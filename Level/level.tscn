@@ -13,3 +13,15 @@ texture = ExtResource("1_o6mkr")
 
 [node name="Character" parent="." unique_id=876229241 instance=ExtResource("2_qmtf6")]
 position = Vector2(510, 275)
+<<<<<<< Updated upstream
+=======
+
+[node name="CasterBlue" parent="." unique_id=1522399475 instance=ExtResource("3_caster")]
+position = Vector2(900, 200)
+
+[node name="CasterBlue2" parent="." unique_id=2039232864 instance=ExtResource("3_caster")]
+position = Vector2(200, 480)
+
+[node name="Chaser" parent="." unique_id=424083071 instance=ExtResource("4_chaser")]
+position = Vector2(950, 520)
+>>>>>>> Stashed changes
