@@ -1,0 +1,23 @@
+[gd_scene format=3 uid="uid://cat6y314sauri"]
+
+[ext_resource type="Script" path="res://Scripts/blue_caster.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://bnkwrsxs72ivj" path="res://icon.svg" id="2_icon"]
+[ext_resource type="Shader" uid="uid://cqqrtmw1ylj0x" path="res://Scenes/invert.gdshader" id="3_invert"]
+[ext_resource type="PackedScene" path="res://Scenes/enemy_projectile.tscn" id="4_projectile"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_invert"]
+shader = ExtResource("3_invert")
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_caster"]
+radius = 58.0
+
+[node name="BlueCaster" type="CharacterBody2D" unique_id=659505408]
+script = ExtResource("1_script")
+projectile_scene = ExtResource("4_projectile")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=943830864]
+material = SubResource("ShaderMaterial_invert")
+texture = ExtResource("2_icon")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=936832986]
+shape = SubResource("CircleShape2D_caster")
