@@ -1,14 +1,14 @@
-## Character
+## Character (Cole)
 - Health
 - Dash (wip)
 - Parry
 - Toggle (if easy)
 
-## Enemies
+## Enemies (Ales)
 - Health
 - ???
 
-## Abilities (cards)
+## Abilities (cards) (Everybody brainstorm)
 - var work_through = Brainstorm list 3 - 5
 - [work_through].do()
 - Dash has Invincibility Frames
@@ -24,13 +24,13 @@
 ## Leaderboard (whoo)
 - Enemies killed, time survived, name.
 
-## UX / UI
+## UX / UI (Yanru)
 - Timer (indicates time to boss)
 - Start Screen / End Screen
 - Score: points
 - Health bar
 
-## Sounds
+## Sounds (Kevin)
 - player shoot
 - enemy shoot
 - player hit
