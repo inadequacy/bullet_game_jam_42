@@ -18,6 +18,7 @@ func dash_direction(direction: Vector2) -> void:
 func parry_this_casual() -> void:
 	pass
 
+## Toggle
 
 func get_input() -> void:
 	if movement_allowed == true:
