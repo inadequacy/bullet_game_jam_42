@@ -3,8 +3,9 @@
 - Movement **complete** ✔️
 - Dash **complete** ✔️
 - Parry **complete** ✔️
-- Toggle (if easy)
-- Shooting (standard)
+- Toggle (is easy, depends on having both shoot types)
+- Shooting (standard) **complete** ✔️
+- Shooting (closest enemy)
 
 ## Enemies (Ale)
 - Health
