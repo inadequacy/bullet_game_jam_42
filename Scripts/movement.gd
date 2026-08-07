@@ -32,7 +32,7 @@ func dash_direction(direction: Vector2) -> void:
 ## Press Shift to parry
 func parry_this_casual() -> void:
 	parry_allowed = false
-	
+	#
 
 ## Toggle targeting
 
