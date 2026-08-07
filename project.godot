@@ -75,6 +75,14 @@ parry={
 ]
 }
 
+[layer_names]
+
+2d_render/layer_1="Enemies and Players"
+2d_render/layer_2="Enemies only"
+2d_render/layer_3="Player only"
+2d_render/layer_4="Projectiles"
+2d_render/layer_5="Terrain"
+
 [physics]
 
 3d/physics_engine="Jolt Physics"

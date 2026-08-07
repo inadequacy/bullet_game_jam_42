@@ -12,6 +12,8 @@ var dash_allowed = true
 # Parry settings
 @export var parry_duration: float = 0.2
 @export var parry_cooldown: float = 2.0
+@export var parry_radius: float = 90.0
+@onready var parry_collider = $ParryRadius
 var parry_allowed = true
 
 ## Press Space to dash
@@ -29,10 +31,22 @@ func dash_direction(direction: Vector2) -> void:
 	dash_allowed = true
 
 
+## Set Parry radius
+## Maybe update this to be general universal updater later.
+func parry_radius_update(new_radius: float) -> void:
+	parry_collider.shape.set_radius(new_radius)
+
+
 ## Press Shift to parry
 func parry_this_casual() -> void:
 	parry_allowed = false
-	
+
+	parry_collider.set_deferred("disabled", false)
+	await get_tree().create_timer(parry_duration).timeout
+	parry_collider.set_deferred("disabled", true)
+	await get_tree().create_timer(parry_cooldown).timeout
+	parry_allowed = true
+
 
 ## Toggle targeting
 
