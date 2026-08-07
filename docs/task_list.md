@@ -3,6 +3,7 @@
 - Dash (wip)
 - Parry
 - Toggle (if easy)
+- Shooting (standard)
 
 ## Enemies (Ales)
 - Health
