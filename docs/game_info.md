@@ -85,11 +85,14 @@ must read a full screen in a quarter second.
 | --- | --- | --- | --- | --- |
 | 🔵 **Blue** | Straight, slow, dense | No | **Yes** | Parry a green shot to clear the screen |
 | 🟢 **Green** | Straight, telegraphed | **Yes** | n/a (it's the trigger) | Parry it |
-| 🔴 **Red** | **Homing** | No | No | **Dash** — outmaneuver or break the lock |
+| 🔴 **Red** | **Homing** | No | No | **Dash** — only dash displacement escapes it |
 
 Red is the only projectile that chases you, which makes it the only one that
 demands a dash. Blue is the crowd you clear, green is the opportunity you punish,
 red is the threat that follows you home.
+
+Red is introduced by the first boss and only becomes a normal spawn afterwards —
+see §5.
 
 **Red homing tuning — the single most important number in the game.** Red is
 escaped by *displacement only*: dash displacement works, walking displacement
@@ -132,17 +135,56 @@ the game outside the heal-on-parry card.
 
 ## 5. Enemies
 
-Three archetypes:
+Every enemy shares one base class. Bosses are subclasses of it too. What
+separates enemy types is **how they position** and **what they throw**.
 
-1. **Chaser** — melee, no projectiles. Pressures your positioning.
-2. **Blue caster** — slow, dense blue spreads. The "clear this" enemy.
-3. **Green caster** — telegraphed green shots. The "parry me" enemy.
+### Two movement archetypes
 
-**Spawn blue and green casters together.** The parry burst is only meaningful
-when there's blue on screen to clear, so pairing them is what makes the mechanic
-teach itself.
+**Range-keepers (casters).** A caster holds a preferred distance from the player
+rather than closing on them. If the player is further than that, it advances; if
+the player closes inside it, it backs away; and while inside the tolerance band
+it **strafes sideways**, reversing direction periodically so it doesn't orbit
+predictably. Casters **root themselves during a cast wind-up**, which is what
+makes them punishable — the player who reads the telegraph can close and kill.
 
-Red projectiles come **only from bosses**, so red always reads as escalation.
+**Chasers (melee).** A chaser has no preferred distance. It walks straight at the
+player and attacks on contact. It is the enemy that punishes standing still, and
+the reason the player can't just camp a corner and out-range the casters.
+
+### The roster
+
+| Enemy | Positioning | Attack | Role |
+| --- | --- | --- | --- |
+| **Chaser** | Closes to contact | Melee, on a cooldown with a wind-up | Denies camping, pressures position |
+| **Blue caster** | Holds range | Dense blue spreads | The "clear this" enemy |
+| **Green caster** | Holds range | Telegraphed green shots | The "parry me" enemy |
+| **Red caster** | Holds range | Red homing | The "dash now" enemy |
+
+**Spawn blue and green casters together.** The parry burst only means something
+when there's blue on screen to clear, so pairing them is what teaches the
+mechanic without a tutorial.
+
+**Gate red casters behind the first boss (3:00).** Red is introduced by the boss,
+so it should be a boss's signature before it becomes a normal spawn. Letting red
+casters into the opening minutes makes red read as background noise instead of
+escalation, and the player meets homing before they've had a chance to draw dash
+cards.
+
+The chaser should be in the very first wave. It's the simplest enemy to read and
+it establishes movement as the core verb before any projectile appears.
+
+### Melee attack shape
+
+The chaser must not be an instant contact-damage blob — that punishes the player
+for the enemy's pathing rather than for their own mistakes. Give it the same
+shape as a cast:
+
+1. **Wind-up** — it stops and telegraphs, ~0.4 s.
+2. **Strike** — a short hitbox in front of it.
+3. **Recovery** — a cooldown before it can swing again.
+
+That makes melee dodgeable by dashing or simply walking away, which keeps every
+threat in the game answerable by movement.
 
 ## 6. Run Structure
 
