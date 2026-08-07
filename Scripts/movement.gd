@@ -10,7 +10,8 @@ func dash_direction(direction: Vector2) -> void:
 	if direction == Vector2(0.0, 0.0):
 		direction = self.transform.x
 
-	velocity = direction * speed * 30
+	velocity = direction * speed * 2
+	await get_tree().create_timer(0.3).timeout
 	movement_allowed = true
 
 
