@@ -1,5 +1,6 @@
 [gd_scene format=3 uid="uid://bxufhl5cvsmpq"]
 
+[ext_resource type="Script" uid="uid://bxkb5aexglxbc" path="res://Scripts/level.gd" id="1_nk1il"]
 [ext_resource type="Texture2D" uid="uid://c751sti8w420u" path="res://Images/Background.webp" id="1_o6mkr"]
 [ext_resource type="PackedScene" uid="uid://dfv1w0exg4fps" path="res://Scenes/character.tscn" id="2_qmtf6"]
 [ext_resource type="PackedScene" path="res://Scenes/caster.tscn" id="3_caster"]
@@ -7,6 +8,7 @@
 [ext_resource type="PackedScene" uid="uid://dpu2waoxwk22w" path="res://Scenes/score.tscn" id="5_iincs"]
 
 [node name="Level" type="Node2D" unique_id=1836397518]
+script = ExtResource("1_nk1il")
 
 [node name="Background" type="Sprite2D" parent="." unique_id=1863172997]
 position = Vector2(574, 333)
@@ -27,3 +29,5 @@ position = Vector2(200, 480)
 position = Vector2(950, 520)
 
 [node name="Score" parent="." unique_id=1254480381 instance=ExtResource("5_iincs")]
+
+[connection signal="shoot" from="Character" to="." method="_on_character_shoot"]

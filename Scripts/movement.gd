@@ -25,6 +25,7 @@ var parry_allowed = true
 signal shoot(projectile, direction, location)
 var projectile = preload("res://Scenes/player_projectile.tscn")
 @export var cast_rate: float = 1.0
+var can_attack: bool = true
 @export_group("")
 
 ## Press Space to dash
@@ -60,7 +61,10 @@ func parry_this_casual() -> void:
 
 
 func basic_attack() -> void:
+	can_attack = false
 	shoot.emit(projectile, rotation, position)
+	await get_tree().create_timer(cast_rate).timeout
+	can_attack = true
 
 
 ## Toggle targeting
@@ -81,3 +85,5 @@ func get_input() -> void:
 func _physics_process(_delta) -> void:
 	get_input()
 	move_and_slide()
+	if can_attack == true:
+		basic_attack()
