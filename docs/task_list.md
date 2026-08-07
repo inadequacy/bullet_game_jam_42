@@ -6,7 +6,7 @@
 - Toggle (if easy)
 - Shooting (standard)
 
-## Enemies (Ales)
+## Enemies (Ale)
 - Health
 - ???
 
@@ -28,7 +28,7 @@
 
 ## UX / UI (Yanru)
 - Timer (indicates time to boss)
-- Start Screen / End Screen
+- Start Screen / End Screen **complete** ✔️
 - Score: points
 - Health bar
 
