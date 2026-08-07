@@ -1,18 +1,30 @@
 extends CharacterBody2D
 
-@export var speed: float = 400
-
+@export var movespeed: int = 400
 var movement_allowed = true
+
+# Dash settings
+@export var dash_duration: float = 0.2
+@export var dash_cooldown: float = 1.0
+@export var dash_speed: int = 800
+var dash_allowed = true
+
+# Parry settings
+
+var parry_allowed = true
 
 ## Press Space to dash
 func dash_direction(direction: Vector2) -> void:
 	movement_allowed = false
+	dash_allowed = false
 	if direction == Vector2(0.0, 0.0):
 		direction = self.transform.x
 
-	velocity = direction * speed * 2
-	await get_tree().create_timer(0.3).timeout
+	velocity = direction * dash_speed
+	await get_tree().create_timer(dash_duration).timeout
 	movement_allowed = true
+	await get_tree().create_timer(dash_cooldown).timeout
+	dash_allowed = true
 
 
 ## Press Shift to parry
@@ -25,12 +37,12 @@ func get_input() -> void:
 	if movement_allowed == true:
 		look_at(get_global_mouse_position())
 		var input_direction = Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
-		velocity = input_direction * speed
+		velocity = input_direction * movespeed
 
-		if Input.is_action_just_pressed("dash"):
+		if Input.is_action_just_pressed("dash") && dash_allowed:
 			dash_direction(input_direction)
 
-		if Input.is_action_just_pressed("parry"):
+		if Input.is_action_just_pressed("parry") && parry_allowed:
 			parry_this_casual()
 
 
