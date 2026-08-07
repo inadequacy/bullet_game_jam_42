@@ -4,17 +4,28 @@ extends CharacterBody2D
 var movement_allowed = true
 
 # Dash settings
+@export_group("Dash Settings")
 @export var dash_duration: float = 0.2
 @export var dash_cooldown: float = 2.0
 @export var dash_speed: int = 800
 var dash_allowed = true
+@export_group("")
 
 # Parry settings
+@export_group("Parry Settings")
 @export var parry_duration: float = 0.2
 @export var parry_cooldown: float = 2.0
 @export var parry_radius: float = 90.0
 @onready var parry_collider = $ParryRadius
 var parry_allowed = true
+@export_group("")
+
+# Attack settings
+@export_group("Attack Settings")
+signal shoot(projectile, direction, location)
+var projectile = preload("res://Scenes/player_projectile.tscn")
+@export var cast_rate: float = 1.0
+@export_group("")
 
 ## Press Space to dash
 func dash_direction(direction: Vector2) -> void:
@@ -46,6 +57,10 @@ func parry_this_casual() -> void:
 	parry_collider.set_deferred("disabled", true)
 	await get_tree().create_timer(parry_cooldown).timeout
 	parry_allowed = true
+
+
+func basic_attack() -> void:
+	shoot.emit(projectile, rotation, position)
 
 
 ## Toggle targeting

@@ -1,0 +1,21 @@
+[gd_scene format=3 uid="uid://b823whlpgo1dw"]
+
+[ext_resource type="Script" uid="uid://dwha2w4ug5i5f" path="res://Scripts/player_projectile.gd" id="1_2f6ks"]
+[ext_resource type="Texture2D" uid="uid://bnkwrsxs72ivj" path="res://icon.svg" id="2_314jq"]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_haif4"]
+radius = 15.0
+height = 45.0
+
+[node name="Player Projectile" type="Area2D" unique_id=74783098]
+script = ExtResource("1_2f6ks")
+
+[node name="Icon" type="Sprite2D" parent="." unique_id=1947587561]
+position = Vector2(0, -1.9073486e-06)
+scale = Vector2(0.34375, 0.234375)
+texture = ExtResource("2_314jq")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1518891728]
+visibility_layer = 11
+rotation = 1.5707964
+shape = SubResource("CapsuleShape2D_haif4")
