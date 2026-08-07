@@ -2,7 +2,7 @@
 - Health
 - Movement **complete** ✔️
 - Dash **complete** ✔️
-- Parry
+- Parry **complete** ✔️
 - Toggle (if easy)
 - Shooting (standard)
 
