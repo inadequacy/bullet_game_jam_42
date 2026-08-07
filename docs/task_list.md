@@ -1,6 +1,7 @@
 ## Character (Cole)
 - Health
-- Dash (wip)
+- Movement **complete** ✔️
+- Dash **complete** ✔️
 - Parry
 - Toggle (if easy)
 - Shooting (standard)
