@@ -1,6 +1,6 @@
-[gd_scene format=3 uid="uid://1gk0q2uu887u"]
+[gd_scene format=3 uid="uid://brl2cj0sbtyu5"]
 
-[ext_resource type="Script" uid="uid://f0ddo4sw3nl4" path="res://Scripts/start_menu.gd" id="1_wrsnd"]
+[ext_resource type="Script" uid="uid://b8r8fidbuqfhg" path="res://Scripts/end_menu.gd" id="1_wrsnd"]
 [ext_resource type="Texture2D" uid="uid://c751sti8w420u" path="res://Images/Background.webp" id="2_rrpri"]
 
 [node name="Menu" type="Control" unique_id=729403175]
@@ -23,7 +23,7 @@ layout_mode = 0
 offset_right = 298.0
 offset_bottom = 120.0
 
-[node name="Title" type="Label" parent="VBoxContainer" unique_id=483457592]
+[node name="Label" type="Label" parent="VBoxContainer" unique_id=483457592]
 layout_mode = 2
 text = "Max the Wizard"
 horizontal_alignment = 1
@@ -31,15 +31,16 @@ vertical_alignment = 1
 
 [node name="Start_Button" type="Button" parent="VBoxContainer" unique_id=1648177023]
 layout_mode = 2
-text = "Start"
+text = "Restart"
+
+[node name="Menu_Button" type="Button" parent="VBoxContainer" unique_id=822702546]
+layout_mode = 2
+text = "Main menu"
 
 [node name="Quit_Button" type="Button" parent="VBoxContainer" unique_id=1454954634]
 layout_mode = 2
 text = "Quit"
 
-[node name="Credits" type="Label" parent="VBoxContainer" unique_id=1241274112]
-layout_mode = 2
-text = "Credits: Cole, Alessandro, Kevin, Yanru"
-
 [connection signal="pressed" from="VBoxContainer/Start_Button" to="." method="_on_start_button_pressed"]
+[connection signal="pressed" from="VBoxContainer/Menu_Button" to="." method="_on_menu_button_pressed"]
 [connection signal="pressed" from="VBoxContainer/Quit_Button" to="." method="_on_quit_button_pressed"]
