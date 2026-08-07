@@ -6,14 +6,18 @@
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_haif4"]
 size = Vector2(125, 125)
 
-[node name="CharacterBody2D" type="CharacterBody2D" groups=["player"] unique_id=1852961571]
+[sub_resource type="CircleShape2D" id="CircleShape2D_haif4"]
+radius = 90.0
+
+[node name="PlayerCharacter" type="CharacterBody2D" unique_id=1852961571 groups=["player"]]
 script = ExtResource("2_ushfy")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=558354169]
+[node name="PlayerCollision" type="CollisionShape2D" parent="." unique_id=558354169]
 position = Vector2(0.5, 0.5)
 shape = SubResource("RectangleShape2D_haif4")
 
-[node name="Character" type="Node2D" parent="." unique_id=876229241]
+[node name="ParryRadius" type="CollisionShape2D" parent="." unique_id=1844970628]
+shape = SubResource("CircleShape2D_haif4")
 
-[node name="Icon" type="Sprite2D" parent="Character" unique_id=1203039092]
+[node name="CharacterImage" type="Sprite2D" parent="." unique_id=1203039092]
 texture = ExtResource("1_lkv7d")
