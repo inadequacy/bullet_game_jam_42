@@ -280,3 +280,4 @@ fight. Four bespoke bosses is not a 48-hour task; one plus variations is.
 - **Ability (Q)** — no behavior designed. Build the rest of the kit first; decide
   late whether to add one or drop the input entirely. Nothing else depends on it.
 - **Infinite / scrolling arena** — only if the 12-minute run ships early.
+- **Leaderboard** - image if I wrote like AI.
