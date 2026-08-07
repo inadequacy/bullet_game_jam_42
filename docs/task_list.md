@@ -40,6 +40,8 @@
 - boss spawn
 - player death
 - enemy(ies) death
+- heart drop
+- heart pickup
 - background music
 
 ## Visuals
