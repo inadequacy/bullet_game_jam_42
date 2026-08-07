@@ -5,18 +5,20 @@ var movement_allowed = true
 
 # Dash settings
 @export var dash_duration: float = 0.2
-@export var dash_cooldown: float = 1.0
+@export var dash_cooldown: float = 2.0
 @export var dash_speed: int = 800
 var dash_allowed = true
 
 # Parry settings
-
+@export var parry_duration: float = 0.2
+@export var parry_cooldown: float = 2.0
 var parry_allowed = true
 
 ## Press Space to dash
 func dash_direction(direction: Vector2) -> void:
 	movement_allowed = false
 	dash_allowed = false
+
 	if direction == Vector2(0.0, 0.0):
 		direction = self.transform.x
 
@@ -29,9 +31,10 @@ func dash_direction(direction: Vector2) -> void:
 
 ## Press Shift to parry
 func parry_this_casual() -> void:
-	pass
+	parry_allowed = false
+	
 
-## Toggle
+## Toggle targeting
 
 func get_input() -> void:
 	if movement_allowed == true:
