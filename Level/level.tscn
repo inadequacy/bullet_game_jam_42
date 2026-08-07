@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://bxufhl5cvsmpq"]
 
 [ext_resource type="Texture2D" uid="uid://c751sti8w420u" path="res://Images/Background.webp" id="1_o6mkr"]
+[ext_resource type="PackedScene" uid="uid://dfv1w0exg4fps" path="res://Scenes/character.tscn" id="2_qmtf6"]
 
 [node name="Level" type="Node2D" unique_id=1836397518]
 
@@ -9,3 +10,6 @@ position = Vector2(574, 333)
 rotation = 1.5707964
 scale = Vector2(1.55, 1.5500001)
 texture = ExtResource("1_o6mkr")
+
+[node name="Character" parent="." unique_id=876229241 instance=ExtResource("2_qmtf6")]
+position = Vector2(510, 275)
