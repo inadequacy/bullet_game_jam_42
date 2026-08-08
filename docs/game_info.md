@@ -92,7 +92,7 @@ must read a full screen in a quarter second.
 | Color | Behavior | Parryable | Cleared by parry burst | The answer is |
 | --- | --- | --- | --- | --- |
 | 🔵 **Blue** | Straight, slow, dense | No | **Yes** | Parry a green shot to clear the screen |
-| 🟢 **Green** | Straight, telegraphed | **Yes** | n/a (it's the trigger) | Parry it |
+| 🟢 **Green** | **Hitscan** after a charge | **Yes** | n/a (it's the trigger) | Parry the charge |
 | 🔴 **Red** | **Homing** | No | No | **Dash** — dashing severs its lock |
 
 Red is the only projectile that chases you, which makes it the only one that
@@ -101,6 +101,26 @@ red is the threat that follows you home.
 
 Red is introduced by the first boss and only becomes a normal spawn afterwards —
 see §5.
+
+### Green: parry the charge, not the shot
+
+Green is **hitscan**. The caster stops, glows green for `charge_time` (0.3 s),
+then hits instantly along a straight line to wherever the player is standing.
+
+**The trace cannot be reacted to** — it resolves the same frame it appears. The
+line drawn on screen is feedback after the fact. What the player reacts to is
+the *glow*: a stationary, brightening caster is the tell, and the parry has to
+already be active when the shot lands.
+
+That makes green the one enemy that trains rhythm rather than reflex. Blue and
+red are objects in flight you respond to; green is a clock you learn.
+
+> ⚠️ **0.3 s is below human reaction time for a cold read.** Simple visual
+> reaction is ~0.25 s, and the parry then has to still be active on the firing
+> frame — so a player who waits to *see* the glow will usually be late. It works
+> as a rhythm test once the cast cadence is learned, but if it feels unfair in
+> playtest, `charge_time` is the first knob to raise (0.5–0.6 s makes it
+> reactable). It's exported per-caster.
 
 ### Red: how the dash actually escapes it
 

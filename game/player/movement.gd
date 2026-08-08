@@ -265,14 +265,46 @@ func _resolve_parry() -> void:
 		if dist > parry_radius:
 			continue
 
-		_parried_this_window += 1
 		p.queue_free()
-		var cleared := _parry_burst()
+		var cleared := _parry_succeeded()
 
 		if parry_debug_logs:
 			var into := (Time.get_ticks_msec() - _parry_window_opened_ms) / 1000.0
-			print("[PARRY] SUCCESS | green parried at %dpx | %.2fs into %.2fs window | burst cleared %d blue"
+			print("[PARRY] SUCCESS | green shot parried at %dpx | %.2fs into %.2fs window | burst cleared %d blue"
 				% [dist, into, effective_parry_window(), cleared])
+
+
+## Called by a hitscan attack at the instant it fires. Returns true if the
+## player was parrying, which eats the shot entirely.
+##
+## Hitscan cannot be dodged - the trace is instant - so the parry has to be
+## already active when this is called. The player reacts to the caster's charge
+## glow, never to the trace.
+func try_parry_hitscan(_from: Vector2) -> bool:
+	if not is_parrying:
+		return false
+
+	var cleared := _parry_succeeded()
+	if parry_debug_logs:
+		var into := (Time.get_ticks_msec() - _parry_window_opened_ms) / 1000.0
+		print("[PARRY] SUCCESS | hitscan parried | %.2fs into %.2fs window | burst cleared %d blue"
+			% [into, effective_parry_window(), cleared])
+	return true
+
+
+## Everything a successful parry does, whatever it caught: clears blue, throws
+## up the ring, and thumps the screen. Returns how many blue shots died.
+func _parry_succeeded() -> int:
+	_parried_this_window += 1
+	var cleared := _parry_burst()
+
+	ParryFlash.burst(get_parent(), global_position, effective_parry_burst_radius())
+
+	var camera := get_tree().get_first_node_in_group("camera_shake")
+	if camera != null:
+		camera.shake()
+
+	return cleared
 
 
 ## Destroys every blue shot inside the burst radius. Returns how many died.
