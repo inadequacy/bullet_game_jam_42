@@ -4,6 +4,13 @@ extends CharacterBody2D
 @export var movespeed: int = 340
 var movement_allowed = true
 
+var random_names = ["Aspen", "Landen", "Yousef", 
+		"Lesli", "Kacie", "Tia", "Chancellor", 
+		"Dianna", "Brycen", "Kylee", "Ashlynn", 
+		"Deontae", "Fredrick", "Gwendolyn", "Jaeden", 
+		"Ibrahim", "Alma", "Serenity", "Maranda", 
+		"Emelia", "Beatriz", "Rylee", "Donnie", "Alanis", "Andrea"]
+
 # Dash settings
 @export_group("Dash Settings")
 @export var dash_duration: float = 0.2
@@ -123,6 +130,12 @@ var can_attack: bool = true
 @export_group("")
 
 
+@onready var health_bar: HealthBar = get_tree().current_scene.get_node("HUD/HealthBar")
+var my_name: String
+
+
+func take_damage(amount: int) -> void:
+	health_bar.take_damage(amount)
 # Debug settings
 @export_group("Debug")
 ## Press H to toggle. While on, the player takes no damage - for trying out
@@ -333,6 +346,12 @@ func _ready() -> void:
 	# Keep the shape in sync so the parry radius is visible with debug collision
 	# shapes on, even though the shape itself stays disabled.
 	parry_collider.shape.set_radius(parry_radius)
+	health_bar.health_depleted.connect(_on_health_depleted)
+	if !GameManager.player_name:
+		my_name = random_names.pick_random()
+		GameManager.player_name = my_name
+	else:
+		my_name = GameManager.player_name
 	# Also hooks up health_depleted. Missing bar is not fatal - the player still
 	# works, it just cannot show or lose health.
 	find_health_bar()
@@ -345,7 +364,10 @@ func _ready() -> void:
 		_body_base_modulate = _body_sprite.modulate
 
 func _on_health_depleted() -> void:
+	SilentWolf.Scores.save_score(my_name, GameManager.score)
+	GameManager.message = "You lost, " + my_name + "!"
 	get_tree().change_scene_to_file("res://game/ui/end_menu.tscn")
+
 
 ## Set Parry radius
 ## Maybe update this to be general universal updater later.

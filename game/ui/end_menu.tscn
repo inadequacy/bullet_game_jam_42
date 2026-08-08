@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://b8r8fidbuqfhg" path="res://game/ui/end_menu.gd" id="1_wrsnd"]
 [ext_resource type="Texture2D" uid="uid://c751sti8w420u" path="res://assets/images/Background.webp" id="2_rrpri"]
 [ext_resource type="Theme" uid="uid://c5m3g1ayqp1sv" path="res://game/ui/button.tres" id="3_rrpri"]
+[ext_resource type="Script" uid="uid://cdn2plt6n14jn" path="res://game/ui/highscores.gd" id="4_f86wk"]
 
 [node name="Menu" type="Control" unique_id=729403175]
 layout_mode = 3
@@ -86,6 +87,16 @@ size_flags_horizontal = 4
 size_flags_vertical = 4
 theme = ExtResource("3_rrpri")
 text = "Quit"
+
+[node name="Highscores" type="Label" parent="." unique_id=1832494344]
+layout_mode = 0
+offset_left = 72.0
+offset_top = 79.0
+offset_right = 345.0
+offset_bottom = 532.0
+theme_override_font_sizes/font_size = 26
+text = "High scores:"
+script = ExtResource("4_f86wk")
 
 [connection signal="pressed" from="VBoxContainer/Start_Button" to="." method="_on_start_button_pressed"]
 [connection signal="pressed" from="VBoxContainer/Menu_Button" to="." method="_on_menu_button_pressed"]

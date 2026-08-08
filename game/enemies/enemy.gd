@@ -150,6 +150,7 @@ func take_damage(amount: float) -> void:
 
 func die() -> void:
 	_on_death()
+	GameManager.add_score(xp_value)
 	died.emit(self)
 	queue_free()
 

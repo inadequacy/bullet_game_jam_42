@@ -1,5 +1,8 @@
 extends Label
 
+
+func _process(delta: float) -> void:
+	$".".text = "Score: " + str(GameManager.score)
 func _ready() -> void:
 	text = "Score: " + str(GameManager.score)
 	GameManager.score_changed.connect(_on_score_changed)

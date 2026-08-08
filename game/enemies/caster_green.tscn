@@ -1,8 +1,8 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene format=3 uid="uid://ys576ewv3f7h"]
 
-[ext_resource type="Script" path="res://game/enemies/caster.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://d4ghjewgcvovb" path="res://game/enemies/caster.gd" id="1_script"]
 [ext_resource type="Texture2D" uid="uid://bnkwrsxs72ivj" path="res://icon.svg" id="2_icon"]
-[ext_resource type="Shader" path="res://assets/shaders/invert.gdshader" id="3_invert"]
+[ext_resource type="Shader" uid="uid://cqqrtmw1ylj0x" path="res://assets/shaders/invert.gdshader" id="3_invert"]
 [ext_resource type="PackedScene" path="res://game/enemies/enemy_projectile.tscn" id="4_projectile"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_invert"]
@@ -11,25 +11,28 @@ shader = ExtResource("3_invert")
 [sub_resource type="CircleShape2D" id="CircleShape2D_caster"]
 radius = 23.0
 
-[node name="CasterGreen" type="CharacterBody2D"]
+[node name="CasterGreen" type="CharacterBody2D" unique_id=741634916]
 script = ExtResource("1_script")
-max_health = 25.0
-move_speed = 130.0
-xp_value = 2
 preferred_range = 300.0
 range_tolerance = 60.0
 attack_mode = 1
 projectile_scene = ExtResource("4_projectile")
 projectile_kind = 1
 cast_interval = 2.8
+telegraph_time = 0.8
+projectiles_per_cast = 1
+spread_degrees = 0.0
+max_health = 25.0
+move_speed = 130.0
+xp_value = 200
 charge_time = 0.6
 hitscan_damage = 1.0
 
-[node name="Sprite2D" type="Sprite2D" parent="."]
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=2027714833]
 modulate = Color(0.55, 1, 0.65, 1)
 material = SubResource("ShaderMaterial_invert")
 scale = Vector2(0.4, 0.4)
 texture = ExtResource("2_icon")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1409725842]
 shape = SubResource("CircleShape2D_caster")
