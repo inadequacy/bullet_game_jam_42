@@ -16,7 +16,7 @@ signal element_locked(element: Element)
 
 ## Every level-up offers exactly one card from each pool, always in this order,
 ## so a slot always means the same thing to the player.
-enum Pool { BASIC, MOBILITY, ATTACK }
+enum Pool { BASIC, ACTION, ATTACK }
 
 ## The player's spell school.
 ##
@@ -27,7 +27,7 @@ enum Element { NONE, ARCANE, FIRE, ICE }
 
 const POOL_NAMES := {
 	Pool.BASIC: "BASIC",
-	Pool.MOBILITY: "MOBILITY",
+	Pool.ACTION: "ACTION",
 	Pool.ATTACK: "ATTACK",
 }
 
@@ -39,7 +39,14 @@ const ELEMENT_NAMES := {
 }
 
 ## Slot order, left to right. One card is drawn from each.
-const OFFER_ORDER := [Pool.BASIC, Pool.MOBILITY, Pool.ATTACK]
+const OFFER_ORDER := [Pool.BASIC, Pool.ACTION, Pool.ATTACK]
+
+## Where a slot draws from once its own pool is exhausted, so the player is
+## never shown a blank card. ATTACK runs dry after an element line is finished -
+## the elements are one-shot chains, while ACTION cards keep coming.
+const POOL_FALLBACK := {
+	Pool.ATTACK: Pool.ACTION,
+}
 
 ## Card keys:
 ##   name     - shown on the card. Not unique: every element has an "Ultimate I".
@@ -59,24 +66,29 @@ const CARDS := {
 		{"name": "Renewal", "desc": "Restore health to full"},
 	],
 
-	# Action and movement: dash, parry, raw speed.
-	Pool.MOBILITY: [
+	# "Action Modifier Cards" in docs/cards.md: mobility, parry, dash, and the
+	# element-neutral basic attack upgrades. None of these are one-shot, so this
+	# pool never runs dry - which is why ATTACK falls back to it.
+	Pool.ACTION: [
+		# Mobility
 		{"name": "Swift Boots", "desc": "+15% move speed"},
+		# Dash
 		{"name": "Second Wind", "desc": "+1 dash charge"},
 		{"name": "Fleet Footed", "desc": "-35% dash cooldown"},
 		{"name": "Phase Step", "desc": "Dash grants invulnerability frames"},
+		# Parry
 		{"name": "Steady Hand", "desc": "+50% parry window"},
 		{"name": "Shockwave", "desc": "+40% parry burst radius"},
 		{"name": "Quick Recovery", "desc": "-30% parry cooldown"},
 		{"name": "Reflect", "desc": "Parried shots fly back at the caster"},
-	],
-
-	Pool.ATTACK: [
-		# Element-neutral. Offerable at any point in the run.
+		# Basic attack
 		{"name": "Sharpened Missile", "desc": "+25% basic attack damage"},
 		{"name": "Rapid Casting", "desc": "+30% cast rate"},
 		{"name": "Split Bolt", "desc": "Basic attack fires an extra projectile"},
+	],
 
+	# "Attack Variant Cards": elements and their ultimates, nothing else.
+	Pool.ATTACK: [
 		# The commitment. Exactly one of these can ever be taken, and only
 		# while the run is still unelemented.
 		{"id": "arcane_lock", "name": "Arcane", "element": Element.ARCANE,
@@ -248,20 +260,33 @@ func _on_card_pressed(index: int) -> void:
 	close()
 
 
-## One random card per pool, in OFFER_ORDER. Empty pools are skipped rather
-## than backfilled from elsewhere - a slot shows its own category or nothing.
+## One card per slot, in OFFER_ORDER. A slot whose own pool is exhausted falls
+## back to POOL_FALLBACK so the player always gets three real choices.
 func _draw_offer() -> Array:
 	var offer := []
-	for pool in OFFER_ORDER:
-		var options := _available(pool)
+	# Two slots can draw from the same pool once ATTACK starts falling back to
+	# ACTION, so track what this offer already contains.
+	var already_offered := {}
+
+	for slot_pool in OFFER_ORDER:
+		var source: Pool = slot_pool
+		var options := _available(source, already_offered)
+
+		if options.is_empty() and POOL_FALLBACK.has(slot_pool):
+			source = POOL_FALLBACK[slot_pool]
+			options = _available(source, already_offered)
+
 		if options.is_empty():
-			push_warning("No card available for pool '%s' - that slot is blank."
-				% POOL_NAMES[pool])
+			push_warning("No card available for slot '%s' - it will be blank."
+				% POOL_NAMES[slot_pool])
 			continue
+
 		var card: Dictionary = (options[randi() % options.size()] as Dictionary).duplicate()
-		card["group"] = POOL_NAMES[pool]
-		card["pool"] = pool
+		already_offered[card_id(card)] = true
+		card["group"] = POOL_NAMES[source]
+		card["pool"] = source
 		offer.append(card)
+
 	return offer
 
 
@@ -271,9 +296,11 @@ func card_id(card: Dictionary) -> String:
 	return card.get("id", card["name"])
 
 
-func _available(pool: Pool) -> Array:
+func _available(pool: Pool, exclude: Dictionary = {}) -> Array:
 	var out := []
 	for card in CARDS.get(pool, []):
+		if exclude.has(card_id(card)):
+			continue
 		if _is_available(card):
 			out.append(card)
 	return out
