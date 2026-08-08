@@ -104,23 +104,27 @@ see §5.
 
 ### Green: parry the charge, not the shot
 
-Green is **hitscan**. The caster stops, glows green for `charge_time` (0.3 s),
-then hits instantly along a straight line to wherever the player is standing.
+Green fires a **fast travelling trace** after a visible charge. Three stages:
 
-**The trace cannot be reacted to** — it resolves the same frame it appears. The
-line drawn on screen is feedback after the fact. What the player reacts to is
-the *glow*: a stationary, brightening caster is the tell, and the parry has to
-already be active when the shot lands.
+| Stage | Duration | What the player sees |
+| --- | --- | --- |
+| **Charge** | `charge_time` — 0.6 s | Caster roots itself. A green aura swells around it, growing in size and opacity the whole time, while the caster's own sprite brightens |
+| **Shot** | ~0.18 s over 400 px | A green streak crosses the gap at `trace_speed` (2200 px/s) |
+| **Impact** | — | Damage, or nothing if a parry is active |
+
+**The streak is visible but not reactable** — under a fifth of a second in
+flight. The reaction window is the *aura*, which is why it builds gradually
+rather than popping on: how bright it is tells you how close the shot is.
+
+The shot is **committed** — it aims where the player stood at fire time and does
+not track. Green is not answered by dodging; it's answered by parrying.
+
+Damage and the parry check resolve **on arrival, not on firing**. So the real
+window from first glow to impact is ~0.78 s, comfortably reactable, and a parry
+pressed slightly late still catches the shot in flight.
 
 That makes green the one enemy that trains rhythm rather than reflex. Blue and
 red are objects in flight you respond to; green is a clock you learn.
-
-> ⚠️ **0.3 s is below human reaction time for a cold read.** Simple visual
-> reaction is ~0.25 s, and the parry then has to still be active on the firing
-> frame — so a player who waits to *see* the glow will usually be late. It works
-> as a rhythm test once the cast cadence is learned, but if it feels unfair in
-> playtest, `charge_time` is the first knob to raise (0.5–0.6 s makes it
-> reactable). It's exported per-caster.
 
 ### Red: how the dash actually escapes it
 
