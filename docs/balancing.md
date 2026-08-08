@@ -10,7 +10,7 @@
 
 ## Monsters Generally
 - Needs to ramp up:
- - Attack frequency
+-- Attack frequency
 - More should spawn faster, either per level up +1 max mobs or every 20 seconds +1 max mobs
 - If there's ever only one or so mob left max mobs should be increased too
 - ^ All this with a certain cap to be determined, since clutter will get bad, but does need ramping ^
