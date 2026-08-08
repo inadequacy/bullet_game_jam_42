@@ -3,15 +3,12 @@
 [ext_resource type="Script" uid="uid://bxkb5aexglxbc" path="res://game/levels/level.gd" id="1_nk1il"]
 [ext_resource type="Texture2D" uid="uid://c751sti8w420u" path="res://assets/images/Background.webp" id="1_o6mkr"]
 [ext_resource type="PackedScene" uid="uid://dfv1w0exg4fps" path="res://game/player/character.tscn" id="2_qmtf6"]
-[ext_resource type="PackedScene" path="res://game/enemies/caster_blue.tscn" id="3_caster"]
-[ext_resource type="PackedScene" path="res://game/enemies/chaser.tscn" id="4_chaser"]
 [ext_resource type="PackedScene" uid="uid://dpu2waoxwk22w" path="res://game/ui/score.tscn" id="5_iincs"]
-[ext_resource type="PackedScene" path="res://game/enemies/caster_green.tscn" id="6_green"]
-[ext_resource type="PackedScene" path="res://game/enemies/caster_red.tscn" id="7_red"]
 [ext_resource type="PackedScene" uid="uid://bu5b1wbkhqegi" path="res://game/ui/health_bar.tscn" id="9_b3dog"]
 [ext_resource type="PackedScene" path="res://game/cards/card_screen.tscn" id="10_cards"]
 [ext_resource type="PackedScene" path="res://game/ui/dash_bar.tscn" id="11_dash"]
 [ext_resource type="PackedScene" path="res://game/ui/parry_bar.tscn" id="13_parry"]
+[ext_resource type="PackedScene" path="res://game/ui/run_timer.tscn" id="14_timer"]
 [ext_resource type="Script" path="res://game/levels/camera_shake.gd" id="12_shake"]
 
 [node name="Level" type="Node2D" unique_id=1836397518]
@@ -39,21 +36,6 @@ auto_aim = null
 auto_aim_range = null
 aim_logs = null
 
-[node name="CasterBlue" parent="." unique_id=1522399475 instance=ExtResource("3_caster")]
-position = Vector2(900, 200)
-
-[node name="CasterBlue2" parent="." unique_id=2039232864 instance=ExtResource("3_caster")]
-position = Vector2(200, 480)
-
-[node name="CasterGreen" parent="." unique_id=39030835 instance=ExtResource("6_green")]
-position = Vector2(180, 130)
-
-[node name="CasterRed" parent="." unique_id=814850292 instance=ExtResource("7_red")]
-position = Vector2(1020, 340)
-
-[node name="Chaser" parent="." unique_id=424083071 instance=ExtResource("4_chaser")]
-position = Vector2(950, 520)
-
 [node name="Camera2D" type="Camera2D" parent="."]
 position = Vector2(576, 324)
 script = ExtResource("12_shake")
@@ -61,6 +43,8 @@ script = ExtResource("12_shake")
 [node name="HUD" type="CanvasLayer" parent="." unique_id=792891429]
 
 [node name="Score" parent="HUD" unique_id=1254480381 instance=ExtResource("5_iincs")]
+
+[node name="RunTimer" parent="HUD" instance=ExtResource("14_timer")]
 
 [node name="HealthBar" parent="HUD" unique_id=2142482034 instance=ExtResource("9_b3dog")]
 offset_transform_enabled = true

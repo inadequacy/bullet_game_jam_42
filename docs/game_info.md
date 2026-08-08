@@ -341,6 +341,28 @@ faster, as the run clock advances. Enemy stats stay flat; the crowd is the
 pressure. Bosses are punctuation on top of a continuously rising baseline, not
 the only escalation.
 
+`level.gd` holds the arena at a **fixed head count per tier**, stepping up on the
+same three-minute beat as the bosses:
+
+| Clock | Tier | Enemies alive |
+| --- | --- | --- |
+| 12:00 – 9:00 | 1 | 3 |
+| 9:00 – 6:00 | 2 | 4 |
+| 6:00 – 3:00 | 3 | 5 |
+| 3:00 – 0:00 | 4 | 6 |
+
+It is a **cap that is always met**, not a spawn budget: kill one and the arena
+tops itself back up after `respawn_delay`, so the pressure never sags. Which
+enemy arrives is random from `ENEMY_SCENES`. The refill is driven by a head count
+rather than by death signals, so a tier stepping up, several kills landing at
+once, or an enemy lost some other way all resolve identically without anything
+having to report them.
+
+**Enemies never appear in the arena.** They spawn `spawn_offscreen_margin` past
+the nearest edge and walk in, and `_behavior()` is skipped until they arrive — a
+caster that could fire from outside the view would be attacking from somewhere
+the player cannot see, let alone answer.
+
 Normal waves keep spawning during boss fights and after 12:00.
 
 ### Boss implementation (jam-sized)

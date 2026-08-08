@@ -110,6 +110,16 @@ code.
 | `caster_green.tscn` | Green, single telegraphed shot | The parry bait |
 | `caster_red.tscn` | Red, homing | The dash bait |
 
+**Enemies are not placed in `level.tscn`.** `level.gd` owns the population: it
+counts heads every frame and tops the arena back up to the cap for the current
+tier (3 enemies for the first three minutes, then 4, 5, 6). Adding an instance by
+hand only puts the count over cap until it dies.
+
+New arrivals start off screen and walk in. `Enemy.enter_from()` skips
+`_behavior()` until they reach their target, so nothing attacks from outside the
+view — if you add an enemy type, that comes for free as long as its logic lives
+in `_behavior()`.
+
 ### Projectile colours
 
 The colour language is the whole combat vocabulary:
