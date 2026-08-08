@@ -28,9 +28,10 @@
 - Ability drops
 - Health restore drops
 
-## Leaderboard (whoo)
+## Leaderboard (Cole)
 
 - Enemies killed, time survived, name.
+- Storing scores over time
 
 ## UX / UI (Yanru)
 
