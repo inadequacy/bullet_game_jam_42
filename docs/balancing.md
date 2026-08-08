@@ -1,10 +1,10 @@
 # Balancing
 
 ## Player
-- Dash distance too long
+- Dash distance too long (duration 0.1, dist 600 better) in movement.gd Character Settings
 - Not a great feel to get hit by things that don't visually hit, we might wanna make the hitbox smaller too.
-- Exp requirement is too high atm (from start) half maybe
-- Better base attack speed
+- Exp requirement is too high atm (from start) (350 start mb) GameManger.gd line 11 and 34
+- Better base attack speed (try 0.7) movement.gd Character Settings (Attack)
 
 ## Green Enemy
 - Attack can be parried before you see it, should be as you begin to see it (slightly later)
