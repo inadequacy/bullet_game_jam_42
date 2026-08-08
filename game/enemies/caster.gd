@@ -42,16 +42,27 @@ enum AttackMode { PROJECTILE, HITSCAN }
 @export var stop_while_casting: bool = true
 
 @export_group("Hitscan")
-## How long the caster glows before firing. THE ENTIRE REACTION WINDOW - the
-## trace itself is instant and cannot be dodged, so this is what the player
-## reads and parries. Raise it to make the enemy more forgiving.
-@export var charge_time: float = 0.3
+## How long the caster charges before firing. THE REACTION WINDOW - the shot
+## itself is far too fast to answer, so this aura is what the player reads.
+## Raise it to make the enemy more forgiving.
+@export var charge_time: float = 0.6
 @export var hitscan_damage: float = 1.0
-## Colour the caster glows while charging.
-@export var charge_color: Color = Color(0.35, 1.0, 0.45)
-## How long the trace stays on screen after the hit. Cosmetic only.
-@export var trace_lifetime: float = 0.12
+## Colour of the aura and the shot.
+@export var charge_color: Color = Color(0.3, 1.0, 0.4)
+## How much brighter the caster's own sprite gets at full charge. Must be well
+## above 1.0 or the tint is lost against an already-green sprite.
+@export var charge_glow_intensity: float = 2.4
+@export var aura_start_radius: float = 26.0
+@export var aura_end_radius: float = 72.0
+
+@export_subgroup("Trace")
+## Pixels per second. Fast enough to be unreactable, slow enough to be seen.
+@export var trace_speed: float = 2200.0
+## Length of the visible streak.
+@export var trace_length: float = 140.0
 @export var trace_width: float = 3.0
+
+var _aura: ChargeAura = null
 
 var _cast_timer: float = 0.0
 var _telegraphing: bool = false
@@ -124,20 +135,33 @@ func _start_wind_up(duration: float) -> void:
 		telegraph(1.25, duration, 0.1)
 
 
-## Ramps the sprite toward charge_color over the whole charge, so the glow
-## builds rather than popping on - it reads as "about to fire".
+## Builds the aura and brightens the caster over the whole charge, so "about to
+## fire" gets progressively louder instead of popping on at the end.
 func _start_charge_glow(duration: float) -> void:
+	if _aura != null and is_instance_valid(_aura):
+		_aura.queue_free()
+	_aura = ChargeAura.start(self, aura_start_radius, aura_end_radius,
+		duration, charge_color)
+
 	if _sprite == null:
 		return
+	# Overbright, not just "green" - the sprite is already green, so tinting
+	# toward the same hue would be invisible. Brightness is the signal.
+	var lit := charge_color * charge_glow_intensity
+	lit.a = _base_modulate.a
 	var tween := create_tween()
-	tween.tween_property(_sprite, "modulate", charge_color, duration)
+	tween.tween_property(_sprite, "modulate", lit, duration)
 
 
 func _end_charge_glow() -> void:
+	if _aura != null and is_instance_valid(_aura):
+		_aura.release()
+		_aura = null
+
 	if _sprite == null:
 		return
 	var tween := create_tween()
-	tween.tween_property(_sprite, "modulate", _base_modulate, 0.12)
+	tween.tween_property(_sprite, "modulate", _base_modulate, 0.15)
 
 
 func _cast() -> void:
@@ -147,37 +171,26 @@ func _cast() -> void:
 		_fire_projectiles()
 
 
-## Instant hit along a straight line to wherever the player is standing right
-## now. Deliberately undodgeable: the player's chance was the charge glow. The
-## only way out is a parry that is ALREADY active when this fires.
+## Releases the charge as a fast travelling streak aimed at where the player is
+## standing right now. The target is fixed at fire time - green is a committed
+## shot, answered by parrying rather than dodging.
+##
+## The trace resolves damage and parry on ARRIVAL, so it owns that logic, not
+## this caster - it has to keep working even if the caster dies mid-flight.
 func _fire_hitscan() -> void:
 	_end_charge_glow()
 	if not has_player():
 		return
 
-	var target: Vector2 = player.global_position
-	_spawn_trace(global_position, target)
-
-	if player.has_method("try_parry_hitscan") and player.try_parry_hitscan(global_position):
-		return
-	if player.has_method("take_damage"):
-		player.take_damage(hitscan_damage)
+	HitscanTrace.fire(get_parent(), global_position, player.global_position,
+		charge_color, trace_speed, trace_length, trace_width, hitscan_damage)
 
 
-## The line the player sees after the fact. Purely feedback - the damage has
-## already been resolved by the time this appears.
-func _spawn_trace(from: Vector2, to: Vector2) -> void:
-	var line := Line2D.new()
-	line.width = trace_width
-	line.default_color = charge_color
-	line.z_index = 10
-	line.add_point(from)
-	line.add_point(to)
-	get_tree().current_scene.add_child(line)
-
-	var tween := line.create_tween()
-	tween.tween_property(line, "modulate:a", 0.0, trace_lifetime)
-	tween.tween_callback(line.queue_free)
+func _on_death() -> void:
+	# Don't leave an aura floating where the caster used to be.
+	if _aura != null and is_instance_valid(_aura):
+		_aura.queue_free()
+		_aura = null
 
 
 func _fire_projectiles() -> void:

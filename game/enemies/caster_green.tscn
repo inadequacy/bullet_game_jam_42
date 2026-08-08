@@ -22,7 +22,7 @@ attack_mode = 1
 projectile_scene = ExtResource("4_projectile")
 projectile_kind = 1
 cast_interval = 2.8
-charge_time = 0.3
+charge_time = 0.6
 hitscan_damage = 1.0
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
