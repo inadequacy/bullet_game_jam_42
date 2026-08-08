@@ -5,9 +5,20 @@ class_name ParryFlash
 ## a parry landed. Created in code and frees itself; no scene needed.
 ##
 ##     ParryFlash.burst(get_parent(), global_position, burst_radius)
+##
+## This ring is a PROMISE: everything it covers is destroyed. movement.gd holds
+## its clear field open for exactly `duration` at exactly `to_radius`, so pass
+## both from the same values the burst itself used - a ring that outlives or
+## outgrows the field is a ring that visibly sweeps over survivors.
 
 @export var color: Color = Color(0.45, 1.0, 0.55)
+## Floor on the stroke, so a tiny burst still draws a visible line.
 @export var width: float = 4.0
+## Stroke thickness as a fraction of the final radius. A burst grown by cards
+## should read as HEAVIER and not merely wider - at a fixed stroke a 40% larger
+## ring looks about the same, which is what made the upgrade feel like it had not
+## applied. 0.025 reproduces the original 4px at the default 160 radius.
+@export var width_ratio: float = 0.025
 
 var radius: float = 0.0:
 	set(value):
@@ -26,6 +37,7 @@ static func burst(parent: Node, at: Vector2, to_radius: float,
 	var flash := ParryFlash.new()
 	parent.add_child(flash)
 	flash.global_position = at
+	flash.width = maxf(to_radius * flash.width_ratio, flash.width)
 	# Start part-grown so the ring reads as a shockwave, not a dot.
 	flash.radius = to_radius * 0.3
 

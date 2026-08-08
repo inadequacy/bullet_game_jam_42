@@ -163,9 +163,17 @@ func _is_out_of_bounds() -> bool:
 
 
 ## Severs the lock and dims the shot, so the player can see the dash worked.
+##
+## Also hands the dash charge straight back. Breaking a lock is the one thing the
+## dash exists for, so spending a charge on it and then standing there on
+## cooldown - while the caster winds up the next shot - punished the player for
+## answering correctly.
 func _break_lock() -> void:
 	lock_broken = true
 	_sprite.modulate = COLORS[Kind.RED].darkened(0.45)
+	if (_player != null and is_instance_valid(_player)
+			and _player.has_method("refund_dash_charge")):
+		_player.refund_dash_charge()
 
 
 func is_parryable() -> bool:

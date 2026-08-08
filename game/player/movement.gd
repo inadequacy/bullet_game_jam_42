@@ -39,7 +39,19 @@ var is_dashing = false
 @export var parry_radius: float = 90.0
 ## Radius of the clear burst a successful parry sets off. Destroys blue AND red
 ## inside it; green is excluded, being what triggered it.
+##
+## This is the BASE. Cards scale it through STAT_PARRY_BURST_RADIUS, and both the
+## kill field and the ring drawn on screen read the modified value, so a bigger
+## radius is always visibly bigger.
 @export var parry_burst_radius: float = 160.0
+## How long the clear field stays up after a parry.
+##
+## The burst is not an instant snapshot. It used to be, and the ring - which
+## takes this long to expand - would visibly sweep over shots that survived,
+## because they had been outside the radius at the single instant it was
+## measured. Holding the field open for the ring's whole life makes the promise
+## the visual is making true: what the circle covers, dies.
+@export var parry_burst_duration: float = 0.28
 ## Prints parry results to the terminal. Turn off before shipping.
 @export var parry_debug_logs: bool = true
 @onready var parry_collider = $ParryRadius
@@ -64,6 +76,11 @@ var _parry_cooldown_span: float = 0.0
 ## at all. Chaining parries back to back is the intended reward for reading the
 ## screen correctly.
 var _parry_refunded: bool = false
+## Seconds the clear field has left, and the radius it is holding. The radius is
+## snapshotted when the parry lands so a card taken mid-burst cannot resize a
+## field that is already up and no longer matches the ring on screen.
+var _burst_left: float = 0.0
+var _burst_radius: float = 0.0
 @export_group("")
 
 # Impact settings
@@ -244,6 +261,27 @@ func _tick_dash_recharge(delta: float) -> void:
 			_dash_recharge = 0.0
 
 
+## Hands back one charge, up to the maximum. Called when a red projectile loses
+## its lock, so severing one is free.
+##
+## Without this, answering red correctly left the player with no dash and a
+## cooldown to wait out, which is the worst possible moment to be immobile - the
+## caster is already winding up the next one. Refunding turns the dash into the
+## dedicated answer to red rather than a resource red drains.
+##
+## Deliberately not routed through _dash_recharge: this is a whole charge landing
+## now, not progress toward one.
+func refund_dash_charge() -> void:
+	var maximum := max_dash_charges()
+	if dash_charges >= maximum:
+		return
+	dash_charges += 1
+	if dash_charges >= maximum:
+		_dash_recharge = 0.0
+	if debug_logs:
+		print("[DASH] lock broken - charge refunded | %d/%d" % [dash_charges, maximum])
+
+
 ## A card raising the maximum hands over the extra charge immediately, rather
 ## than making the player wait a cooldown for something they just bought.
 func _on_run_stats_changed() -> void:
@@ -274,6 +312,8 @@ func dash_direction(direction: Vector2) -> void:
 	dash_charges -= 1
 	movement_allowed = false
 	is_dashing = true
+	# Anything still shoving the player is cancelled by the dash taking over.
+	_knockback = Vector2.ZERO
 
 	if direction == Vector2(0.0, 0.0):
 		direction = self.transform.x
@@ -441,13 +481,26 @@ func _parry_succeeded() -> int:
 	_parry_cooldown_span = 0.0
 	parry_allowed = true
 
+	# One radius for the field, the ring and the tick that follows, so the three
+	# can never disagree about how big the burst was.
+	_burst_radius = effective_parry_burst_radius()
+	_burst_left = parry_burst_duration
 	var cleared := _parry_burst()
 
-	ParryFlash.burst(get_parent(), global_position, effective_parry_burst_radius())
+	ParryFlash.burst(get_parent(), global_position, _burst_radius, parry_burst_duration)
 	# No arguments: the parry is what CameraShake's defaults were tuned for.
 	_shake_camera()
 
 	return cleared
+
+
+## Keeps the clear field up for as long as the ring is on screen, so a shot that
+## flies into the circle after the parry lands dies like everything else in it.
+func _tick_parry_burst(delta: float) -> void:
+	if _burst_left <= 0.0:
+		return
+	_burst_left -= delta
+	_parry_burst()
 
 
 ## Thumps the screen, if the level has a camera that can. Negative values fall
@@ -463,13 +516,14 @@ func _shake_camera(strength: float = -1.0, duration: float = -1.0) -> void:
 ## red both, green excluded. Returns how many died.
 func _parry_burst() -> int:
 	var cleared := 0
-	var radius := effective_parry_burst_radius()
 	for p in get_tree().get_nodes_in_group("enemy_projectiles"):
-		if not is_instance_valid(p):
+		# queue_free leaves the node in its group until the end of the frame, so
+		# without this a shot killed by the burst is recounted on the next tick.
+		if not is_instance_valid(p) or p.is_queued_for_deletion():
 			continue
 		if not p.is_cleared_by_parry_burst():
 			continue
-		if p.global_position.distance_to(global_position) <= radius:
+		if p.global_position.distance_to(global_position) <= _burst_radius:
 			p.queue_free()
 			cleared += 1
 	return cleared
@@ -481,6 +535,18 @@ func _parry_burst() -> int:
 func apply_knockback(dir: Vector2, strength: float = -1.0) -> void:
 	if dir == Vector2.ZERO:
 		return
+
+	# The hit still registers on screen even when the shove itself is refused.
+	_shake_camera(knockback_shake_strength, knockback_decay)
+
+	# A DASH OWNS MOVEMENT OUTRIGHT. Stacking a shove on top adds to dash_speed
+	# rather than replacing it, which threw the player most of the way across the
+	# arena - and being flung further for having dodged is worse than not being
+	# shoved at all. The shove is dropped, not queued: by the time the dash ends
+	# the hit is old news.
+	if is_dashing:
+		return
+
 	var force := knockback_strength if strength < 0.0 else strength
 	if force <= 0.0:
 		return
@@ -488,7 +554,6 @@ func apply_knockback(dir: Vector2, strength: float = -1.0) -> void:
 	# once, not launch the player at double speed.
 	_knockback = dir.normalized() * force
 	_knockback_drop = force / maxf(knockback_decay, 0.001)
-	_shake_camera(knockback_shake_strength, knockback_decay)
 
 
 func _decay_knockback(delta: float) -> void:
@@ -565,7 +630,11 @@ func get_input() -> void:
 func _physics_process(_delta) -> void:
 	get_input()
 	# After get_input, which has just overwritten velocity from the movement keys.
-	velocity += _knockback
+	# Skipped mid-dash: apply_knockback already refuses a shove while dashing, but
+	# one applied a frame BEFORE the dash started would still be decaying, and it
+	# would add to dash_speed exactly the same way.
+	if not is_dashing:
+		velocity += _knockback
 	move_and_slide()
 	_decay_knockback(_delta)
 	_tick_dash_recharge(_delta)
@@ -573,5 +642,6 @@ func _physics_process(_delta) -> void:
 	if is_parrying:
 		_resolve_parry()
 	_tick_parry(_delta)
+	_tick_parry_burst(_delta)
 	if can_attack == true:
 		basic_attack()

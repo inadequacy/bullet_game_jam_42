@@ -26,7 +26,7 @@ Everything gained is lost on death. No meta-progression in the jam build.
 | --- | --- | --- |
 | Move | WASD | 8-directional, constant speed. **Does not change facing** |
 | Face | Mouse | Player always faces the cursor, independent of movement |
-| Dash | Space | Short burst along **WASD direction**, ~0.4 s cooldown. **No i-frames by default** — i-frames are a card |
+| Dash | Space | Short burst along **WASD direction**, ~0.4 s cooldown. **No i-frames by default** — i-frames are a card. **Refunded in full when it severs a red lock** |
 | Parry | Shift | Short active window (~0.2 s), 0.4 s cooldown — **refunded in full if the parry connects** |
 | Ability | Q | **Undecided.** Behavior not designed yet — implement late or cut |
 | Ultimate | E | Fires along **facing**. **Locked** until the Ultimate card is drawn |
@@ -80,6 +80,17 @@ radius around the player that destroys **every other colour inside it, blue and
 red alike**. Green is the only parryable color and the only color that rewards
 parrying.
 
+The green ring drawn on a parry is **a promise, not decoration**: the clear field
+is held open at exactly the ring's radius for exactly the ring's lifetime, so
+everything the circle covers dies, including shots that fly into it after the
+parry landed. Do not let the two drift apart — an instantaneous burst under an
+animated ring reads as broken, because the player watches the circle sweep over
+survivors.
+
+Card upgrades to `parry_burst_radius` scale the ring as well as the field, and
+the stroke thickens with it so a bigger burst reads as heavier rather than just
+wider.
+
 A parry that connects also **refunds its own cooldown instantly** — the bar is
 full again the moment it lands. The lockout exists to punish a wild press, so
 reading the screen correctly costs nothing and parries can be chained. Miss, and
@@ -99,7 +110,7 @@ must read a full screen in a quarter second.
 | --- | --- | --- | --- | --- |
 | 🔵 **Blue** | Straight, slow, dense | No | **Yes** | Parry a green shot to clear the screen |
 | 🟢 **Green** | **Hitscan** after a charge | **Yes** | No — it's the trigger | Parry the charge |
-| 🔴 **Red** | **Homing** | No | **Yes** | **Dash** — dashing severs its lock |
+| 🔴 **Red** | **Homing** | No | **Yes** | **Dash** — dashing severs its lock, and refunds the charge |
 
 Red is the only projectile that chases you, which makes it the only one that
 demands a dash. Blue is the crowd you clear, green is the opportunity you punish,

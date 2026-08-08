@@ -128,7 +128,10 @@ The colour language is the whole combat vocabulary:
 - **Green** — the only parryable colour. Parrying one triggers the burst, and
   costs no cooldown: a parry that connects is refunded instantly.
 - **Red** — homing. Not parryable, but the burst clears it like everything else.
-  Outside the burst radius, **dashing severs its lock** and remains the answer.
+  Outside the burst radius, **dashing severs its lock** and remains the answer —
+  and severing one **refunds the dash charge**, so the counter to red is free.
+  A hit taken mid-dash shoves the player not at all: the dash owns movement, and
+  stacking a knockback on top of `dash_speed` threw them across the arena.
 
 Red reads `is_dashing` off the player. If the dash is ever rewritten, that flag
 has to survive or red becomes unavoidable.
