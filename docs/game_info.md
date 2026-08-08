@@ -27,7 +27,7 @@ Everything gained is lost on death. No meta-progression in the jam build.
 | Move | WASD | 8-directional, constant speed. **Does not change facing** |
 | Face | Mouse | Player always faces the cursor, independent of movement |
 | Dash | Space | Short burst along **WASD direction**, ~0.4 s cooldown. **No i-frames by default** — i-frames are a card |
-| Parry | Shift | Short active window (~0.15 s), ~1.5 s cooldown |
+| Parry | Shift | Short active window (~0.2 s), 0.4 s cooldown — **refunded in full if the parry connects** |
 | Ability | Q | **Undecided.** Behavior not designed yet — implement late or cut |
 | Ultimate | E | Fires along **facing**. **Locked** until the Ultimate card is drawn |
 | Toggle aim | T | Switches the basic spell between auto-aim and facing |
@@ -76,8 +76,14 @@ meaningful without punishing imprecision.
 ### Parry
 
 A successful parry (green projectiles only) triggers a **clear burst** — a small
-radius around the player that destroys blue projectiles. Green is the only
-parryable color and the only color that rewards parrying.
+radius around the player that destroys **every other colour inside it, blue and
+red alike**. Green is the only parryable color and the only color that rewards
+parrying.
+
+A parry that connects also **refunds its own cooldown instantly** — the bar is
+full again the moment it lands. The lockout exists to punish a wild press, so
+reading the screen correctly costs nothing and parries can be chained. Miss, and
+the normal cooldown runs.
 
 ### Health
 
@@ -92,12 +98,18 @@ must read a full screen in a quarter second.
 | Color | Behavior | Parryable | Cleared by parry burst | The answer is |
 | --- | --- | --- | --- | --- |
 | 🔵 **Blue** | Straight, slow, dense | No | **Yes** | Parry a green shot to clear the screen |
-| 🟢 **Green** | **Hitscan** after a charge | **Yes** | n/a (it's the trigger) | Parry the charge |
-| 🔴 **Red** | **Homing** | No | No | **Dash** — dashing severs its lock |
+| 🟢 **Green** | **Hitscan** after a charge | **Yes** | No — it's the trigger | Parry the charge |
+| 🔴 **Red** | **Homing** | No | **Yes** | **Dash** — dashing severs its lock |
 
 Red is the only projectile that chases you, which makes it the only one that
 demands a dash. Blue is the crowd you clear, green is the opportunity you punish,
 red is the threat that follows you home.
+
+The burst clears red as well as blue, but that does not make the dash redundant:
+the burst only reaches `parry_burst_radius`, and it needs a green shot on screen
+to trigger at all. Red at range is still a dash problem. What the burst buys is
+that a landed parry is never a consolation prize — it does not leave the one shot
+that was actually chasing you still in the air.
 
 Red is introduced by the first boss and only becomes a normal spawn afterwards —
 see §5.
@@ -276,8 +288,9 @@ the reason the player can't just camp a corner and out-range the casters.
 | **Red caster** | Holds range | Red homing | The "dash now" enemy |
 
 **Spawn blue and green casters together.** The parry burst only means something
-when there's blue on screen to clear, so pairing them is what teaches the
-mechanic without a tutorial.
+when there's something on screen to clear, so pairing them is what teaches the
+mechanic without a tutorial. Green must always be paired with *something* — a
+parry with an empty screen around it is a refunded cooldown and nothing else.
 
 **Gate red casters behind the first boss (3:00).** Red is introduced by the boss,
 so it should be a boss's signature before it becomes a normal spawn. Letting red

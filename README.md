@@ -106,7 +106,7 @@ code.
 
 | Scene | Fires | Role |
 | --- | --- | --- |
-| `caster_blue.tscn` | Blue, 5-shot spread | The crowd you clear |
+| `caster_blue.tscn` | Blue, 2-shot spread | The crowd you clear |
 | `caster_green.tscn` | Green, single telegraphed shot | The parry bait |
 | `caster_red.tscn` | Red, homing | The dash bait |
 
@@ -115,8 +115,10 @@ code.
 The colour language is the whole combat vocabulary:
 
 - **Blue** — not parryable, but destroyed by a successful parry's burst.
-- **Green** — the only parryable colour. Parrying one triggers the burst.
-- **Red** — homing. Not parryable, not cleared. **Dashing severs its lock.**
+- **Green** — the only parryable colour. Parrying one triggers the burst, and
+  costs no cooldown: a parry that connects is refunded instantly.
+- **Red** — homing. Not parryable, but the burst clears it like everything else.
+  Outside the burst radius, **dashing severs its lock** and remains the answer.
 
 Red reads `is_dashing` off the player. If the dash is ever rewritten, that flag
 has to survive or red becomes unavoidable.

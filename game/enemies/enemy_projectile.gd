@@ -4,8 +4,9 @@ extends Area2D
 ## A single enemy spell. The Kind decides how the player is allowed to answer it:
 ##
 ##   BLUE  - straight and dense. Not parryable, but destroyed by a parry burst.
-##   GREEN - parryable. Parrying one triggers the burst that clears blue.
-##   RED   - homing. Not parryable, not cleared. Escaped by dashing only.
+##   GREEN - parryable. Parrying one triggers the burst.
+##   RED   - homing. Not parryable, but the burst clears it. At range the dash
+##           is still the only answer, since the burst is a short radius.
 ##
 ## RED must travel faster than the player's walk speed, or it never closes the
 ## gap and the homing is decorative. Set that per-caster via `projectile_speed`.
@@ -172,8 +173,19 @@ func is_parryable() -> bool:
 
 
 ## Whether a successful parry's clear burst destroys this projectile.
+##
+## Every colour but green. Red used to be immune, which meant a landed parry
+## still left the one shot that was actually chasing you - the burst read as a
+## consolation prize rather than a reward. Clearing red too makes the parry a
+## genuine panic button, and red is still answered by the dash at range, since
+## the burst only reaches parry_burst_radius.
+##
+## GREEN is excluded because it is what the burst is FOR. The shot that triggered
+## the parry is already destroyed by the parry itself, and letting the burst take
+## the rest would mean one parry answers a whole volley of the only colour the
+## player is supposed to read individually.
 func is_cleared_by_parry_burst() -> bool:
-	return kind == Kind.BLUE
+	return kind != Kind.GREEN
 
 
 ## Whether touching the player always spends the shot, even when the damage was
