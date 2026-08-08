@@ -23,7 +23,7 @@ projectile_kind = 0
 projectile_speed = 260.0
 cast_interval = 2.2
 telegraph_time = 0.45
-projectiles_per_cast = 5
+projectiles_per_cast = 2
 spread_degrees = 42.0
 
 [node name="Sprite2D" type="Sprite2D" parent="."]

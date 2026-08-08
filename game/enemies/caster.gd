@@ -57,7 +57,7 @@ enum AttackMode { PROJECTILE, HITSCAN }
 
 @export_subgroup("Trace")
 ## Pixels per second. Fast enough to be unreactable, slow enough to be seen.
-@export var trace_speed: float = 2200.0
+@export var trace_speed: float = 2500.0
 ## Length of the visible streak.
 @export var trace_length: float = 140.0
 @export var trace_width: float = 3.0

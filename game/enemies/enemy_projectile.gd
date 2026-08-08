@@ -41,6 +41,11 @@ const COLORS := {
 ## 90-400, there is no setting where a walking player is hit but a dashing one
 ## escapes, because a dash is just a brief burst of the same lateral movement.
 @export var breaks_lock_on_dash: bool = true
+## RED is drawn and collides at this multiple of the base size.
+##
+## Applied here rather than in the scene because enemy_projectile.tscn is shared
+## by all three colours - growing it there would fatten blue and green too.
+@export var red_size_scale: float = 2.0
 
 var lock_broken: bool = false
 
@@ -58,6 +63,28 @@ func _ready() -> void:
 	body_entered.connect(_on_body_entered)
 	if kind == Kind.RED:
 		_player = get_tree().get_first_node_in_group("player") as Node2D
+		_apply_red_size()
+
+
+## Grows RED's sprite and its hurtbox together, so what you see is what hits you.
+##
+## The shape is DUPLICATED first. A sub-resource is shared by every instance of a
+## packed scene, so scaling the radius in place would fatten blue and green as
+## well - and permanently, since the resource outlives the projectile that
+## touched it. Scaling the Area2D root instead would be simpler but puts a scale
+## on a physics node, which Godot handles poorly.
+func _apply_red_size() -> void:
+	if is_equal_approx(red_size_scale, 1.0):
+		return
+
+	_sprite.scale *= red_size_scale
+
+	var circle := $CollisionShape2D.shape as CircleShape2D
+	if circle == null:
+		return
+	var grown: CircleShape2D = circle.duplicate()
+	grown.radius *= red_size_scale
+	$CollisionShape2D.shape = grown
 
 
 func _physics_process(delta: float) -> void:

@@ -12,8 +12,8 @@ class_name HitscanTrace
 ## natural timing: the player commits during the charge, and the shot lands a
 ## moment later.
 
-## Pixels per second. ~2200 crosses a typical 400px gap in under 0.2s.
-var speed: float = 2200.0
+## Pixels per second. ~2500 crosses a typical 400px gap in under 0.2s.
+var speed: float = 2500.0
 ## Length of the visible streak. Shorter reads as a bolt, longer as a beam.
 var length: float = 140.0
 var width: float = 3.0

@@ -1,7 +1,7 @@
 extends CharacterBody2D
 
 
-@export var movespeed: int = 400
+@export var movespeed: int = 340
 var movement_allowed = true
 
 # Dash settings
@@ -30,7 +30,11 @@ var is_dashing = false
 ## THE PARRY WINDOW. How long the parry stays active after the key press.
 ## Lower = tighter and more demanding, higher = more forgiving.
 @export var parry_duration: float = 0.2
-@export var parry_cooldown: float = 2.0
+## Lockout after the window shuts. Short on purpose - the parry is already
+## self-limiting, because a mistimed one leaves you standing in the shot.
+## The ParryBar is what stops this from feeling arbitrary; without the readout
+## a spent parry is indistinguishable from a broken one.
+@export var parry_cooldown: float = 0.4
 ## How close a green shot must be to count as parried.
 @export var parry_radius: float = 90.0
 ## Radius of the clear burst a successful parry sets off. Destroys blue shots
@@ -46,6 +50,15 @@ var parry_allowed = true
 var is_parrying = false
 var _parry_window_opened_ms: int = 0
 var _parried_this_window: int = 0
+## Seconds left in the open window, then in the lockout after it.
+##
+## These are ticked in _physics_process rather than awaited on a SceneTreeTimer,
+## which the dash cooldown already does. An awaited timer knows only "not yet" -
+## it cannot say how far along it is, so a UI readout is impossible without it.
+var _parry_window_left: float = 0.0
+var _parry_cooldown_left: float = 0.0
+## Length of the lockout currently running, so the bar has a denominator.
+var _parry_cooldown_span: float = 0.0
 @export_group("")
 
 # Attack settings
@@ -276,6 +289,9 @@ func parry_radius_update(new_radius: float) -> void:
 
 ## Press Shift to parry
 func parry_this_casual() -> void:
+	if not parry_allowed:
+		return
+
 	parry_allowed = false
 	is_parrying = true
 	_parried_this_window = 0
@@ -287,16 +303,58 @@ func parry_this_casual() -> void:
 	# Parry detection is done by distance in _resolve_parry() instead, and this
 	# shape stays disabled. Make it an Area2D child if you ever want real
 	# collision-based parrying.
-	var window := effective_parry_window()
-	await get_tree().create_timer(window).timeout
-	is_parrying = false
+	#
+	# The window length is snapshotted here, not re-read while it runs, so a card
+	# taken mid-parry cannot stretch a window that is already open.
+	_parry_window_left = effective_parry_window()
+	_parry_cooldown_left = 0.0
+	_parry_cooldown_span = 0.0
 
-	if parry_debug_logs and _parried_this_window == 0:
-		print("[PARRY] miss    | nothing green within %dpx | window %.2fs"
-			% [parry_radius, window])
 
-	await get_tree().create_timer(effective_parry_cooldown()).timeout
-	parry_allowed = true
+## Runs the open window down, then the lockout. Split from the window itself so
+## _resolve_parry() and the UI can both read where in the cycle we are.
+func _tick_parry(delta: float) -> void:
+	if is_parrying:
+		_parry_window_left -= delta
+		if _parry_window_left > 0.0:
+			return
+
+		_parry_window_left = 0.0
+		is_parrying = false
+		if parry_debug_logs and _parried_this_window == 0:
+			print("[PARRY] miss    | nothing green within %dpx | window %.2fs"
+				% [parry_radius, effective_parry_window()])
+
+		_parry_cooldown_span = maxf(effective_parry_cooldown(), 0.0)
+		_parry_cooldown_left = _parry_cooldown_span
+		parry_allowed = _parry_cooldown_left <= 0.0
+		return
+
+	if _parry_cooldown_left > 0.0:
+		_parry_cooldown_left = maxf(_parry_cooldown_left - delta, 0.0)
+		if _parry_cooldown_left <= 0.0:
+			parry_allowed = true
+
+
+# --- Parry readouts (ParryBar polls these) -----------------------------------
+
+## True only while the window is open. The window is a fifth of a second, so the
+## UI needs to be told about it explicitly - it is easy to miss on screen.
+func parry_is_active() -> bool:
+	return is_parrying
+
+## True when a parry can be started right now.
+func parry_is_ready() -> bool:
+	return parry_allowed
+
+## Lockout recovery, 0..1. Reads 1.0 whenever the parry is up, and 0.0 for the
+## length of the open window, so the bar drains and refills once per use.
+func parry_cooldown_ratio() -> float:
+	if parry_allowed:
+		return 1.0
+	if is_parrying or _parry_cooldown_span <= 0.0:
+		return 0.0
+	return clampf(1.0 - _parry_cooldown_left / _parry_cooldown_span, 0.0, 1.0)
 
 
 ## Runs every physics frame while the window is open. Only GREEN shots can be
@@ -438,7 +496,9 @@ func _physics_process(_delta) -> void:
 	get_input()
 	move_and_slide()
 	_tick_dash_recharge(_delta)
+	# Resolve before ticking, so the frame that closes the window still counts.
 	if is_parrying:
 		_resolve_parry()
+	_tick_parry(_delta)
 	if can_attack == true:
 		basic_attack()
