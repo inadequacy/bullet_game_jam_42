@@ -142,8 +142,13 @@ pressure.
 | Slot | Pool | Contents |
 | --- | --- | --- |
 | 1 | **Basic** | Utility. Currently only *Renewal* (restore to full health) |
-| 2 | **Mobility** | Dash, parry, move speed — the action kit |
-| 3 | **Attack** | Basic attack upgrades and elemental variants |
+| 2 | **Action** | Mobility, dash, parry, and basic attack damage / cast rate / spread |
+| 3 | **Attack** | Elements and their ultimates, nothing else |
+
+Slot 3 is the only one that can run out — the element lines are one-shot chains,
+seven cards deep. When it does, **slot 3 falls back to an Action card**, so the
+player always gets three real choices and never a blank. The fallback never
+repeats whatever slot 2 already offered.
 
 ### Element lock
 
@@ -182,9 +187,9 @@ Fire  →  Fire I  →  Fire II  →  Fire III          (spell line)
 still a discovery — it can't be upgraded before it's found — and the E key stays
 dead until the player draws it.
 
-Six element cards plus three element-neutral ones gives the Attack slot enough
-depth to stay interesting for a 12-minute run. Once a line is exhausted the slot
-falls back to the neutral upgrades, which is the intended tail rather than a gap.
+A commitment card plus six tiers is seven Attack-slot cards per run. Once that
+line is spent the slot falls back to Action cards, which is the intended tail
+rather than a gap.
 
 *Names are placeholders.* Display names repeat across schools — every element has
 an `Ultimate I` — so cards are tracked internally by `id`, not by name.
