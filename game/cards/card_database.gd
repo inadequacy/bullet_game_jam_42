@@ -121,7 +121,6 @@ const CARDS := {
 			"effect": {"op": "mult", "stat": STAT_DASH_COOLDOWN, "value": 0.65}},
 		{"name": "Second Wind", "desc": "+1 dash charge",
 			"effect": {"op": "add", "stat": STAT_DASH_CHARGES, "value": 1}},
-		# NOT WIRED: dash has no i-frames to switch on yet.
 		{"name": "Phase Step", "desc": "Dash grants invulnerability frames",
 			"effect": {"op": "flag", "flag": FLAG_DASH_IFRAMES}},
 

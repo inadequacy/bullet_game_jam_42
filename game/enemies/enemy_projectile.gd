@@ -114,7 +114,15 @@ func is_cleared_by_parry_burst() -> bool:
 func _on_body_entered(body: Node2D) -> void:
 	if not body.is_in_group("player"):
 		return
-	# The player has no health yet - this stays inert until it does.
+
+	# Only spend the shot if the hit actually landed. A blocked hit - i-frames,
+	# or the debug toggle - lets the shot fly on through, so invulnerability
+	# never doubles as a screen clear.
+	var landed := true
 	if body.has_method("take_damage"):
-		body.take_damage(damage)
-	queue_free()
+		var result = body.take_damage(damage)
+		# Older callers returned nothing; treat that as a hit.
+		landed = result != false
+
+	if landed:
+		queue_free()
