@@ -13,11 +13,11 @@ func _ready() -> void:
 			for entry in sw_result.scores:
 				var player_name: String = entry.get("player_name", "Anonymous")
 				var score: String = str(int(entry.get("score", 0)))
-				
+
 				new_text += player_name + ": " + score + "\n"
 	set_text(get_text() + "\n" + new_text)
 
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
-func _process(delta: float) -> void:
+func _process(_delta: float) -> void:
 	pass
