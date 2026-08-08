@@ -2,9 +2,9 @@
 
 [ext_resource type="Script" uid="uid://b7nvayeliug7q" path="res://game/ui/score.gd" id="1_0f7a8"]
 
-[node name="Score" type="Label" unique_id=202585169]
+[node name="Score" type="Label" unique_id=579509169]
+offset_right = 54.0
+offset_bottom = 28.0
 offset_transform_enabled = true
 offset_transform_position = Vector2(20, 20)
-theme_override_font_sizes/font_size = 20
-text = "Score"
 script = ExtResource("1_0f7a8")
