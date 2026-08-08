@@ -85,7 +85,7 @@ must read a full screen in a quarter second.
 | --- | --- | --- | --- | --- |
 | 🔵 **Blue** | Straight, slow, dense | No | **Yes** | Parry a green shot to clear the screen |
 | 🟢 **Green** | Straight, telegraphed | **Yes** | n/a (it's the trigger) | Parry it |
-| 🔴 **Red** | **Homing** | No | No | **Dash** — only dash displacement escapes it |
+| 🔴 **Red** | **Homing** | No | No | **Dash** — dashing severs its lock |
 
 Red is the only projectile that chases you, which makes it the only one that
 demands a dash. Blue is the crowd you clear, green is the opportunity you punish,
@@ -94,20 +94,33 @@ red is the threat that follows you home.
 Red is introduced by the first boss and only becomes a normal spawn afterwards —
 see §5.
 
-**Red homing tuning — the single most important number in the game.** Red is
-escaped by *displacement only*: dash displacement works, walking displacement
-does not. The projectile's turn rate must sit in the window between the two.
+### Red: how the dash actually escapes it
 
-```
-turn rate too low  → player strafes away, red is harmless
-turn rate correct  → walking never escapes, a dash always does
-turn rate too high → dash never escapes, red is an unavoidable hit
-```
+**Dashing severs the projectile's lock.** The shot stops tracking, continues in
+a straight line, and dims so the player can see the dash worked. Red also gives
+up tracking after ~3 seconds regardless, so no shot chases forever.
 
-Dash has no i-frames by default, so red must never be unavoidable. Tune turn rate
-against walk speed and dash distance first, before touching anything else about
-red. Every dash card (+distance, +charges, −cooldown) shifts this balance, so
-re-check it after the card pool exists.
+This replaces the original plan, which was to tune the *turn rate* into a window
+where walking is too slow to escape but a dash is fast enough. **That window does
+not exist**, and it was measured rather than guessed:
+
+- Swept projectile speeds 600–900 against turn rates 90–400. In every
+  combination, either both walking and dashing escaped, or neither did.
+- Raising dash speed made things *worse*, not better — at turn rate 120,
+  increasing dash speed from 800 to 1600 moved the closest approach from 47px
+  to 0.9px, i.e. from a clean miss to a direct hit.
+
+The reason is structural: a rate-limited pursuit re-aims every frame, so a dash
+is only *walking, briefly faster* — a quantitative difference, not a qualitative
+one. Displacement alone can never be the counter. With break-lock, walking is hit
+by 1–14px and dashing escapes by 140–157px across the whole tested range.
+
+Turn rate is now set high (220°/s) precisely so walking cannot escape. The dash
+is the only answer, which is exactly the intent — reached by a different route.
+
+> **Dependency:** this reads a boolean `is_dashing` on the player, set for the
+> duration of the dash in `Scripts/movement.gd`. If the dash is ever rewritten,
+> that flag has to survive or red becomes unavoidable.
 
 ## 4. Progression
 
