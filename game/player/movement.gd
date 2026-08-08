@@ -39,6 +39,15 @@ var _parried_this_window: int = 0
 signal shoot(projectile, direction, location)
 var projectile = preload("res://game/player/player_projectile.tscn")
 @export var cast_rate: float = 1.0
+## ON  = shots track the nearest enemy, regardless of where you are facing.
+## OFF = shots fly along facing (the mouse).
+## Press T to flip. This is the starting mode.
+@export var auto_aim: bool = true
+## Auto-aim ignores enemies further away than this and falls back to facing.
+## Zero means no limit - it will always find the nearest enemy on the map.
+@export var auto_aim_range: float = 0.0
+## Prints the aim mode to the terminal when toggled.
+@export var aim_logs: bool = true
 var can_attack: bool = true
 @export_group("")
 
@@ -134,14 +143,55 @@ func _parry_burst() -> int:
 
 func basic_attack() -> void:
 	can_attack = false
-	shoot.emit(projectile, rotation, position)
+	shoot.emit(projectile, aim_angle(), position)
 	await get_tree().create_timer(cast_rate).timeout
 	can_attack = true
+
+
+## Direction of the next shot: the nearest enemy while auto-aim is on, otherwise
+## wherever the character faces. Falls back to facing when nothing is in range,
+## so the player is never left firing at nothing.
+func aim_angle() -> float:
+	if not auto_aim:
+		return rotation
+	var target := nearest_enemy()
+	if target == null:
+		return rotation
+	return global_position.direction_to(target.global_position).angle()
+
+
+## Closest living enemy, or null if there are none within auto_aim_range.
+func nearest_enemy() -> Node2D:
+	var best: Node2D = null
+	var best_dist_sq := INF
+	for e in get_tree().get_nodes_in_group("enemies"):
+		if not is_instance_valid(e):
+			continue
+		var d: float = global_position.distance_squared_to(e.global_position)
+		if d < best_dist_sq:
+			best_dist_sq = d
+			best = e
+	if best != null and auto_aim_range > 0.0 and best_dist_sq > auto_aim_range * auto_aim_range:
+		return null
+	return best
+
+
+func toggle_auto_aim() -> void:
+	auto_aim = not auto_aim
+	if aim_logs:
+		if auto_aim:
+			print("[AIM] AUTO - shots track the nearest enemy")
+		else:
+			print("[AIM] MANUAL - shots follow the mouse")
 
 
 ## Toggle targeting
 
 func get_input() -> void:
+	# Outside the movement gate so the toggle still registers during a dash.
+	if Input.is_action_just_pressed("toggle_aim"):
+		toggle_auto_aim()
+
 	if movement_allowed == true:
 		look_at(get_global_mouse_position())
 		var input_direction = Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")

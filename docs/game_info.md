@@ -30,6 +30,7 @@ Everything gained is lost on death. No meta-progression in the jam build.
 | Parry | Shift | Short active window (~0.15 s), ~1.5 s cooldown |
 | Ability | Q | **Undecided.** Behavior not designed yet — implement late or cut |
 | Ultimate | E | Fires along **facing**. **Locked** until the Ultimate card is drawn |
+| Toggle aim | T | Switches the basic spell between auto-aim and facing |
 
 Movement and aim are decoupled — this is a twin-stick scheme with the mouse as
 the right stick. The player can strafe, retreat, and circle while keeping the
@@ -51,19 +52,26 @@ If dash is pressed with **no movement key held**, it falls back to facing direct
 
 ### Attack
 
-The basic spell **auto-fires along facing** (toward the cursor) on a fixed
-interval. "Auto" means **auto-fire, not auto-aim** — no clicking, but the player
-still points.
+The basic spell fires on a fixed interval with no button held. It has **two aim
+modes**, flipped with **T**:
 
-Aiming is the only offensive decision in the kit, and it's what makes the mouse
-mean one consistent thing across shooting, the ultimate, and (later) the ability.
-Auto-targeting the nearest enemy was considered and rejected: it makes the mouse
-matter for some actions and not others, and "nearest" reliably picks the melee
-chaser at your feet over the caster across the arena that's actually threatening.
+| Mode | Shots go | |
+| --- | --- | --- |
+| **Auto** | At the nearest enemy | **Default** |
+| **Manual** | Along facing (the cursor) | |
 
-*Tuning escape hatch:* if manual aim proves too demanding alongside dodging, add a
-small **snap assist** — bias shots toward an enemy within a few degrees of the
-cursor. Keeps aiming meaningful without punishing imprecision.
+Auto-aim frees the whole hand for movement, which is the right default in a
+bullet hell where dodging is the skill. Manual exists because "nearest" is a
+crude heuristic — it will happily pick the chaser at your feet over the caster
+across the arena that is actually killing you. When target priority matters, the
+player takes the wheel.
+
+Both modes fall back to facing when there is no enemy in range, so the player is
+never left firing at nothing.
+
+*If auto-aim proves too strong,* the middle ground is **snap assist**: fire along
+facing but bias toward an enemy within a few degrees of the cursor. Keeps aiming
+meaningful without punishing imprecision.
 
 ### Parry
 

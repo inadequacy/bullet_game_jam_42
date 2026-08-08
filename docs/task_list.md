@@ -3,14 +3,14 @@
 - Movement **complete** ✔️
 - Dash **complete** ✔️
 - Parry **complete** ✔️
-- Toggle (is easy, depends on having both shoot types)
 - Shooting (standard) **complete** ✔️
 - Shooting (closest enemy)
 
 ## Enemies (Ale)
 
-- Health
-- Enemies
+- Health ✔️
+- Enemies ✔️
+- Auto aim toggle
 - Bosses
 - Difficulty Scale
 - XP & Game Progression
