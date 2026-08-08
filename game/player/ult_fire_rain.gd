@@ -16,6 +16,19 @@ extends Node2D
 
 const FLAME_TEXTURE := preload("res://assets/images/flame.svg")
 
+## The roar, held for the whole ultimate. A seamless two second loop - looping is
+## turned on by SoundManager.make_looping(), NOT by the import, which drops it -
+## so it covers any duration a card stretches this to rather than needing one
+## file per length.
+const ROAR_SOUND := preload("res://assets/sounds/ultimate_fire1.wav")
+## Under the effects it plays over - it is a bed, not a hit.
+const ROAR_VOLUME_DB := -8.0
+
+## Its own player rather than SoundManager's pool: a pooled voice is round
+## robined away by the next sound effect, and nothing sustained can be stopped
+## through it. Parented to this node, so the roar cannot outlive the fire.
+var _roar: AudioStreamPlayer
+
 ## Seconds between damage ticks. Every enemy takes `damage` on each one, so the
 ## total is roughly duration/DAMAGE_INTERVAL times it.
 const DAMAGE_INTERVAL := 0.35
@@ -90,6 +103,7 @@ func _ready() -> void:
 	_left = duration
 	_area = _arena_bounds()
 	_build_glow()
+	_start_roar()
 	# One damage tick lands immediately - a screen-wide ultimate that did
 	# nothing for its first third of a second would feel like it had misfired.
 	_burn_everything()
@@ -112,6 +126,17 @@ func _build_glow() -> void:
 	_glow.size = r.size
 	_glow.color = Color(GLOW_COLOR.r, GLOW_COLOR.g, GLOW_COLOR.b, 0.0)
 	add_child(_glow)
+
+
+## Brought up over a beat rather than started at full volume, so the fire builds
+## the way the wash does instead of the roar snapping on ahead of the visuals.
+func _start_roar() -> void:
+	_roar = AudioStreamPlayer.new()
+	_roar.stream = SoundManager.make_looping(ROAR_SOUND)
+	_roar.volume_db = ROAR_VOLUME_DB - 12.0
+	add_child(_roar)
+	_roar.play()
+	create_tween().tween_property(_roar, "volume_db", ROAR_VOLUME_DB, 0.35)
 
 
 func _process(delta: float) -> void:
@@ -145,6 +170,12 @@ func _finish() -> void:
 	var tween := create_tween()
 	tween.tween_method(_fade_wash, _wash, 0.0, 0.4)
 	tween.tween_callback(queue_free).set_delay(0.6)
+
+	# Faded over the whole tail, flames included, rather than cut with the wash -
+	# there is still fire in the air for another half second after the tint has
+	# gone, and silence over it would read as the sound having broken.
+	if _roar != null:
+		create_tween().tween_property(_roar, "volume_db", -50.0, 0.9)
 
 
 ## Both halves of the wash have to fade together, or the additive glow would be

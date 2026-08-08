@@ -31,8 +31,9 @@ spread_degrees = 0.0
 max_health = 25.0
 move_speed = 130.0
 xp_value = 200
-charge_time = 0.6
+charge_time = 0.7
 hitscan_damage = 1.0
+hitscan_hit_radius = 40.0
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=2027714833]
 material = SubResource("ShaderMaterial_tint")

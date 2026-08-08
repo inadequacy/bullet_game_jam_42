@@ -24,6 +24,17 @@ const HALF_WIDTH := 34.0
 ## independent and the hit flashes read as pulses.
 const DAMAGE_INTERVAL := 0.12
 
+## The beam's hum, held for as long as the beam is out. A seamless two second
+## loop - looping is turned on by SoundManager.make_looping(), NOT by the import,
+## which drops it - so a card that extends the ultimate extends the sound too.
+const BEAM_SOUND := preload("res://assets/sounds/ultimate_beam1.wav")
+const BEAM_VOLUME_DB := -10.0
+
+## Its own player, parented to the beam. SoundManager's pool round robins its
+## voices away and offers no way to stop one, neither of which works for a sound
+## that has to be held. Being a child means the hum cannot outlive the beam.
+var _hum: AudioStreamPlayer
+
 var damage_per_second: float = 40.0
 var duration: float = 3.0
 
@@ -56,6 +67,14 @@ func _ready() -> void:
 		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	tween.tween_method(_set_alpha, 0.0, 1.0, 0.1)
 
+	# Rises with the beam opening, over the same 0.14s, so the two land together.
+	_hum = AudioStreamPlayer.new()
+	_hum.stream = SoundManager.make_looping(BEAM_SOUND)
+	_hum.volume_db = BEAM_VOLUME_DB - 14.0
+	add_child(_hum)
+	_hum.play()
+	create_tween().tween_property(_hum, "volume_db", BEAM_VOLUME_DB, 0.14)
+
 
 func _set_open(value: float) -> void:
 	_open = value
@@ -87,6 +106,10 @@ func _finish() -> void:
 	var tween := create_tween().set_parallel(true)
 	tween.tween_method(_set_alpha, _alpha, 0.0, 0.18)
 	tween.tween_method(_set_open, _open, 0.0, 0.18)
+	if _hum != null:
+		# On the same tween as the visuals, so the hum dies exactly as the beam
+		# closes rather than being chopped off by the queue_free that follows.
+		tween.tween_property(_hum, "volume_db", -50.0, 0.18)
 	tween.chain().tween_callback(queue_free)
 
 

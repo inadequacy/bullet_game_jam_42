@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 64 64">
+  <!-- Heart pickup. Drawn with the same chunky dark outline as the card icons so
+       it reads at pickup size (about 40px on screen) against the ruin background. -->
+  <defs>
+    <clipPath id="heart">
+      <path d="M32 57 C10 42 4 31 4 22 C4 13 11 7 19 7 C25 7 29 10 32 15 C35 10 39 7 45 7 C53 7 60 13 60 22 C60 31 54 42 32 57 Z"/>
+    </clipPath>
+  </defs>
+
+  <!-- Outline, drawn as a fatter copy underneath rather than a stroke, so the
+       silhouette stays solid at any scale. -->
+  <path d="M32 57 C10 42 4 31 4 22 C4 13 11 7 19 7 C25 7 29 10 32 15 C35 10 39 7 45 7 C53 7 60 13 60 22 C60 31 54 42 32 57 Z"
+        fill="#3B0A14" stroke="#3B0A14" stroke-width="6" stroke-linejoin="round"/>
+
+  <g clip-path="url(#heart)">
+    <!-- Body, with a darker lower half so the heart has some volume. -->
+    <rect x="0" y="0" width="64" height="64" fill="#E23B4E"/>
+    <path d="M0 34 H64 V64 H0 Z" fill="#C22439"/>
+    <!-- Top light, catching the two lobes. -->
+    <ellipse cx="32" cy="12" rx="30" ry="12" fill="#F26071" opacity="0.75"/>
+  </g>
+
+  <!-- Glint. Two blobs, the classic cartoon highlight - this is what makes it
+       read as a shiny pickup rather than a health icon. -->
+  <ellipse cx="19" cy="18" rx="6" ry="4.5" fill="#FFFFFF" opacity="0.9" transform="rotate(-28 19 18)"/>
+  <circle cx="27" cy="25" r="2.4" fill="#FFFFFF" opacity="0.65"/>
+</svg>

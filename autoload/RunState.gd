@@ -17,6 +17,10 @@ extends Node
 ## recompute here.
 signal stats_changed
 
+## Played by the "heal_full" card action. Same sample the heart pickup uses -
+## both are the player being healed, so they should sound like the same thing.
+const HEALING_SOUND := preload("res://assets/sounds/healing1.wav")
+
 ## The committed spell school, or NONE while the player is on plain missiles.
 var chosen_element: CardDatabase.Element = CardDatabase.Element.NONE
 
@@ -121,6 +125,7 @@ func _run_action(action: String) -> void:
 				push_warning("heal_full: no node in the 'health_bar' group.")
 				return
 			bar.heal(bar.max_health)
+			SoundManager.play_sfx(HEALING_SOUND, 0, 0.9, 1.0, 0)
 		_:
 			push_warning("Unknown card action: %s" % action)
 

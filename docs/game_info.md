@@ -4,8 +4,9 @@ A top-down **bullet hell** with **ARPG** progression and **roguelite** runs.
 Theme: **high medieval sorcery**. The protagonist casts spells — wands, staves,
 grimoires, bare hands. **No guns, no triggers, nothing with a barrel.**
 
-A run is **12 minutes long** and ends in a win or a death. Fixed single-screen
-arena, no scrolling.
+A run is **6 minutes long** and ends in a win or a death. Fixed single-screen
+arena, no scrolling. (It was 12; halved after playtesting, which moved every
+boss beat and the whole difficulty ramp onto the shorter clock.)
 
 ---
 
@@ -13,7 +14,7 @@ arena, no scrolling.
 
 ```
 survive waves → kill enemies → gain XP → level up → pick 1 of 3 cards
-    → boss every 3 minutes → kill the final boss at 12:00 → win
+    → boss every 90 seconds → kill the final boss at 6:00 → win
 ```
 
 Everything gained is lost on death. No meta-progression in the jam build.
@@ -108,9 +109,9 @@ must read a full screen in a quarter second.
 
 | Color | Behavior | Parryable | Cleared by parry burst | The answer is |
 | --- | --- | --- | --- | --- |
-| 🔵 **Blue** | Straight, slow, dense | No | **Yes** | Parry a green shot to clear the screen |
-| 🟢 **Green** | **Hitscan** after a charge | **Yes** | No — it's the trigger | Parry the charge |
-| 🔴 **Red** | **Homing** | No | **Yes** | **Dash** — dashing severs its lock, and refunds the charge |
+| 🔵 **Blue** | Straight, slow, dense. **Spawns in packs** | No | **Yes** | Parry a green shot to clear the screen |
+| 🟢 **Green** | Charged trace | **Yes** | No — it's the trigger | Parry the shot, or leave the spot it was aimed at |
+| 🔴 **Red** | **Homing** | Only with **Crimson Guard** | **Yes** | **Dash** — dashing severs its lock, and refunds the charge |
 
 Red is the only projectile that chases you, which makes it the only one that
 demands a dash. Blue is the crowd you clear, green is the opportunity you punish,
@@ -122,32 +123,52 @@ to trigger at all. Red at range is still a dash problem. What the burst buys is
 that a landed parry is never a consolation prize — it does not leave the one shot
 that was actually chasing you still in the air.
 
+**Crimson Guard** is the one card that moves a colour between rows: it makes red
+parryable outright. It does not retire the dash — a parry answers the red already
+on top of you, while a red still crossing the arena is out of parry range and
+has to be dashed, and the parry carries a lockout that dash charges do not share.
+It is the *second* answer to red, for the player who would rather spend a read
+than a charge.
+
 Red is introduced by the first boss and only becomes a normal spawn afterwards —
 see §5.
 
 ### Green: parry the charge, not the shot
 
-Green fires a **fast travelling trace** after a visible charge. Three stages:
+Green fires a **travelling trace** after a visible charge. Three stages:
 
 | Stage | Duration | What the player sees |
 | --- | --- | --- |
-| **Charge** | `charge_time` — 0.6 s | Caster roots itself. A green aura swells around it, growing in size and opacity the whole time, while the caster's own sprite brightens |
-| **Shot** | ~0.18 s over 400 px | A green streak crosses the gap at `trace_speed` (2200 px/s) |
-| **Impact** | — | Damage, or nothing if a parry is active |
+| **Charge** | `charge_time` — 0.7 s | Caster roots itself. A green aura swells around it, growing in size and opacity the whole time, while the caster's own sprite brightens |
+| **Shot** | ~0.25 s over 300 px | A green streak crosses the gap at `trace_speed` (1200 px/s) |
+| **Impact** | — | Damage — unless a parry is active, or the player is no longer standing there |
 
-**The streak is visible but not reactable** — under a fifth of a second in
-flight. The reaction window is the *aura*, which is why it builds gradually
-rather than popping on: how bright it is tells you how close the shot is.
+**The aura is "get ready"; the streak is "now."** The charge tells you a shot is
+coming and roughly when, which is why it builds gradually rather than popping on.
+The streak is what you actually answer, and it is deliberately slow enough to be
+in the air for the whole of the window it opens.
 
 The shot is **committed** — it aims where the player stood at fire time and does
-not track. Green is not answered by dodging; it's answered by parrying.
+not track. It can be answered **either way**:
 
-Damage and the parry check resolve **on arrival, not on firing**. So the real
-window from first glow to impact is ~0.78 s, comfortably reactable, and a parry
-pressed slightly late still catches the shot in flight.
+- **Parry it.** Damage and the parry check both resolve *on arrival*, so flight
+  time is the window.
+- **Not be there.** The trace only touches what is still within
+  `hitscan_hit_radius` (40 px) of the point it was aimed at.
 
-That makes green the one enemy that trains rhythm rather than reflex. Blue and
-red are objects in flight you respond to; green is a clock you learn.
+Both answers need the same read of the aura, which is what the aura is for.
+
+**A parry may only be opened once the shot is out** (less
+`hitscan_parry_grace`, ~0.08 s of slack for pressing a frame early). Without that
+rule, a window opened during the *charge* — while there was nothing on screen to
+parry — was still open when the beam landed, so the player was parrying something
+they had not yet seen, and green trained memorisation rather than reaction. This
+is also the reason `trace_speed` is a balance number and not a visual one: it *is*
+the parry window.
+
+The range check matters just as much. The trace used to damage the player
+wherever they were standing, so a beam that visibly fell short still took a heart
+off them — the single most "the game is cheating" moment in the build.
 
 ### Red: how the dash actually escapes it
 
@@ -333,48 +354,72 @@ what's happening.
 | Time | Event |
 | --- | --- |
 | 0:00 | Run starts, normal waves |
-| 3:00 | Small boss #1 |
-| 6:00 | Small boss #2 |
-| 9:00 | Small boss #3 |
-| 12:00 | **Final boss** |
+| 1:30 | Small boss #1 |
+| 3:00 | Small boss #2 |
+| 4:30 | Small boss #3 |
+| 6:00 | **Final boss** |
 
 - The clock does **not** pause during boss fights.
 - If a small boss is still alive when the next one spawns, **they stack** — you
   now fight both, and potentially all three. This is intended. Slow kills are
   punished, and a run can spiral out of reach. No despawn, no mercy rule.
-- After 12:00 the clock stops advancing. Normal waves keep spawning and the run
+- After 6:00 the clock stops advancing. Normal waves keep spawning and the run
   ends only when the **final boss dies**. Killing it is the win condition.
 
 ### Difficulty Ramp
 
-Difficulty escalates through **enemy density** — more enemies on screen, spawning
-faster, as the run clock advances. Enemy stats stay flat; the crowd is the
-pressure. Bosses are punctuation on top of a continuously rising baseline, not
-the only escalation.
+Difficulty escalates on **two** axes, both driven off the run clock and both read
+off `level.gd`. Enemy stats stay flat — nothing gains health or damage as the
+run goes on.
 
-`level.gd` holds the arena at a **fixed head count per tier**, stepping up on the
-same three-minute beat as the bosses:
+**Density** is the main one. The cap starts at `starting_population` (3) and
+climbs by one every `population_step` seconds (35), up to a hard
+`max_population` of **10**:
 
-| Clock | Tier | Enemies alive |
-| --- | --- | --- |
-| 12:00 – 9:00 | 1 | 3 |
-| 9:00 – 6:00 | 2 | 4 |
-| 6:00 – 3:00 | 3 | 5 |
-| 3:00 – 0:00 | 4 | 6 |
+| Clock | Enemies alive |
+| --- | --- |
+| 6:00 – 5:25 | 3 |
+| 5:25 – 4:50 | 4 |
+| … | +1 per 35s |
+| 1:55 – 0:00 | 10 |
+
+The ceiling is not negotiable. Past ten the screen reads as clutter rather than
+as pressure and the player can no longer pick out the one caster about to fire,
+so nothing — not the ramp, not a blue pack — is allowed through it.
+
+**Attack rate** is the second. Every enemy multiplies its attack interval by
+`attack_interval_scale()`, which slides linearly from 1.0 to
+`final_attack_interval_scale` (0.65) across the run — so the same enemy attacks
+about half again as often at 0:00 as it did at 6:00. Enemies read it through
+`Enemy.attack_interval_scale()` rather than each subclass knowing about it, so
+the whole roster speeds up together and anything written later inherits the ramp.
+The **wind-up is never scaled**: a telegraph is the player's read on the attack,
+and shortening it would make late-run casters unreactable rather than fast.
+
+The two multiply. Ten enemies attacking 1.5x as often is roughly a fivefold wall
+of fire against the opening minute, which is why the attack-rate half is kept
+modest.
 
 It is a **cap that is always met**, not a spawn budget: kill one and the arena
-tops itself back up after `respawn_delay`, so the pressure never sags. Which
-enemy arrives is random from `ENEMY_SCENES`. The refill is driven by a head count
-rather than by death signals, so a tier stepping up, several kills landing at
-once, or an enemy lost some other way all resolve identically without anything
-having to report them.
+tops itself back up after `respawn_delay`, so the pressure never sags. A big
+hole — a screen the player just cleared, or the cap stepping up — refills at the
+much shorter `catch_up_delay` instead, so earning a clear does not buy dead air.
+Which enemy arrives is random from `ENEMY_SCENES`, except that **blue arrives in
+packs** of two or three: blue is the crowd enemy, trivial to walk around alone
+and only dangerous as crossfire, so rolling blue rolls a group. A pack may
+overshoot the current cap (the ceiling still holds); trimming it to the last free
+slot would just be a lone blue again.
+
+The refill is driven by a head count rather than by death signals, so the cap
+stepping up, several kills landing at once, or an enemy lost some other way all
+resolve identically without anything having to report them.
 
 **Enemies never appear in the arena.** They spawn `spawn_offscreen_margin` past
 the nearest edge and walk in, and `_behavior()` is skipped until they arrive — a
 caster that could fire from outside the view would be attacking from somewhere
 the player cannot see, let alone answer.
 
-Normal waves keep spawning during boss fights and after 12:00.
+Normal waves keep spawning during boss fights and after 6:00.
 
 ### Boss implementation (jam-sized)
 

@@ -10,7 +10,6 @@
 [ext_resource type="PackedScene" uid="uid://beexpipvffo0h" path="res://game/ui/exp_bar.tscn" id="11_yqurt"]
 [ext_resource type="Script" uid="uid://bot2idqjveu7p" path="res://game/levels/camera_shake.gd" id="12_shake"]
 [ext_resource type="PackedScene" uid="uid://dov8juapygxev" path="res://game/ui/parry_bar.tscn" id="13_parry"]
-[ext_resource type="Script" uid="uid://ch2c4m7ly0rc4" path="res://game/levels/sound_manager.gd" id="14_6segh"]
 [ext_resource type="PackedScene" path="res://game/ui/run_timer.tscn" id="14_timer"]
 [ext_resource type="PackedScene" path="res://game/ui/ultimate_bar.tscn" id="15_ult"]
 
@@ -125,11 +124,5 @@ position = Vector2(777, 232)
 shape = SubResource("CircleShape2D_haif4")
 
 [node name="CardScreen" parent="." unique_id=132707580 instance=ExtResource("10_cards")]
-
-[node name="SoundManager" type="Node2D" parent="." unique_id=808211865]
-script = ExtResource("14_6segh")
-
-[node name="PlayerSounds" type="AudioStreamPlayer2D" parent="SoundManager" unique_id=460092337]
-volume_db = -49.57
 
 [connection signal="shoot" from="Character" to="." method="_on_character_shoot"]

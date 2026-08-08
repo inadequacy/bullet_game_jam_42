@@ -176,8 +176,17 @@ func _break_lock() -> void:
 		_player.refund_dash_charge()
 
 
+## Whether a parry window can catch this shot outright.
+##
+## GREEN always. RED only once the Crimson Guard card is taken - that card is
+## the whole reason this reads a flag instead of comparing to a constant. It does
+## not replace the dash: a parry answers the red that is already on top of you,
+## while the dash is what you use on one still crossing the arena, and the parry
+## has a lockout the dash's charges do not share.
 func is_parryable() -> bool:
-	return kind == Kind.GREEN
+	if kind == Kind.GREEN:
+		return true
+	return kind == Kind.RED and RunState.flag(CardDatabase.FLAG_PARRY_RED)
 
 
 ## Whether a successful parry's clear burst destroys this projectile.

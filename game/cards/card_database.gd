@@ -88,8 +88,10 @@ const STAT_FREEZE_EVERY := "freeze_every"
 const STAT_SHATTER_BONUS := "shatter_bonus"
 
 # --- Ultimate (E). Which one you get is decided by the element lock. ---
-## Seconds between casts. Deliberately long - the ultimate is an event, not a
-## rotation - so Ultimate II and III do NOT shorten it.
+## Seconds between casts. Deliberately long - the ultimate is an event, not part
+## of a rotation - so only the LAST card in a school's ultimate line touches it,
+## and only by a quarter. Ultimate II makes the cast bigger; Ultimate III is the
+## one that also lets it come round again.
 const STAT_ULTIMATE_COOLDOWN := "ultimate_cooldown"
 const STAT_ULTIMATE_DAMAGE := "ultimate_damage"
 const STAT_ULTIMATE_DURATION := "ultimate_duration"
@@ -101,6 +103,9 @@ const STAT_ULTIMATE_FREEZE := "ultimate_freeze"
 # Booleans rather than numbers - they switch behaviour on, they don't scale it.
 const FLAG_DASH_IFRAMES := "dash_iframes"
 const FLAG_PARRY_REFLECT := "parry_reflect"
+## Makes RED homing shots parryable as well as green. Red is otherwise a dash
+## problem exclusively - see enemy_projectile.is_parryable().
+const FLAG_PARRY_RED := "parry_red"
 ## Set by the element locks. The basic attack reads these to decide what it does
 ## on impact beyond dealing damage - see player_projectile.gd.
 const FLAG_EXPLOSIVE_SHOTS := "explosive_shots"
@@ -204,44 +209,52 @@ const CARDS := {
 	# pool never runs dry - which is why ATTACK falls back to it.
 	Pool.ACTION: [
 		# Mobility
-		{"name": "Swift Boots", "desc": "+15% move speed",
+		{"name": "Swift Boots", "desc": "+20% move speed",
 			"icon": ICON_MOVE,
-			"effect": {"op": "mult", "stat": STAT_MOVE_SPEED, "value": 1.15}},
+			"effect": {"op": "mult", "stat": STAT_MOVE_SPEED, "value": 1.2}},
 
 		# Dash
-		{"name": "Fleet Footed", "desc": "-35% dash cooldown",
+		{"name": "Fleet Footed", "desc": "-40% dash cooldown",
 			"icon": ICON_DASH,
-			"effect": {"op": "mult", "stat": STAT_DASH_COOLDOWN, "value": 0.65}},
+			"effect": {"op": "mult", "stat": STAT_DASH_COOLDOWN, "value": 0.6}},
 		{"name": "Second Wind", "desc": "+1 dash charge",
 			"icon": ICON_DASH,
 			"effect": {"op": "add", "stat": STAT_DASH_CHARGES, "value": 1}},
-		{"name": "Phase Step", "desc": "Dash grants invulnerability frames",
+		# Unique, like every flag card here: taking a switch twice does nothing,
+		# so re-offering one costs the player a whole slot for no gain.
+		{"name": "Phase Step", "unique": true,
+			"desc": "Dash grants invulnerability,\nand for a beat afterwards",
 			"icon": ICON_DASH,
 			"effect": {"op": "flag", "flag": FLAG_DASH_IFRAMES}},
 
 		# Parry
-		{"name": "Steady Hand", "desc": "+50% parry window",
+		{"name": "Steady Hand", "desc": "+60% parry window",
 			"icon": ICON_PARRY,
-			"effect": {"op": "mult", "stat": STAT_PARRY_WINDOW, "value": 1.5}},
-		{"name": "Shockwave", "desc": "+40% parry burst radius",
+			"effect": {"op": "mult", "stat": STAT_PARRY_WINDOW, "value": 1.6}},
+		{"name": "Shockwave", "desc": "+50% parry burst radius",
 			"icon": ICON_PARRY,
-			"effect": {"op": "mult", "stat": STAT_PARRY_BURST_RADIUS, "value": 1.4}},
-		{"name": "Quick Recovery", "desc": "-30% parry cooldown",
+			"effect": {"op": "mult", "stat": STAT_PARRY_BURST_RADIUS, "value": 1.5}},
+		{"name": "Quick Recovery", "desc": "-40% parry cooldown",
 			"icon": ICON_PARRY,
-			"effect": {"op": "mult", "stat": STAT_PARRY_COOLDOWN, "value": 0.7}},
-		# NOT WIRED: parried shots are destroyed, not turned around.
-		{"name": "Reflect", "desc": "Parried shots fly back at the caster",
+			"effect": {"op": "mult", "stat": STAT_PARRY_COOLDOWN, "value": 0.6}},
+		# The answer to red that is not the dash. Unique - it either flips red
+		# into parryable or it does not, so a second copy would do nothing.
+		{"name": "Crimson Guard", "unique": true,
+			"desc": "Red homing shots can be parried too",
+			"icon": ICON_PARRY,
+			"effect": {"op": "flag", "flag": FLAG_PARRY_RED}},
+		{"name": "Reflect", "unique": true,
+			"desc": "A landed parry fires a cast\nstraight back at the nearest enemy",
 			"icon": ICON_PARRY,
 			"effect": {"op": "flag", "flag": FLAG_PARRY_REFLECT}},
 
 		# Basic attack
-		{"name": "Sharpened Missile", "desc": "+25% basic attack damage",
+		{"name": "Sharpened Missile", "desc": "+35% basic attack damage",
 			"icon": ICON_ATTACK,
-			"effect": {"op": "mult", "stat": STAT_ATTACK_DAMAGE, "value": 1.25}},
-		{"name": "Rapid Casting", "desc": "Cast 30% faster",
+			"effect": {"op": "mult", "stat": STAT_ATTACK_DAMAGE, "value": 1.35}},
+		{"name": "Rapid Casting", "desc": "Cast 35% faster",
 			"icon": ICON_ATTACK,
-			"effect": {"op": "mult", "stat": STAT_CAST_INTERVAL, "value": 0.7}},
-		# NOT WIRED: the basic attack fires a single projectile.
+			"effect": {"op": "mult", "stat": STAT_CAST_INTERVAL, "value": 0.65}},
 		{"name": "Split Bolt", "desc": "Basic attack fires an extra projectile",
 			"icon": ICON_ATTACK,
 			"effect": {"op": "add", "stat": STAT_PROJECTILE_COUNT, "value": 1}},
@@ -257,8 +270,8 @@ const CARDS := {
 		{"id": "arcane_lock", "name": "Arcane", "element": Element.ARCANE,
 			"locks": true, "unique": true,
 			"desc": "Missiles hit harder and fly faster\nLOCKS: Arcane",
-			"effect": [{"op": "mult", "stat": STAT_ATTACK_DAMAGE, "value": 1.25},
-				{"op": "mult", "stat": STAT_PROJECTILE_SPEED, "value": 1.25}]},
+			"effect": [{"op": "mult", "stat": STAT_ATTACK_DAMAGE, "value": 1.4},
+				{"op": "mult", "stat": STAT_PROJECTILE_SPEED, "value": 1.3}]},
 		{"id": "fire_lock", "name": "Fire", "element": Element.FIRE,
 			"locks": true, "unique": true,
 			"desc": "Missiles explode on impact\nLOCKS: Fire",
@@ -271,8 +284,8 @@ const CARDS := {
 		# --- Arcane line: no new verb, just better missiles. ---
 		{"id": "arcane_1", "name": "Piercing Bolt", "element": Element.ARCANE,
 			"unique": true,
-			"desc": "Shots carry through one extra enemy",
-			"effect": {"op": "add", "stat": STAT_PIERCE, "value": 1}},
+			"desc": "Shots carry through two extra enemies",
+			"effect": {"op": "add", "stat": STAT_PIERCE, "value": 2}},
 		{"id": "arcane_2", "name": "Arcane Volley", "element": Element.ARCANE,
 			"unique": true, "requires": "arcane_1",
 			"desc": "One extra projectile every cast",
@@ -291,21 +304,22 @@ const CARDS := {
 			"icon": ICON_ULTIMATE,
 			"unique": true, "requires": "arcane_ult_1",
 			"desc": "Beam hits harder and lasts longer",
-			"effect": [{"op": "mult", "stat": STAT_ULTIMATE_DAMAGE, "value": 1.5},
-				{"op": "mult", "stat": STAT_ULTIMATE_DURATION, "value": 1.35}]},
+			"effect": [{"op": "mult", "stat": STAT_ULTIMATE_DAMAGE, "value": 1.8},
+				{"op": "mult", "stat": STAT_ULTIMATE_DURATION, "value": 1.5}]},
 		{"id": "arcane_ult_3", "name": "Ultimate III", "element": Element.ARCANE,
 			"icon": ICON_ULTIMATE,
 			"unique": true, "requires": "arcane_ult_2",
-			"desc": "Beam hits harder and lasts longer again",
-			"effect": [{"op": "mult", "stat": STAT_ULTIMATE_DAMAGE, "value": 1.5},
-				{"op": "mult", "stat": STAT_ULTIMATE_DURATION, "value": 1.35}]},
+			"desc": "Beam hits harder, lasts longer,\nand comes back 25% sooner",
+			"effect": [{"op": "mult", "stat": STAT_ULTIMATE_DAMAGE, "value": 1.8},
+				{"op": "mult", "stat": STAT_ULTIMATE_DURATION, "value": 1.5},
+				{"op": "mult", "stat": STAT_ULTIMATE_COOLDOWN, "value": 0.75}]},
 
 		# --- Fire line: the blast gets wider, then lingers, then spreads. ---
 		{"id": "fire_1", "name": "Wider Blast", "element": Element.FIRE,
 			"unique": true,
-			"desc": "+40% explosion radius\n+25% explosion damage",
-			"effect": [{"op": "mult", "stat": STAT_EXPLOSION_RADIUS, "value": 1.4},
-				{"op": "mult", "stat": STAT_EXPLOSION_DAMAGE, "value": 1.25}]},
+			"desc": "+55% explosion radius\n+45% explosion damage",
+			"effect": [{"op": "mult", "stat": STAT_EXPLOSION_RADIUS, "value": 1.55},
+				{"op": "mult", "stat": STAT_EXPLOSION_DAMAGE, "value": 1.45}]},
 		{"id": "fire_2", "name": "Cinders", "element": Element.FIRE,
 			"unique": true, "requires": "fire_1",
 			"desc": "Anything you burn keeps burning",
@@ -324,29 +338,32 @@ const CARDS := {
 			"icon": ICON_ULTIMATE,
 			"unique": true, "requires": "fire_ult_1",
 			"desc": "Rain of Fire hits harder and lasts longer",
-			"effect": [{"op": "mult", "stat": STAT_ULTIMATE_DAMAGE, "value": 1.5},
-				{"op": "mult", "stat": STAT_ULTIMATE_DURATION, "value": 1.35}]},
+			"effect": [{"op": "mult", "stat": STAT_ULTIMATE_DAMAGE, "value": 1.8},
+				{"op": "mult", "stat": STAT_ULTIMATE_DURATION, "value": 1.5}]},
 		{"id": "fire_ult_3", "name": "Ultimate III", "element": Element.FIRE,
 			"icon": ICON_ULTIMATE,
 			"unique": true, "requires": "fire_ult_2",
-			"desc": "Rain of Fire hits harder and lasts longer again",
-			"effect": [{"op": "mult", "stat": STAT_ULTIMATE_DAMAGE, "value": 1.5},
-				{"op": "mult", "stat": STAT_ULTIMATE_DURATION, "value": 1.35}]},
+			"desc": "Rain of Fire hits harder, lasts longer,\nand comes back 25% sooner",
+			"effect": [{"op": "mult", "stat": STAT_ULTIMATE_DAMAGE, "value": 1.8},
+				{"op": "mult", "stat": STAT_ULTIMATE_DURATION, "value": 1.5},
+				{"op": "mult", "stat": STAT_ULTIMATE_COOLDOWN, "value": 0.75}]},
 
 		# --- Ice line: the slow deepens, then it pays off, then it stops them. ---
 		{"id": "ice_1", "name": "Deep Chill", "element": Element.ICE,
 			"unique": true,
 			"desc": "A far heavier slow, and it lasts longer",
-			"effect": [{"op": "mult", "stat": STAT_SLOW_FACTOR, "value": 0.6},
-				{"op": "mult", "stat": STAT_SLOW_DURATION, "value": 1.5}]},
+			"effect": [{"op": "mult", "stat": STAT_SLOW_FACTOR, "value": 0.5},
+				{"op": "mult", "stat": STAT_SLOW_DURATION, "value": 1.6}]},
 		{"id": "ice_2", "name": "Shatter", "element": Element.ICE,
 			"unique": true, "requires": "ice_1",
-			"desc": "Chilled enemies take +40% damage",
-			"effect": {"op": "flag", "flag": FLAG_SHATTER}},
+			"desc": "Chilled enemies take +70% damage",
+			"effect": [{"op": "flag", "flag": FLAG_SHATTER},
+				{"op": "mult", "stat": STAT_SHATTER_BONUS, "value": 1.21}]},
 		{"id": "ice_3", "name": "Flash Freeze", "element": Element.ICE,
 			"unique": true, "requires": "ice_2",
-			"desc": "Every 4th hit freezes solid",
-			"effect": {"op": "flag", "flag": FLAG_FLASH_FREEZE}},
+			"desc": "Every 3rd hit freezes solid",
+			"effect": [{"op": "flag", "flag": FLAG_FLASH_FREEZE},
+				{"op": "add", "stat": STAT_FREEZE_EVERY, "value": -1}]},
 		# ICE: a pool of ice centred on the player. Everything caught inside is
 		# FULLY FROZEN, not slowed. Tiers grow the pool, the ultimate's own
 		# duration, and how long the freeze holds - three knobs, not two.
@@ -358,16 +375,17 @@ const CARDS := {
 			"icon": ICON_ULTIMATE,
 			"unique": true, "requires": "ice_ult_1",
 			"desc": "Frozen Ground spreads wider and holds longer",
-			"effect": [{"op": "mult", "stat": STAT_ULTIMATE_RADIUS, "value": 1.35},
-				{"op": "mult", "stat": STAT_ULTIMATE_DURATION, "value": 1.35},
-				{"op": "mult", "stat": STAT_ULTIMATE_FREEZE, "value": 1.35}]},
+			"effect": [{"op": "mult", "stat": STAT_ULTIMATE_RADIUS, "value": 1.5},
+				{"op": "mult", "stat": STAT_ULTIMATE_DURATION, "value": 1.5},
+				{"op": "mult", "stat": STAT_ULTIMATE_FREEZE, "value": 1.5}]},
 		{"id": "ice_ult_3", "name": "Ultimate III", "element": Element.ICE,
 			"icon": ICON_ULTIMATE,
 			"unique": true, "requires": "ice_ult_2",
-			"desc": "Frozen Ground spreads wider and holds longer again",
-			"effect": [{"op": "mult", "stat": STAT_ULTIMATE_RADIUS, "value": 1.35},
-				{"op": "mult", "stat": STAT_ULTIMATE_DURATION, "value": 1.35},
-				{"op": "mult", "stat": STAT_ULTIMATE_FREEZE, "value": 1.35}]},
+			"desc": "Frozen Ground spreads wider, holds longer,\nand comes back 25% sooner",
+			"effect": [{"op": "mult", "stat": STAT_ULTIMATE_RADIUS, "value": 1.5},
+				{"op": "mult", "stat": STAT_ULTIMATE_DURATION, "value": 1.5},
+				{"op": "mult", "stat": STAT_ULTIMATE_FREEZE, "value": 1.5},
+				{"op": "mult", "stat": STAT_ULTIMATE_COOLDOWN, "value": 0.75}]},
 	],
 }
 

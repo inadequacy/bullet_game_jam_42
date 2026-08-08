@@ -4,6 +4,7 @@ extends Control
 func _ready() -> void:
 	$VBoxContainer/Label.text = str(GameManager.message)
 	$VBoxContainer/Score.text = "Score: " + str(GameManager.score)
+	SoundManager.attach_button_sounds(self)
 
 
 func _on_start_button_pressed() -> void:

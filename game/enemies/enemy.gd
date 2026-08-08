@@ -28,6 +28,15 @@ signal damaged(enemy: Enemy, amount: float)
 ## XP awarded to the player on death. Bosses set this much higher.
 @export var xp_value: int = 1
 
+@export_group("Drops")
+## Chance this enemy leaves a heart behind, 0.0 to 1.0.
+##
+## The heart appears where the body was, once the corpse has finished fading -
+## see _disappear(). Rolled at DEATH rather than at fade time so the outcome is
+## fixed by the kill, not by whatever happens in the three seconds after it.
+@export_range(0.0, 1.0, 0.01) var heart_drop_chance: float = 0.1
+@export var drop_logs: bool = true
+
 @export_group("Entry")
 ## How close to its entry target an enemy must get before it starts fighting.
 @export var entry_arrive_distance: float = 24.0
@@ -76,6 +85,10 @@ var _attack_scale: Vector2 = Vector2.ONE
 ## True once this enemy has died. Guards against a second death - burn ticks and
 ## an ultimate landing in the same frame can both reach take_damage().
 var _dying: bool = false
+## Rolled once in die(). Read again when the body finally disappears.
+var _drops_heart: bool = false
+
+const HEART_PICKUP := preload("res://game/pickups/heart_pickup.tscn")
 
 ## True while walking in from off screen. See enter_from().
 var _entering: bool = false
@@ -88,6 +101,10 @@ var _entry_saved_mask: int = 0
 
 var _base_modulate: Color = Color.WHITE
 var _base_scale: Vector2 = Vector2.ONE
+
+## The arena, resolved lazily through the "run_clock" group. Cached because
+## attack_interval_scale() is read on every cast by every enemy on screen.
+var _run_clock: Node = null
 
 
 func _ready() -> void:
@@ -289,6 +306,24 @@ func _refresh_status_tint() -> void:
 
 # --- Shared helpers ----------------------------------------------------------
 
+## What to multiply any attack interval by right now - the arena's difficulty
+## ramp, which tightens attack timings as the run clock advances.
+##
+## EVERY attacking enemy must go through this rather than using its authored
+## interval directly. Doing it here rather than per subclass is what makes the
+## ramp apply to the whole roster, bosses and anything written later included,
+## without each one having to know the run has a difficulty curve.
+##
+## Returns 1.0 - the authored timings, unchanged - when there is no arena to ask,
+## so an enemy dropped into a test scene behaves normally.
+func attack_interval_scale() -> float:
+	if _run_clock == null or not is_instance_valid(_run_clock):
+		_run_clock = get_tree().get_first_node_in_group("run_clock")
+	if _run_clock == null or not _run_clock.has_method("attack_interval_scale"):
+		return 1.0
+	return maxf(_run_clock.attack_interval_scale(), 0.05)
+
+
 func has_player() -> bool:
 	return player != null and is_instance_valid(player)
 
@@ -325,9 +360,10 @@ func die() -> void:
 	# Scoring rides on the `died` signal, connected in _ready. Adding it here too
 	# double-counted every kill.
 	died.emit(self)
+	_drops_heart = randf() < heart_drop_chance
 
 	if dead_texture == null or not _sprite is Sprite2D:
-		queue_free()
+		_disappear()
 		return
 	_become_corpse()
 
@@ -361,7 +397,43 @@ func _become_corpse() -> void:
 	var tween := create_tween()
 	tween.tween_interval(corpse_duration * 0.7)
 	tween.tween_property(sprite, "modulate:a", 0.0, corpse_duration * 0.3)
-	tween.tween_callback(queue_free)
+	tween.tween_callback(_disappear)
+
+
+## The last thing an enemy does: leave its drops where it lay, then free itself.
+##
+## Both death paths end here - the one with a corpse, once the body has finished
+## fading, and the one without, immediately - so the drop rules live in one place
+## and a boss without a dead_texture still drops.
+func _disappear() -> void:
+	_drop_loot()
+	queue_free()
+
+
+## Spawns whatever this enemy rolled on death, at the spot the body vacated.
+##
+## Parented to the ARENA, not to the enemy - a child of a node being freed goes
+## with it, so a heart added here would be destroyed in the same breath. Added
+## deferred because this runs from a tween callback, which can land inside the
+## physics flush where the tree is locked.
+func _drop_loot() -> void:
+	if not _drops_heart:
+		return
+	_drops_heart = false
+
+	var arena := get_parent()
+	if arena == null:
+		return
+
+	var heart := HEART_PICKUP.instantiate()
+	# `position`, not `global_position`: the heart joins the same parent as the
+	# enemy, so their local coordinates already mean the same thing - and
+	# global_position cannot be written before the node is in the tree anyway.
+	heart.position = position
+	arena.add_child.call_deferred(heart)
+
+	if drop_logs:
+		print("[DROP] %s left a heart at (%d, %d)" % [name, position.x, position.y])
 
 
 ## The dead sprites are drawn lying down - dead_cat.png is 519x238 against the

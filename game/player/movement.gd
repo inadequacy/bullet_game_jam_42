@@ -27,16 +27,36 @@ var dash_charges: int = 1
 var _dash_recharge: float = 0.0
 ## Last known maximum, so a card that raises it can hand over the new charge.
 var _known_max_charges: int = 1
+## How long Phase Step's invulnerability keeps running AFTER the dash ends.
+##
+## A dash is 0.2s, which is less time than it takes to read the screen - so
+## i-frames that ended exactly with it meant the keystone card only saved you
+## from what you had already dodged. The tail is what makes it a panic button:
+## dash through the volley and the last shot in it still misses.
+@export var dash_iframe_grace: float = 0.18
+
 ## True only while a dash is in progress. Red homing projectiles read this and
 ## sever their lock, which is what makes dash the counter to homing.
 var is_dashing = false
+## Seconds of invulnerability left. Only ever set by a dash with Phase Step, and
+## tracked separately from `is_dashing` so it can outlive the dash by
+## dash_iframe_grace.
+var _iframes_left: float = 0.0
 @export_group("")
 
 # Parry settings
 @export_group("Parry Settings")
 ## THE PARRY WINDOW. How long the parry stays active after the key press.
 ## Lower = tighter and more demanding, higher = more forgiving.
-@export var parry_duration: float = 0.2
+@export var parry_duration: float = 0.24
+## How far BEFORE a hitscan shot is fired a parry may already have been opened
+## and still count.
+##
+## Zero would mean the window has to start strictly after the beam appears, which
+## punishes a player who read the charge correctly and pressed a frame early.
+## Anything much larger and the old behaviour is back: a parry mashed during the
+## caster's charge answers a shot that did not exist yet. See try_parry_hitscan.
+@export var hitscan_parry_grace: float = 0.08
 ## Lockout after the window shuts. Short on purpose - the parry is already
 ## self-limiting, because a mistimed one leaves you standing in the shot.
 ## The ParryBar is what stops this from feeling arbitrary; without the readout
@@ -112,10 +132,10 @@ var _knockback: Vector2 = Vector2.ZERO
 var _knockback_drop: float = 0.0
 @export_group("")
 # Sounds
-var attack_sound = preload("res://assets/sounds/magic_attack1.wav")
 var parry_sound = preload("res://assets/sounds/parry1.wav")
 var dash_sound = preload("res://assets/sounds/dash1.wav")
-var healing_sound = preload("res://assets/sounds/healing1.wav") # NOT BEING USED YET
+# Healing lives with whatever does the healing - heart_pickup.gd and the
+# "heal_full" card action in RunState.gd - so the player does not carry it.
 var levelup_sound = preload("res://assets/sounds/level_up1.wav") # used by the ultimate
 var playerhit_dog_sound = preload("res://assets/sounds/playerhit_dog1.wav")
 var playerhit_low_sound = preload("res://assets/sounds/playerhit_low1.wav")
@@ -124,7 +144,10 @@ var playerhit_low_sound = preload("res://assets/sounds/playerhit_low1.wav")
 @export_group("Attack Settings")
 signal shoot(projectile, direction, location)
 var projectile = preload("res://game/player/player_projectile.tscn")
-@export var cast_rate: float = 1.0
+## Seconds between casts, before Rapid Casting. A full second was long enough
+## that the opening minutes read as underpowered - the player watched their own
+## missiles more than the screen.
+@export var cast_rate: float = 0.8
 ## Shots per cast before any card. Arcane Volley and Split Bolt add to this.
 @export var base_projectile_count: int = 1
 ## Total arc a multi-shot cast is spread across, in degrees. Only ever visible
@@ -152,37 +175,52 @@ var can_attack: bool = true
 ## ultimates. The ARCANE ultimate ignores this and holds the pose for as long as
 ## the beam is actually out - see cast_ultimate().
 ##
-## NOTE: the basic attack fires about once a second, so at 1.0 Max is in the
-## attack pose almost continuously. That is intended - he is a wizard casting
-## without pause - but this is the knob to turn if the idle pose should show
-## between shots.
-@export var attack_art_duration: float = 1.0
+## Kept WELL under the cast interval on purpose: the basic attack fires about
+## once a second, so anything close to that leaves Max permanently mid-cast with
+## his mouth open. A short flash reads as "he just cast" and lets the idle pose
+## show between shots.
+@export var attack_art_duration: float = 0.22
+## Shown when a hit actually lands on Max. Outranks the attack pose - see
+## _pose_texture() - because taking a hit is the more urgent thing to read.
+@export var hurt_texture: Texture2D
+## How long the hurt pose is held. Deliberately longer than a single cast's
+## attack flash, so a hit taken mid-rotation is not immediately painted over by
+## the next shot going out.
+@export var hurt_art_duration: float = 0.45
 ## Thrown out around Max when a parry lands. Optional.
 @export var parry_sparkle_texture: Texture2D
 
 ## Seconds of attack artwork still to show. Counted down rather than reverted on
 ## a timer, so overlapping casts cannot leave the pose stuck on.
 var _attack_art_left: float = 0.0
-## Scale that keeps the attack pose the same apparent size as the idle one.
+## Same, for the hurt pose.
+var _hurt_art_left: float = 0.0
+## Scales that keep each pose the same apparent size as the idle one.
 var _attack_art_scale: Vector2 = Vector2.ONE
+var _hurt_art_scale: Vector2 = Vector2.ONE
 var _idle_art_scale: Vector2 = Vector2.ONE
 @export_group("")
 
 # Ultimate settings
 @export_group("Ultimate")
 ## Seconds between casts. LONG on purpose - the ultimate is an event, not part
-## of a rotation - and no card shortens it, so the only way to get more out of it
-## is to make each cast count.
-@export var ultimate_cooldown: float = 30.0
-## Rain of Fire: damage every enemy on screen takes per tick.
-@export var ultimate_fire_damage: float = 8.0
+## of a rotation - and only Ultimate III shortens it, so the main way to get more
+## out of it is to make each cast count.
+##
+## Cut from 30 with the run halved to six minutes: at 30s a run only ever held
+## about a dozen casts, and the ultimate is supposed to be the run's high point
+## rather than something seen twice.
+@export var ultimate_cooldown: float = 22.0
+## Rain of Fire: damage every enemy on screen takes per tick. Ticks every 0.35s,
+## so a 3s cast lands roughly nine of these on everything alive.
+@export var ultimate_fire_damage: float = 12.0
 ## Beam: damage per second to anything standing in it.
-@export var ultimate_beam_dps: float = 40.0
+@export var ultimate_beam_dps: float = 70.0
 ## Frozen Ground: how wide the pool spreads, and how long it holds an enemy.
-@export var ultimate_ice_radius: float = 260.0
-@export var ultimate_ice_freeze: float = 3.0
+@export var ultimate_ice_radius: float = 300.0
+@export var ultimate_ice_freeze: float = 4.0
 ## How long every ultimate runs before cards extend it.
-@export var ultimate_duration: float = 3.0
+@export var ultimate_duration: float = 3.5
 @export var ultimate_logs: bool = true
 
 ## Seconds until the ultimate is ready. Starts at zero, so the card arriving
@@ -352,9 +390,9 @@ func has_dash_iframes() -> bool:
 
 
 ## Anything that would hurt the player checks this. Covers the debug toggle and
-## an i-frame dash.
+## an i-frame dash, including its grace tail.
 func is_invulnerable() -> bool:
-	return invincible or (is_dashing and has_dash_iframes())
+	return invincible or _iframes_left > 0.0
 
 
 ## Returns TRUE only if the damage actually landed.
@@ -363,15 +401,12 @@ func is_invulnerable() -> bool:
 ## themselves only when it did. Freeing on a blocked hit would turn i-frames
 ## into a screen clear, which is the parry's job, not the dash's.
 func take_damage(amount: float) -> bool:
-	# Play_sfx calls sound, start playing position, min pitch, max pitch, volume.
-	SoundManager.play_sfx(playerhit_dog_sound, 0, 0.85, 1.1, 0)
-	SoundManager.play_sfx(playerhit_low_sound, 0, 0.85, 1.1, 0)
 	if invincible:
 		if debug_logs:
 			print("[DEBUG] blocked %s damage (invincible)" % amount)
 		return false
 
-	if is_dashing and has_dash_iframes():
+	if _iframes_left > 0.0:
 		if debug_logs:
 			print("[DASH] i-frames absorbed %s damage" % amount)
 		return false
@@ -381,6 +416,15 @@ func take_damage(amount: float) -> bool:
 		push_warning("No node in the 'health_bar' group - damage ignored.")
 		return false
 	bar.take_damage(amount)
+
+	# Both of these used to fire at the top of the function, ahead of the guards,
+	# so a dash i-framed through a volley still sounded - and looked, now that the
+	# pose is here too - like every shot had connected. Nothing below runs unless
+	# the hit actually landed.
+	# Play_sfx takes: sound, start playing position, min pitch, max pitch, volume.
+	SoundManager.play_sfx(playerhit_dog_sound, 0, 0.85, 1.1, 0)
+	SoundManager.play_sfx(playerhit_low_sound, 0, 0.85, 1.1, 0)
+	show_hurt(hurt_art_duration)
 	return true
 
 
@@ -463,18 +507,60 @@ func _on_run_stats_changed() -> void:
 	dash_charges = clampi(dash_charges, 0, maximum)
 
 
-# --- Attack pose ---------------------------------------------------------------
+# --- Poses ---------------------------------------------------------------------
+#
+# Max has three drawings - idle, attacking and hurt - and only one sprite to put
+# them on, so which one wins is decided in ONE place, _pose_texture(). Each pose
+# is a countdown rather than a timer or a tween: overlapping casts, or a hit
+# taken mid-cast, can never leave a pose stuck on, and whichever runs out first
+# simply falls through to the next one down.
 
-## Shows Max's attacking artwork for `duration`, then reverts. Safe to call with
-## no attack texture assigned.
+## Shows Max's attacking artwork for `duration`. Safe to call with no attack
+## texture assigned. Does not disturb a hurt pose that is still running - it
+## outranks this one - but the timer still counts, so the attack pose can show
+## for whatever is left of it once the hurt pose expires.
 func show_attacking(duration: float) -> void:
-	if attack_texture == null or _body_sprite == null:
-		return
-	_body_sprite.texture = attack_texture
-	_body_sprite.scale = _attack_art_scale
 	# The longer of the two wins, so a basic cast fired during the Arcane beam
 	# cannot cut the beam's pose short.
 	_attack_art_left = maxf(_attack_art_left, duration)
+	_apply_pose()
+
+
+## Shows Max's hurt artwork. Called from take_damage() only once the hit has got
+## past the invulnerability checks - a blocked hit did not hurt him.
+func show_hurt(duration: float) -> void:
+	_hurt_art_left = maxf(_hurt_art_left, duration)
+	_apply_pose()
+
+
+## Which drawing should be up right now: hurt beats attacking beats idle. Falls
+## back down the list whenever a texture is not assigned, so a scene with only an
+## idle drawing still works.
+func _pose_texture() -> Texture2D:
+	if _hurt_art_left > 0.0 and hurt_texture != null:
+		return hurt_texture
+	if _attack_art_left > 0.0 and attack_texture != null:
+		return attack_texture
+	return idle_texture
+
+
+## Scale that makes `texture` read at the same size as the idle drawing.
+func _pose_scale(texture: Texture2D) -> Vector2:
+	if texture == hurt_texture:
+		return _hurt_art_scale
+	if texture == attack_texture:
+		return _attack_art_scale
+	return _idle_art_scale
+
+
+func _apply_pose() -> void:
+	if _body_sprite == null:
+		return
+	var texture := _pose_texture()
+	if texture == null or _body_sprite.texture == texture:
+		return
+	_body_sprite.texture = texture
+	_body_sprite.scale = _pose_scale(texture)
 
 
 ## Keeps Max's artwork upright while the BODY goes on rotating with the mouse.
@@ -492,13 +578,15 @@ func _face_art() -> void:
 	_body_sprite.flip_h = cos(rotation) < 0.0
 
 
-func _tick_attack_art(delta: float) -> void:
-	if _attack_art_left <= 0.0:
+## Runs both pose countdowns and re-resolves the sprite whenever one expires.
+## _apply_pose() is a no-op when the winning texture has not changed, so this is
+## cheap to call every frame.
+func _tick_poses(delta: float) -> void:
+	if _attack_art_left <= 0.0 and _hurt_art_left <= 0.0:
 		return
-	_attack_art_left -= delta
-	if _attack_art_left <= 0.0 and idle_texture != null and _body_sprite != null:
-		_body_sprite.texture = idle_texture
-		_body_sprite.scale = _idle_art_scale
+	_attack_art_left = maxf(_attack_art_left - delta, 0.0)
+	_hurt_art_left = maxf(_hurt_art_left - delta, 0.0)
+	_apply_pose()
 
 
 ## Goes translucent and cold for the length of an invulnerable dash, then
@@ -515,9 +603,12 @@ func _show_iframes(duration: float) -> void:
 
 ## Press Space to dash
 func dash_direction(direction: Vector2) -> void:
-	SoundManager.play_sfx(dash_sound,  0, 0.85, 1.1, 0)
 	if not can_dash():
 		return
+	# After the guard, not before it: a dash refused for having no charge left
+	# used to whoosh anyway, which told the player they had dashed when they had
+	# not - the worst possible moment to be misinformed.
+	SoundManager.play_sfx(dash_sound,  0, 0.85, 1.1, 0)
 
 	dash_charges -= 1
 	movement_allowed = false
@@ -529,9 +620,13 @@ func dash_direction(direction: Vector2) -> void:
 		direction = self.transform.x
 
 	# An i-frame dash has to look different, or the player cannot tell whether
-	# the card is doing anything.
+	# the card is doing anything - and the tint has to run for the WHOLE
+	# invulnerability, grace tail included, or it would promise less than the
+	# card actually gives.
 	if has_dash_iframes():
-		_show_iframes(dash_duration)
+		var invulnerable_for := dash_duration + maxf(dash_iframe_grace, 0.0)
+		_iframes_left = invulnerable_for
+		_show_iframes(invulnerable_for)
 
 	velocity = direction * dash_speed
 	await get_tree().create_timer(dash_duration).timeout
@@ -562,18 +657,30 @@ func _ready() -> void:
 	if _body_sprite != null:
 		_body_base_modulate = _body_sprite.modulate
 		_idle_art_scale = _body_sprite.scale
-		_attack_art_scale = _idle_art_scale
-		# Attacking_max.png is 307x416 against Idle_Max.png's 288x451, so without
-		# this Max would change size every time he cast.
-		if idle_texture != null and attack_texture != null \
-				and attack_texture.get_height() > 0:
-			_attack_art_scale = _idle_art_scale * (float(idle_texture.get_height())
-				/ float(attack_texture.get_height()))
+		# None of the three drawings share a frame - Attacking_max.png is 307x416
+		# against Idle_Max.png's 288x451 - so without this Max would change size
+		# every time he cast or took a hit.
+		_attack_art_scale = _match_idle_height(attack_texture)
+		_hurt_art_scale = _match_idle_height(hurt_texture)
+
+
+## The scale at which `texture` stands as tall as the idle drawing does. Falls
+## back to the idle scale for anything unusable, so a missing or zero-height
+## texture cannot produce a divide by zero or a collapsed sprite.
+func _match_idle_height(texture: Texture2D) -> Vector2:
+	if idle_texture == null or texture == null or texture.get_height() <= 0:
+		return _idle_art_scale
+	return _idle_art_scale * (float(idle_texture.get_height())
+		/ float(texture.get_height()))
 
 func _on_health_depleted() -> void:
 	SilentWolf.Scores.save_score(my_name, GameManager.score)
 	GameManager.message = "You lost, " + my_name + "!"
-	get_tree().change_scene_to_file("res://game/ui/end_menu.tscn")
+	# DEFERRED. The killing blow arrives from a projectile's body_entered, which
+	# is a physics callback, and swapping the scene there tears down every
+	# collider mid-step - Godot logs "Removing a CollisionObject node during a
+	# physics callback is not allowed" and the behaviour after it is undefined.
+	get_tree().change_scene_to_file.call_deferred("res://game/ui/end_menu.tscn")
 
 
 ## Set Parry radius
@@ -585,15 +692,13 @@ func parry_radius_update(new_radius: float) -> void:
 
 ## Press Shift to parry
 func parry_this_casual() -> void:
-	SoundManager.play_sfx(parry_sound, 0, 0.85, 1.1, 0)
 	if not parry_allowed:
 		return
 
-	# After the guard, not before it. Played first, the parry sound fired on every
-	# press including ones the cooldown refused, so a locked-out parry was
-	# indistinguishable by ear from a real one - exactly the confusion the
-	# ParryBar was added to clear up.
-	SoundManager.play_sfx(parry_sound)
+	# NO SOUND HERE. The press itself is silent, whether it is refused by the
+	# cooldown or opens a window that catches nothing - only a parry that
+	# actually LANDS makes a noise, and that lives in _parry_succeeded(). A press
+	# that sounded regardless taught the player nothing about their timing.
 
 	parry_allowed = false
 	is_parrying = true
@@ -669,7 +774,12 @@ func parry_cooldown_ratio() -> float:
 ## other colour around the player.
 func _resolve_parry() -> void:
 	for p in get_tree().get_nodes_in_group("enemy_projectiles"):
-		if not is_instance_valid(p):
+		# queue_free leaves the node in its group until the end of the frame, and
+		# the burst from the FIRST parry in this loop frees shots the loop has not
+		# reached yet - so without this a single press could "parry" the same shot
+		# twice over, sounding and shaking once per corpse. It matters much more
+		# now that Crimson Guard can put several parryable reds in range at once.
+		if not is_instance_valid(p) or p.is_queued_for_deletion():
 			continue
 		if not p.is_parryable():
 			continue
@@ -686,15 +796,29 @@ func _resolve_parry() -> void:
 				% [dist, into, effective_parry_window(), cleared])
 
 
-## Called by a hitscan attack at the instant it fires. Returns true if the
-## player was parrying, which eats the shot entirely.
+## Called by a hitscan trace when it lands on the player. Returns true if it was
+## parried, which eats the shot entirely.
 ##
-## Hitscan cannot be dodged - the trace is instant - so the parry has to be
-## already active when this is called. The player reacts to the caster's charge
-## glow, never to the trace.
-func try_parry_hitscan(_from: Vector2) -> bool:
+## TWO conditions, not one. The window has to be open, AND it has to have been
+## opened after the beam was fired (less hitscan_parry_grace). The second is what
+## makes green a shot you answer rather than a rhythm you memorise: the trace
+## resolves on arrival, so without it a window opened during the caster's charge
+## - while there was nothing on screen to parry - was still open when the beam
+## landed, and the player was parrying something they had not yet seen.
+##
+## Pass a negative `fired_at_ms` for a shot with no fire time to check against;
+## the timing gate is skipped and only the window matters.
+func try_parry_hitscan(_from: Vector2, fired_at_ms: int = -1) -> bool:
 	if not is_parrying:
 		return false
+
+	if fired_at_ms >= 0:
+		var earliest := fired_at_ms - int(hitscan_parry_grace * 1000.0)
+		if _parry_window_opened_ms < earliest:
+			if parry_debug_logs:
+				print("[PARRY] too early | window opened %dms before the beam was fired"
+					% (fired_at_ms - _parry_window_opened_ms))
+			return false
 
 	var cleared := _parry_succeeded()
 	if parry_debug_logs:
@@ -710,6 +834,11 @@ func try_parry_hitscan(_from: Vector2) -> bool:
 func _parry_succeeded() -> int:
 	_parried_this_window += 1
 
+	# The one and only parry sound. Both kinds of parry - a green projectile and
+	# a hitscan trace - funnel through here, so a success always sounds and a
+	# miss never does.
+	SoundManager.play_sfx(parry_sound, 0, 0.85, 1.1, 0)
+
 	# Refunded here rather than when the window shuts, so the bar reads full the
 	# instant the parry connects instead of a fifth of a second later.
 	_parry_refunded = true
@@ -723,6 +852,9 @@ func _parry_succeeded() -> int:
 	_burst_left = parry_burst_duration
 	var cleared := _parry_burst()
 
+	if RunState.flag(CardDatabase.FLAG_PARRY_REFLECT):
+		_reflect_shot()
+
 	ParryFlash.burst(get_parent(), global_position, _burst_radius, parry_burst_duration)
 	# Sparkles on top of the ring. The ring is a promise about REACH and has to
 	# stay exactly the burst radius; the sparkles are the "that worked", thrown
@@ -732,6 +864,23 @@ func _parry_succeeded() -> int:
 	_shake_camera()
 
 	return cleared
+
+
+## Reflect. A landed parry throws a full cast of the player's own missiles back
+## out, aimed at the nearest enemy.
+##
+## Fired FROM THE PLAYER rather than by turning the incoming shot around. Green
+## is hitscan - there is no projectile node to reverse - and green is the only
+## colour a parry can be aimed at, so a reflect that needed a physical shot to
+## flip would be dead on the one thing that triggers it. This is also why it
+## lives in _parry_succeeded(): both kinds of parry pay out the same.
+func _reflect_shot() -> void:
+	var target := nearest_enemy()
+	var aim := rotation
+	if target != null:
+		aim = global_position.direction_to(target.global_position).angle()
+	_fire_volley(aim)
+	show_attacking(attack_art_duration)
 
 
 ## Keeps the clear field up for as long as the ring is on screen, so a shot that
@@ -803,13 +952,24 @@ func _decay_knockback(delta: float) -> void:
 
 func basic_attack() -> void:
 	can_attack = false
-	SoundManager.play_sfx(attack_sound, 0.2, 0.85, 1.1, 0)
+	# SILENT. magic_attack1 belongs to the green caster now - it is the tell for
+	# an incoming hitscan, and the basic attack firing the same sample about once
+	# a second buried it completely.
 	show_attacking(attack_art_duration)
 
 	# One sound and one cooldown per CAST, however many shots that cast contains
 	# - a volley is one spell, not three.
+	_fire_volley(aim_angle())
+
+	await get_tree().create_timer(effective_cast_interval()).timeout
+	can_attack = true
+
+
+## One cast's worth of missiles, spread across volley_spread_degrees and centred
+## on `aim`. Shared by the basic attack and by Reflect, so a card that adds
+## projectiles adds them to both.
+func _fire_volley(aim: float) -> void:
 	var count := effective_projectile_count()
-	var aim := aim_angle()
 	var spread := deg_to_rad(volley_spread_degrees)
 	for i in count:
 		# Spread evenly across the arc, centred on the aim. A lone shot gets no
@@ -818,9 +978,6 @@ func basic_attack() -> void:
 		if count > 1:
 			offset = (float(i) / float(count - 1) - 0.5) * spread
 		shoot.emit(projectile, aim + offset, position)
-
-	await get_tree().create_timer(effective_cast_interval()).timeout
-	can_attack = true
 
 
 ## Direction of the next shot: the nearest enemy while auto-aim is on, otherwise
@@ -900,9 +1057,10 @@ func _physics_process(_delta) -> void:
 		velocity += _knockback
 	move_and_slide()
 	_decay_knockback(_delta)
+	_iframes_left = maxf(_iframes_left - _delta, 0.0)
 	_tick_dash_recharge(_delta)
 	_tick_ultimate(_delta)
-	_tick_attack_art(_delta)
+	_tick_poses(_delta)
 	# Resolve before ticking, so the frame that closes the window still counts.
 	if is_parrying:
 		_resolve_parry()

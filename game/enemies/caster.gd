@@ -47,6 +47,14 @@ enum AttackMode { PROJECTILE, HITSCAN }
 ## Raise it to make the enemy more forgiving.
 @export var charge_time: float = 0.6
 @export var hitscan_damage: float = 1.0
+## How close to the point it was aimed at the player must still be for the shot
+## to connect.
+##
+## The shot commits to where the player STOOD at fire time, so this is what makes
+## the streak honest: walk out of that spot and the beam lands behind you and
+## does nothing. Without it the beam visibly stopped short of the player and hurt
+## them anyway, which read as the game cheating.
+@export var hitscan_hit_radius: float = 40.0
 ## Colour of the aura and the shot.
 @export var charge_color: Color = Color(0.3, 1.0, 0.4)
 ## How much brighter the caster's own sprite gets at full charge. Must be well
@@ -56,11 +64,24 @@ enum AttackMode { PROJECTILE, HITSCAN }
 @export var aura_end_radius: float = 72.0
 
 @export_subgroup("Trace")
-## Pixels per second. Fast enough to be unreactable, slow enough to be seen.
-@export var trace_speed: float = 2500.0
+## Pixels per second. THIS IS THE PARRY WINDOW, not just a visual.
+##
+## The parry resolves when the streak ARRIVES, and a parry may only be started
+## once the streak is out (see movement.gd's try_parry_hitscan) - so flight time
+## is exactly how long the player has to answer a shot they can see. At 2500 the
+## beam crossed a typical gap in ~0.13s, which meant the only way to parry it was
+## to press before it existed. At 1200 the same gap takes ~0.25s: the beam is
+## visibly in the air for the whole of the parry window it opens.
+@export var trace_speed: float = 1200.0
 ## Length of the visible streak.
 @export var trace_length: float = 140.0
 @export var trace_width: float = 3.0
+
+## The green caster's charge and its release, and nothing else in the game. Blue
+## and red cast silently - there is no sample for a travelling enemy shot - and
+## green is the one the player has to hear coming anyway, because the charge is
+## the parry window and the release is what has to be parried.
+const CHARGE_SOUND := preload("res://assets/sounds/magic_attack1.wav")
 
 var _aura: ChargeAura = null
 
@@ -114,15 +135,26 @@ func telegraph_duration() -> float:
 	return charge_time if attack_mode == AttackMode.HITSCAN else telegraph_time
 
 
+## The gap between casts right now: the authored interval, tightened by the
+## arena's difficulty ramp. Floored so the ramp can never collapse it to nothing.
+func effective_cast_interval() -> float:
+	return maxf(cast_interval * attack_interval_scale(), 0.35)
+
+
 func _tick_casting(delta: float) -> void:
 	_cast_timer += delta
-	var wind_up := telegraph_duration()
+	var interval := effective_cast_interval()
+	# The wind-up is NOT scaled by the ramp - it is the player's read on the
+	# attack, and shortening it would make late-run casters unreactable rather
+	# than fast. Clamped only so a heavily ramped interval cannot end up shorter
+	# than its own telegraph, which would leave the caster permanently winding up.
+	var wind_up := minf(telegraph_duration(), interval * 0.8)
 
-	if not _telegraphing and _cast_timer >= cast_interval - wind_up:
+	if not _telegraphing and _cast_timer >= interval - wind_up:
 		_telegraphing = true
 		_start_wind_up(wind_up)
 
-	if _cast_timer >= cast_interval:
+	if _cast_timer >= interval:
 		_cast_timer = 0.0
 		_telegraphing = false
 		_cast()
@@ -141,6 +173,8 @@ func _start_charge_glow(duration: float) -> void:
 	# Hitscan casters never call telegraph(), so the attack artwork has to be
 	# swapped in here too - the charge IS this enemy's wind-up.
 	show_attacking(duration)
+	# The wind-up: low and quiet, a hum starting somewhere on the map.
+	SoundManager.play_sfx(CHARGE_SOUND, 0, 0.55, 0.7, -5.0)
 	if _aura != null and is_instance_valid(_aura):
 		_aura.queue_free()
 	_aura = ChargeAura.start(self, aura_start_radius, aura_end_radius,
@@ -176,9 +210,14 @@ func _cast() -> void:
 		_fire_projectiles()
 
 
-## Releases the charge as a fast travelling streak aimed at where the player is
+## Releases the charge as a travelling streak aimed at where the player is
 ## standing right now. The target is fixed at fire time - green is a committed
-## shot, answered by parrying rather than dodging.
+## shot: once it is out, it goes where it was pointed.
+##
+## Answered EITHER WAY. Parry it, or be somewhere else by the time it lands - the
+## trace only damages what is still within hitscan_hit_radius of the point it was
+## aimed at. Both answers need the same read of the charge aura, which is what
+## the aura is for.
 ##
 ## The trace resolves damage and parry on ARRIVAL, so it owns that logic, not
 ## this caster - it has to keep working even if the caster dies mid-flight.
@@ -187,8 +226,16 @@ func _fire_hitscan() -> void:
 	if not has_player():
 		return
 
+	# The release, at the instant the shot goes out. Higher and louder than the
+	# wind-up above, so the pair reads as one rising cue - "charging" then "NOW" -
+	# rather than as the same noise twice. The trace itself is too fast to react
+	# to, so this is confirmation rather than a warning: it lands on the same
+	# frame as the parry check in try_parry_hitscan().
+	SoundManager.play_sfx(CHARGE_SOUND, 0, 0.8, 0.95, -1.0)
+
 	HitscanTrace.fire(get_parent(), global_position, player.global_position,
-		charge_color, trace_speed, trace_length, trace_width, hitscan_damage)
+		charge_color, trace_speed, trace_length, trace_width, hitscan_damage,
+		hitscan_hit_radius)
 
 
 func _on_death() -> void:

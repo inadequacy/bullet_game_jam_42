@@ -46,6 +46,9 @@ func _ready() -> void:
 	_screen.visible = false
 	for i in _cards.size():
 		_cards[i].pressed.connect(_on_card_pressed.bind(i))
+	# The three views are re-used rather than rebuilt each hand, so wiring their
+	# hover and click sounds once here is enough.
+	SoundManager.attach_button_sounds(self)
 
 
 func _unhandled_input(event: InputEvent) -> void:
