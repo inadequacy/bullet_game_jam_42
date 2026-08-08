@@ -25,7 +25,6 @@
 
 ## Pickups (Ale)
 
-- Ability drops
 - Health restore drops
 
 ## Leaderboard (Cole)

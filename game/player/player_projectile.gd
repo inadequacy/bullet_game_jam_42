@@ -15,6 +15,8 @@ var _age: float = 0.0
 func _ready() -> void:
 	add_to_group("player_projectiles")
 	body_entered.connect(_on_body_entered)
+	# Bake in the run's damage cards at spawn - the export is the base value.
+	damage = RunState.modified(CardDatabase.STAT_ATTACK_DAMAGE, damage)
 
 
 func _process(delta: float) -> void:
