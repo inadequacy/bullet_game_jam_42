@@ -61,6 +61,23 @@ var _parry_cooldown_left: float = 0.0
 var _parry_cooldown_span: float = 0.0
 @export_group("")
 
+# Impact settings
+@export_group("Impact")
+## How hard a hit shoves the player. Deliberately small - this is feedback that
+## the shot connected, not a control loss.
+@export var knockback_strength: float = 320.0
+## Seconds a shove takes to decay to nothing.
+@export var knockback_decay: float = 0.18
+
+## Carried separately from `velocity` because get_input() overwrites velocity
+## outright every frame from the movement keys - anything written straight into
+## it is gone before move_and_slide() ever sees it. This is added on top instead.
+var _knockback: Vector2 = Vector2.ZERO
+## Units per second the shove sheds, so a full-strength one lasts exactly
+## knockback_decay and a weaker one ends sooner.
+var _knockback_drop: float = 0.0
+@export_group("")
+
 # Attack settings
 @export_group("Attack Settings")
 signal shoot(projectile, direction, location)
@@ -426,6 +443,26 @@ func _parry_burst() -> int:
 	return cleared
 
 
+## Shoves the player along `dir` - called by whatever hit them, so the push
+## follows the shot's own travel direction rather than pointing away from its
+## source. Passing a negative strength uses knockback_strength.
+func apply_knockback(dir: Vector2, strength: float = -1.0) -> void:
+	if dir == Vector2.ZERO:
+		return
+	var force := knockback_strength if strength < 0.0 else strength
+	if force <= 0.0:
+		return
+	# Replaced rather than accumulated: two hits in the same instant should shove
+	# once, not launch the player at double speed.
+	_knockback = dir.normalized() * force
+	_knockback_drop = force / maxf(knockback_decay, 0.001)
+
+
+func _decay_knockback(delta: float) -> void:
+	if _knockback != Vector2.ZERO:
+		_knockback = _knockback.move_toward(Vector2.ZERO, _knockback_drop * delta)
+
+
 func basic_attack() -> void:
 	can_attack = false
 	shoot.emit(projectile, aim_angle(), position)
@@ -494,7 +531,10 @@ func get_input() -> void:
 
 func _physics_process(_delta) -> void:
 	get_input()
+	# After get_input, which has just overwritten velocity from the movement keys.
+	velocity += _knockback
 	move_and_slide()
+	_decay_knockback(_delta)
 	_tick_dash_recharge(_delta)
 	# Resolve before ticking, so the frame that closes the window still counts.
 	if is_parrying:
