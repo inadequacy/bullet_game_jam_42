@@ -213,6 +213,8 @@ func is_invulnerable() -> bool:
 ## themselves only when it did. Freeing on a blocked hit would turn i-frames
 ## into a screen clear, which is the parry's job, not the dash's.
 func take_damage(amount: float) -> bool:
+	SoundManager.play_sfx(playerhit_dog_sound, 0, 0.85, 1.1, 0)
+	SoundManager.play_sfx(playerhit_low_sound, 0, 0.85, 1.1, 0)
 	if invincible:
 		if debug_logs:
 			print("[DEBUG] blocked %s damage (invincible)" % amount)
@@ -598,7 +600,7 @@ func _decay_knockback(delta: float) -> void:
 
 func basic_attack() -> void:
 	can_attack = false
-	SoundManager.play_sfx(attack_sound)
+	SoundManager.play_sfx(attack_sound, 0.2, 0.85, 1.1, 0)
 	
 	shoot.emit(projectile, aim_angle(), position)
 	await get_tree().create_timer(effective_cast_interval()).timeout
