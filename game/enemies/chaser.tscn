@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://bnxnt8334sl0j" path="res://game/enemies/chaser.gd" id="1_script"]
 [ext_resource type="Texture2D" path="res://assets/images/Idle_cat.png" id="2_idle"]
 [ext_resource type="Texture2D" path="res://assets/images/Attacking_cat.png" id="3_attack"]
+[ext_resource type="Texture2D" path="res://assets/images/dead_cat.png" id="4_dead"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_chaser"]
 radius = 21.0
@@ -11,6 +12,7 @@ radius = 21.0
 script = ExtResource("1_script")
 idle_texture = ExtResource("2_idle")
 attack_texture = ExtResource("3_attack")
+dead_texture = ExtResource("4_dead")
 max_health = 20.0
 move_speed = 190.0
 xp_value = 50

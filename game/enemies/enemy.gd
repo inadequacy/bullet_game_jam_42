@@ -16,6 +16,11 @@ signal damaged(enemy: Enemy, amount: float)
 ## Shown while winding up an attack. Optional - leave empty and the sprite never
 ## changes, which is what a boss with a single pose wants.
 @export var attack_texture: Texture2D
+## Left lying on the ground after death. Optional - without one the enemy just
+## disappears the way it always did.
+@export var dead_texture: Texture2D
+## How long the corpse lies there before it fades and frees itself.
+@export var corpse_duration: float = 3.0
 
 @export_group("Stats")
 @export var max_health: float = 30.0
@@ -68,6 +73,9 @@ var _attack_art_left: float = 0.0
 ## made the chaser nearly DOUBLE in size the instant it wound up, which read as
 ## a bug rather than as an attack.
 var _attack_scale: Vector2 = Vector2.ONE
+## True once this enemy has died. Guards against a second death - burn ticks and
+## an ultimate landing in the same frame can both reach take_damage().
+var _dying: bool = false
 
 ## True while walking in from off screen. See enter_from().
 var _entering: bool = false
@@ -309,11 +317,63 @@ func take_damage(amount: float) -> void:
 
 
 func die() -> void:
+	if _dying:
+		return
+	_dying = true
+
 	_on_death()
 	# Scoring rides on the `died` signal, connected in _ready. Adding it here too
 	# double-counted every kill.
 	died.emit(self)
-	queue_free()
+
+	if dead_texture == null or not _sprite is Sprite2D:
+		queue_free()
+		return
+	_become_corpse()
+
+
+## Turns the enemy into a body on the floor for `corpse_duration`, then frees it.
+##
+## The corpse LEAVES the "enemies" group immediately. Everything in the game
+## finds its targets through that group - auto-aim, the explosion, the beam, the
+## Rain of Fire, and level.gd's head count - so staying in it would mean the
+## player could keep shooting a dead cat, ultimates would waste damage on
+## corpses, and the arena would refuse to spawn replacements until the bodies
+## rotted. Leaving the group makes the corpse purely something to look at.
+func _become_corpse() -> void:
+	remove_from_group("enemies")
+	set_physics_process(false)
+	velocity = Vector2.ZERO
+	# Nothing collides with a body: the player walks over it and shots fly past.
+	collision_layer = 0
+	collision_mask = 0
+
+	var sprite := _sprite as Sprite2D
+	sprite.texture = dead_texture
+	sprite.scale = _corpse_scale()
+	# Under the living, so a body never hides a fighter standing on it.
+	sprite.z_index = -1
+	# Drop any chill or freeze tint - it is not cold any more, it is dead.
+	sprite.modulate = _base_modulate
+
+	# Held at full opacity for most of its life, then faded, so the body reads
+	# as scenery that decays rather than as something blinking out.
+	var tween := create_tween()
+	tween.tween_interval(corpse_duration * 0.7)
+	tween.tween_property(sprite, "modulate:a", 0.0, corpse_duration * 0.3)
+	tween.tween_callback(queue_free)
+
+
+## The dead sprites are drawn lying down - dead_cat.png is 519x238 against the
+## standing 274x407 - so the scale is chosen to make the body about as long as
+## the enemy was tall, rather than reusing the standing scale and getting a
+## corpse half again too big.
+func _corpse_scale() -> Vector2:
+	if idle_texture == null or dead_texture == null or dead_texture.get_width() <= 0:
+		return _base_scale
+	var standing_height := float(idle_texture.get_height()) * _base_scale.y
+	var factor := standing_height / float(dead_texture.get_width())
+	return Vector2(factor, factor)
 
 
 ## Turns the sprite toward the player. Only the sprite is touched - moving the

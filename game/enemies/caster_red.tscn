@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://d4ghjewgcvovb" path="res://game/enemies/caster.gd" id="1_script"]
 [ext_resource type="Texture2D" path="res://assets/images/Idle_pug.png" id="2_idle"]
 [ext_resource type="Texture2D" path="res://assets/images/attacking_pug.png" id="3_attack"]
+[ext_resource type="Texture2D" path="res://assets/images/dead_pug.png" id="6_dead"]
 [ext_resource type="Shader" path="res://assets/shaders/team_tint.gdshader" id="5_tint"]
 [ext_resource type="PackedScene" path="res://game/enemies/enemy_projectile.tscn" id="4_projectile"]
 
@@ -17,6 +18,7 @@ radius = 23.0
 script = ExtResource("1_script")
 idle_texture = ExtResource("2_idle")
 attack_texture = ExtResource("3_attack")
+dead_texture = ExtResource("6_dead")
 preferred_range = 400.0
 range_tolerance = 80.0
 projectile_scene = ExtResource("4_projectile")

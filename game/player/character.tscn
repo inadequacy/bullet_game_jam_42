@@ -2,6 +2,8 @@
 
 [ext_resource type="Texture2D" path="res://assets/images/Idle_Max.png" id="1_lkv7d"]
 [ext_resource type="Script" uid="uid://cwirr0va8ubfb" path="res://game/player/movement.gd" id="2_ushfy"]
+[ext_resource type="Texture2D" path="res://assets/images/Attacking_max.png" id="3_attack"]
+[ext_resource type="Texture2D" path="res://assets/images/green_sparkle.png" id="4_sparkle"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_haif4"]
 size = Vector2(50, 50)
@@ -11,6 +13,9 @@ radius = 90.0
 
 [node name="PlayerCharacter" type="CharacterBody2D" unique_id=1852961571 groups=["player"]]
 script = ExtResource("2_ushfy")
+idle_texture = ExtResource("1_lkv7d")
+attack_texture = ExtResource("3_attack")
+parry_sparkle_texture = ExtResource("4_sparkle")
 
 [node name="PlayerCollision" type="CollisionShape2D" parent="." unique_id=558354169]
 visibility_layer = 5

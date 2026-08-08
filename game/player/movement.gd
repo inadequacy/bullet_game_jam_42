@@ -142,6 +142,32 @@ var projectile = preload("res://game/player/player_projectile.tscn")
 var can_attack: bool = true
 @export_group("")
 
+# Art
+@export_group("Art")
+## Max's resting pose. Also what he reverts to after an attack.
+@export var idle_texture: Texture2D
+## Shown whenever Max releases something - a cast or an ultimate.
+@export var attack_texture: Texture2D
+## How long the attack pose is held for a basic cast, and for the Fire and Ice
+## ultimates. The ARCANE ultimate ignores this and holds the pose for as long as
+## the beam is actually out - see cast_ultimate().
+##
+## NOTE: the basic attack fires about once a second, so at 1.0 Max is in the
+## attack pose almost continuously. That is intended - he is a wizard casting
+## without pause - but this is the knob to turn if the idle pose should show
+## between shots.
+@export var attack_art_duration: float = 1.0
+## Thrown out around Max when a parry lands. Optional.
+@export var parry_sparkle_texture: Texture2D
+
+## Seconds of attack artwork still to show. Counted down rather than reverted on
+## a timer, so overlapping casts cannot leave the pose stuck on.
+var _attack_art_left: float = 0.0
+## Scale that keeps the attack pose the same apparent size as the idle one.
+var _attack_art_scale: Vector2 = Vector2.ONE
+var _idle_art_scale: Vector2 = Vector2.ONE
+@export_group("")
+
 # Ultimate settings
 @export_group("Ultimate")
 ## Seconds between casts. LONG on purpose - the ultimate is an event, not part
@@ -278,6 +304,15 @@ func cast_ultimate() -> bool:
 		CardDatabase.Element.ARCANE:
 			# Parented to the player, not the arena - the beam tracks facing.
 			UltArcaneBeam.cast(self, ultimate_beam_dps * power, length)
+
+	# Arcane HOLDS the attack pose for the whole beam, because the beam is a
+	# sustained cast coming out of Max for its full duration. Rain of Fire and
+	# Frozen Ground are released and then happen on their own, so they get the
+	# same brief flash as an ordinary cast.
+	if element == CardDatabase.Element.ARCANE:
+		show_attacking(length)
+	else:
+		show_attacking(attack_art_duration)
 
 	_ultimate_left = effective_ultimate_cooldown()
 	SoundManager.play_sfx(levelup_sound, 0, 0.7, 0.8, 0)
@@ -428,6 +463,44 @@ func _on_run_stats_changed() -> void:
 	dash_charges = clampi(dash_charges, 0, maximum)
 
 
+# --- Attack pose ---------------------------------------------------------------
+
+## Shows Max's attacking artwork for `duration`, then reverts. Safe to call with
+## no attack texture assigned.
+func show_attacking(duration: float) -> void:
+	if attack_texture == null or _body_sprite == null:
+		return
+	_body_sprite.texture = attack_texture
+	_body_sprite.scale = _attack_art_scale
+	# The longer of the two wins, so a basic cast fired during the Arcane beam
+	# cannot cut the beam's pose short.
+	_attack_art_left = maxf(_attack_art_left, duration)
+
+
+## Keeps Max's artwork upright while the BODY goes on rotating with the mouse.
+##
+## The body's `rotation` IS the aim - aim_angle() returns it, the dash falls
+## back to it, and the Arcane beam inherits it by being a child - so it cannot
+## stop turning. But turning a drawn character with it lays Max on his side and
+## then fully upside down as the cursor comes round, which is exactly the
+## problem Enemy.face_player() has. So the sprite is counter-rotated to cancel
+## the body's spin and flipped instead, and the aim is untouched.
+func _face_art() -> void:
+	if _body_sprite == null:
+		return
+	_body_sprite.rotation = -rotation
+	_body_sprite.flip_h = cos(rotation) < 0.0
+
+
+func _tick_attack_art(delta: float) -> void:
+	if _attack_art_left <= 0.0:
+		return
+	_attack_art_left -= delta
+	if _attack_art_left <= 0.0 and idle_texture != null and _body_sprite != null:
+		_body_sprite.texture = idle_texture
+		_body_sprite.scale = _idle_art_scale
+
+
 ## Goes translucent and cold for the length of an invulnerable dash, then
 ## settles back to whatever the sprite normally looks like.
 func _show_iframes(duration: float) -> void:
@@ -488,6 +561,14 @@ func _ready() -> void:
 
 	if _body_sprite != null:
 		_body_base_modulate = _body_sprite.modulate
+		_idle_art_scale = _body_sprite.scale
+		_attack_art_scale = _idle_art_scale
+		# Attacking_max.png is 307x416 against Idle_Max.png's 288x451, so without
+		# this Max would change size every time he cast.
+		if idle_texture != null and attack_texture != null \
+				and attack_texture.get_height() > 0:
+			_attack_art_scale = _idle_art_scale * (float(idle_texture.get_height())
+				/ float(attack_texture.get_height()))
 
 func _on_health_depleted() -> void:
 	SilentWolf.Scores.save_score(my_name, GameManager.score)
@@ -643,6 +724,10 @@ func _parry_succeeded() -> int:
 	var cleared := _parry_burst()
 
 	ParryFlash.burst(get_parent(), global_position, _burst_radius, parry_burst_duration)
+	# Sparkles on top of the ring. The ring is a promise about REACH and has to
+	# stay exactly the burst radius; the sparkles are the "that worked", thrown
+	# where the player is actually looking - at their own character.
+	ParrySparkle.burst(get_parent(), global_position, parry_sparkle_texture)
 	# No arguments: the parry is what CameraShake's defaults were tuned for.
 	_shake_camera()
 
@@ -719,6 +804,7 @@ func _decay_knockback(delta: float) -> void:
 func basic_attack() -> void:
 	can_attack = false
 	SoundManager.play_sfx(attack_sound, 0.2, 0.85, 1.1, 0)
+	show_attacking(attack_art_duration)
 
 	# One sound and one cooldown per CAST, however many shots that cast contains
 	# - a volley is one spell, not three.
@@ -804,6 +890,8 @@ func get_input() -> void:
 
 func _physics_process(_delta) -> void:
 	get_input()
+	# After get_input, which has just aimed the body at the cursor.
+	_face_art()
 	# After get_input, which has just overwritten velocity from the movement keys.
 	# Skipped mid-dash: apply_knockback already refuses a shove while dashing, but
 	# one applied a frame BEFORE the dash started would still be decaying, and it
@@ -814,6 +902,7 @@ func _physics_process(_delta) -> void:
 	_decay_knockback(_delta)
 	_tick_dash_recharge(_delta)
 	_tick_ultimate(_delta)
+	_tick_attack_art(_delta)
 	# Resolve before ticking, so the frame that closes the window still counts.
 	if is_parrying:
 		_resolve_parry()
