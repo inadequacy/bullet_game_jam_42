@@ -23,9 +23,8 @@
 - More bullets
 - Improved cooldowns
 
-## Pickups
+## Pickups (Ale)
 
-- Ability drops
 - Health restore drops
 
 ## Leaderboard (Cole)
@@ -37,23 +36,30 @@
 
 - Timer (indicates time to boss)
 - Start Screen / End Screen **complete** ✔️
-- Score: points
-- Health bar
+- Score: points **complete** ✔️
+- Health bar **complete** ✔️
 
 ## Sounds (Kevin)
+### Player
+- shot ✔️
+- hit (low pitch) ✔️
+- death (optional)
+- level-up (3 notes) ✔️
+- parry (high-pitched) ✔️
+- heart pickup ✔️
 
-- player shoot
-- enemy shoot
-- player hit
-- enemy hit
-- parry
-- level-up
-- boss spawn
-- player death
-- enemy(ies) death
-- heart drop
-- heart pickup
+### Enemy
+- parry shot ✔️
+- parry shot recharge ✔️
+
+### Boss
+- Spawn (drone sound) ✔️
+
+### Others
 - background music
+- ambience ✔️
+- Button hover ✔️
+- button click ✔️
 
 ## Visuals
 

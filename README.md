@@ -29,6 +29,15 @@ menu.
 | **E** | Ultimate *(bound, not implemented)* |
 | *none* | Basic spell auto-fires — at the nearest enemy by default |
 
+### Debug keys
+
+Temporary, for testing. Remove before submitting.
+
+| Input | Action |
+| --- | --- |
+| **G** | Open/close the card screen (freezes the game) |
+| **H** | Toggle invincibility |
+
 ---
 
 ## Folder structure
@@ -65,7 +74,7 @@ halves of one thing.
 | I'm adding… | It goes in |
 | --- | --- |
 | A new enemy type | `game/enemies/` (scene + script together) |
-| A new power-up card | `game/cards/` — create it |
+| A new power-up card | `game/cards/card_database.gd` — data only, nothing else to touch |
 | A boss | `game/enemies/` — bosses subclass `Enemy` like everything else |
 | A HUD element | `game/ui/` |
 | A sound effect | `assets/audio/` — create it |
@@ -97,17 +106,29 @@ code.
 
 | Scene | Fires | Role |
 | --- | --- | --- |
-| `caster_blue.tscn` | Blue, 5-shot spread | The crowd you clear |
+| `caster_blue.tscn` | Blue, 2-shot spread | The crowd you clear |
 | `caster_green.tscn` | Green, single telegraphed shot | The parry bait |
 | `caster_red.tscn` | Red, homing | The dash bait |
+
+**Enemies are not placed in `level.tscn`.** `level.gd` owns the population: it
+counts heads every frame and tops the arena back up to the cap for the current
+tier (3 enemies for the first three minutes, then 4, 5, 6). Adding an instance by
+hand only puts the count over cap until it dies.
+
+New arrivals start off screen and walk in. `Enemy.enter_from()` skips
+`_behavior()` until they reach their target, so nothing attacks from outside the
+view — if you add an enemy type, that comes for free as long as its logic lives
+in `_behavior()`.
 
 ### Projectile colours
 
 The colour language is the whole combat vocabulary:
 
 - **Blue** — not parryable, but destroyed by a successful parry's burst.
-- **Green** — the only parryable colour. Parrying one triggers the burst.
-- **Red** — homing. Not parryable, not cleared. **Dashing severs its lock.**
+- **Green** — the only parryable colour. Parrying one triggers the burst, and
+  costs no cooldown: a parry that connects is refunded instantly.
+- **Red** — homing. Not parryable, but the burst clears it like everything else.
+  Outside the burst radius, **dashing severs its lock** and remains the answer.
 
 Red reads `is_dashing` off the player. If the dash is ever rewritten, that flag
 has to survive or red becomes unavoidable.

@@ -1,5 +1,6 @@
 extends Node
 
+signal score_changed(new_score: int)
 var score: int = 0
 var message: String
 var player_name: String
@@ -19,6 +20,7 @@ func reset_game_data():
 # Score
 func add_score(points: int = 1):
 	score += points
+	score_changed.emit(score)
 
 # Update end message
 func win_message():
