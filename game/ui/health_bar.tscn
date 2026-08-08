@@ -1,0 +1,13 @@
+[gd_scene format=3 uid="uid://bu5b1wbkhqegi"]
+
+[ext_resource type="Script" uid="uid://ducfpctbp4kf0" path="res://game/ui/health_bar.gd" id="1_pk34a"]
+
+[node name="HealthBar" type="Control" unique_id=2142482034]
+layout_mode = 3
+anchors_preset = 0
+script = ExtResource("1_pk34a")
+
+[node name="ProgressBar" type="ProgressBar" parent="." unique_id=1163824491]
+layout_mode = 0
+offset_right = 4.0
+offset_bottom = 27.0

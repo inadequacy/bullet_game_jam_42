@@ -7,10 +7,12 @@ func _ready() -> void:
 
 
 func _on_start_button_pressed() -> void:
+	GameManager.reset_game_data()
 	get_tree().change_scene_to_file("res://game/levels/level.tscn")
 
 
 func _on_menu_button_pressed() -> void:
+	GameManager.reset_game_data()
 	get_tree().change_scene_to_file("res://game/ui/start_menu.tscn")
 
 
