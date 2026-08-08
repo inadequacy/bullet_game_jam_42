@@ -11,6 +11,7 @@
 [ext_resource type="PackedScene" uid="uid://bu5b1wbkhqegi" path="res://game/ui/health_bar.tscn" id="9_b3dog"]
 [ext_resource type="PackedScene" path="res://game/cards/card_screen.tscn" id="10_cards"]
 [ext_resource type="PackedScene" path="res://game/ui/dash_bar.tscn" id="11_dash"]
+[ext_resource type="PackedScene" path="res://game/ui/parry_bar.tscn" id="13_parry"]
 [ext_resource type="Script" path="res://game/levels/camera_shake.gd" id="12_shake"]
 
 [node name="Level" type="Node2D" unique_id=1836397518]
@@ -70,6 +71,12 @@ offset_left = 200.0
 offset_top = 48.0
 offset_right = 320.0
 offset_bottom = 80.0
+
+[node name="ParryBar" parent="HUD" instance=ExtResource("13_parry")]
+offset_left = 200.0
+offset_top = 84.0
+offset_right = 320.0
+offset_bottom = 116.0
 
 [node name="CardScreen" parent="." instance=ExtResource("10_cards")]
 
