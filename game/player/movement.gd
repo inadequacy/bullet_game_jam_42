@@ -130,12 +130,9 @@ var can_attack: bool = true
 @export_group("")
 
 
-@onready var health_bar: HealthBar = get_tree().current_scene.get_node("HUD/HealthBar")
+## Leaderboard name for this run, submitted to SilentWolf on death.
 var my_name: String
 
-
-func take_damage(amount: int) -> void:
-	health_bar.take_damage(amount)
 # Debug settings
 @export_group("Debug")
 ## Press H to toggle. While on, the player takes no damage - for trying out
@@ -346,12 +343,15 @@ func _ready() -> void:
 	# Keep the shape in sync so the parry radius is visible with debug collision
 	# shapes on, even though the shape itself stays disabled.
 	parry_collider.shape.set_radius(parry_radius)
-	health_bar.health_depleted.connect(_on_health_depleted)
+
+	# One name per run, reused if the player restarts. GameManager holds it so it
+	# survives the scene change to the end menu, where the score is shown.
 	if !GameManager.player_name:
 		my_name = random_names.pick_random()
 		GameManager.player_name = my_name
 	else:
 		my_name = GameManager.player_name
+
 	# Also hooks up health_depleted. Missing bar is not fatal - the player still
 	# works, it just cannot show or lose health.
 	find_health_bar()

@@ -32,6 +32,8 @@ var player: Node2D = null
 var _entering: bool = false
 var _entry_target: Vector2 = Vector2.ZERO
 var _entry_time: float = 0.0
+## Collision mask parked while walking in, restored on arrival.
+var _entry_saved_mask: int = 0
 
 @onready var _sprite: CanvasItem = get_node_or_null("Sprite2D")
 
@@ -77,6 +79,14 @@ func enter_from(from: Vector2, target: Vector2) -> void:
 	global_position = from
 	_entry_target = target
 	_entry_time = 0.0
+	# Pass through everything on the way in. The arena's LevelBounds walls sit
+	# right at the edge of the view, between the spawn point and the arena, so an
+	# arriving enemy would otherwise walk into a wall and stop dead just off
+	# screen - alive, passive, and holding a slot in the population cap forever.
+	# Guarded so a second call cannot park a mask of 0 as the "original".
+	if not _entering:
+		_entry_saved_mask = collision_mask
+	collision_mask = 0
 	_entering = true
 
 
@@ -92,6 +102,7 @@ func _walk_in(delta: float) -> void:
 	if (global_position.distance_to(_entry_target) <= entry_arrive_distance
 			or _entry_time >= entry_timeout):
 		_entering = false
+		collision_mask = _entry_saved_mask
 		velocity = Vector2.ZERO
 		return
 	velocity = global_position.direction_to(_entry_target) * move_speed
@@ -150,7 +161,8 @@ func take_damage(amount: float) -> void:
 
 func die() -> void:
 	_on_death()
-	GameManager.add_score(xp_value)
+	# Scoring rides on the `died` signal, connected in _ready. Adding it here too
+	# double-counted every kill.
 	died.emit(self)
 	queue_free()
 

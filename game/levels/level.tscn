@@ -8,7 +8,6 @@
 [ext_resource type="PackedScene" uid="uid://dpu2waoxwk22w" path="res://game/ui/score.tscn" id="5_iincs"]
 [ext_resource type="PackedScene" uid="uid://ys576ewv3f7h" path="res://game/enemies/caster_green.tscn" id="6_green"]
 [ext_resource type="PackedScene" uid="uid://cpgx3ui4pfsn4" path="res://game/enemies/caster_red.tscn" id="7_red"]
-[ext_resource type="PackedScene" uid="uid://dpu2waoxwk22w" path="res://game/ui/score.tscn" id="5_iincs"]
 [ext_resource type="PackedScene" uid="uid://bu5b1wbkhqegi" path="res://game/ui/health_bar.tscn" id="9_b3dog"]
 [ext_resource type="PackedScene" path="res://game/cards/card_screen.tscn" id="10_cards"]
 [ext_resource type="PackedScene" path="res://game/ui/dash_bar.tscn" id="11_dash"]
@@ -82,6 +81,7 @@ collision_layer = 15
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="LevelBounds/LevelBound4" unique_id=2072502007]
 shape = SubResource("RectangleShape2D_haif4")
+
 [node name="DashBar" parent="HUD" instance=ExtResource("11_dash")]
 offset_left = 200.0
 offset_top = 48.0
