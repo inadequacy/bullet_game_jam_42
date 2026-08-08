@@ -68,6 +68,11 @@ var _parry_cooldown_span: float = 0.0
 @export var knockback_strength: float = 320.0
 ## Seconds a shove takes to decay to nothing.
 @export var knockback_decay: float = 0.18
+## Screen shake that rides along with a shove, in pixels of offset. A little
+## harder than the parry's 3.0 thump - this one is a hit landing ON you, rather
+## than one you answered. The shake runs for knockback_decay so the picture
+## settles at the same moment the player stops sliding.
+@export var knockback_shake_strength: float = 4.5
 
 ## Carried separately from `velocity` because get_input() overwrites velocity
 ## outright every frame from the movement keys - anything written straight into
@@ -420,12 +425,19 @@ func _parry_succeeded() -> int:
 	var cleared := _parry_burst()
 
 	ParryFlash.burst(get_parent(), global_position, effective_parry_burst_radius())
-
-	var camera := get_tree().get_first_node_in_group("camera_shake")
-	if camera != null:
-		camera.shake()
+	# No arguments: the parry is what CameraShake's defaults were tuned for.
+	_shake_camera()
 
 	return cleared
+
+
+## Thumps the screen, if the level has a camera that can. Negative values fall
+## back to CameraShake's own defaults. A weaker shake will not cut a stronger one
+## short, so a red hit landing during a parry still reads as the bigger event.
+func _shake_camera(strength: float = -1.0, duration: float = -1.0) -> void:
+	var camera := get_tree().get_first_node_in_group("camera_shake")
+	if camera != null and camera.has_method("shake"):
+		camera.shake(strength, duration)
 
 
 ## Destroys every blue shot inside the burst radius. Returns how many died.
@@ -456,6 +468,7 @@ func apply_knockback(dir: Vector2, strength: float = -1.0) -> void:
 	# once, not launch the player at double speed.
 	_knockback = dir.normalized() * force
 	_knockback_drop = force / maxf(knockback_decay, 0.001)
+	_shake_camera(knockback_shake_strength, knockback_decay)
 
 
 func _decay_knockback(delta: float) -> void:
