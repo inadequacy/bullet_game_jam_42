@@ -34,6 +34,7 @@ func _ready() -> void:
 			_base_scale = (_sprite as Node2D).scale
 	_acquire_player()
 	_on_enemy_ready()
+	died.connect(func(enemy): GameManager.add_score(enemy.xp_value))
 
 
 func _physics_process(delta: float) -> void:
