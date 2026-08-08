@@ -1,0 +1,75 @@
+[gd_scene format=3 uid="uid://48s1bqu0sahc"]
+
+[ext_resource type="Script" uid="uid://vbblni4vr6oe" path="res://game/ui/pause_screen.gd" id="1_cicty"]
+[ext_resource type="Theme" path="/home/yanlu/sgoinfre/bullet_game_jam_42/game/ui/button.tres" id="1_nmcbt"]
+[ext_resource type="Theme" uid="uid://c5m3g1ayqp1sv" path="res://game/ui/button.tres" id="2_cicty"]
+
+[node name="PauseScreen" type="CanvasLayer" unique_id=485895090]
+process_mode = 3
+script = ExtResource("1_cicty")
+
+[node name="Screen" type="Control" parent="." unique_id=1247287664]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Dim" type="ColorRect" parent="Screen" unique_id=629818415]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.25490198, 0.25490198, 0.25490198, 0.7882353)
+
+[node name="Center" type="CenterContainer" parent="Screen" unique_id=247369325]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBox" type="VBoxContainer" parent="Screen/Center" unique_id=29449626]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="Title" type="Label" parent="Screen/Center/VBox" unique_id=102804896]
+z_index = 3
+layout_mode = 2
+theme_override_font_sizes/font_size = 42
+text = "Paused"
+
+[node name="Resume_Button" type="Button" parent="Screen/Center/VBox" unique_id=1186878475]
+z_index = 3
+layout_mode = 2
+mouse_behavior_recursive = 2
+theme = ExtResource("1_nmcbt")
+text = "Resume"
+
+[node name="Restart_Button" type="Button" parent="Screen/Center/VBox" unique_id=1502610432]
+z_index = 3
+layout_mode = 2
+theme = ExtResource("2_cicty")
+action_mode = 0
+text = "Restart"
+
+[node name="MainMenu_Button" type="Button" parent="Screen/Center/VBox" unique_id=305754304]
+z_index = 3
+layout_mode = 2
+theme = ExtResource("2_cicty")
+text = "Main Menu"
+
+[node name="Instructions" type="Label" parent="Screen/Center/VBox" unique_id=134775542]
+z_index = 3
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Space to dash 
+Shift to parry"
+
+[connection signal="pressed" from="Screen/Center/VBox/Resume_Button" to="." method="_on_resume_pressed"]
+[connection signal="pressed" from="Screen/Center/VBox/Restart_Button" to="." method="_on_restart_pressed"]
+[connection signal="pressed" from="Screen/Center/VBox/MainMenu_Button" to="." method="_on_main_menu_pressed"]
