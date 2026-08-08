@@ -22,6 +22,7 @@ radius = 52.34501
 script = ExtResource("1_nk1il")
 
 [node name="Background" type="Sprite2D" parent="." unique_id=1863172997]
+z_index = -10
 position = Vector2(596.00006, 320)
 scale = Vector2(0.6484999, 0.64849997)
 texture = ExtResource("2_dh60h")

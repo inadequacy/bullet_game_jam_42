@@ -43,7 +43,8 @@ static func cast(parent: Node, where: Vector2, pool_radius: float,
 
 func _ready() -> void:
 	# Under the fighters - this is ground, and it must not hide the enemies
-	# standing frozen on it.
+	# standing frozen on it. Requires level.tscn's Background to stay at
+	# z_index -10; at 0 the floor draws over the pool and it vanishes.
 	z_index = -4
 	_left = duration
 	_freeze_everything_inside()

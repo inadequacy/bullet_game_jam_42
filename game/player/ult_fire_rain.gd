@@ -27,10 +27,16 @@ const FLAME_SCALE := Vector2(0.30, 0.62)
 ## Flames are stretched along their fall, which reads as speed rather than as a
 ## sprite dropping down the screen.
 const FLAME_STRETCH := 1.35
-## How hard the arena is tinted at the peak of the pulse. Applied ADDITIVELY -
-## see _ready - so the screen is lit red rather than covered in dark red, which
-## is what alpha blending over a dark arena gave.
-const WASH_ALPHA := 0.42
+## The colour the arena floor is multiplied by at the peak of the pulse, and how
+## far toward it the pulse actually goes.
+##
+## MULTIPLIED, not added or alpha blended - see _ready. Both of those depend on
+## how bright the floor already is: additive red washed the pale stone
+## background out to pink, and alpha blending muddied a dark one to maroon.
+## Multiplying turns whatever is underneath red and keeps working if the
+## background art changes again.
+const WASH_TINT := Color(1.0, 0.24, 0.16)
+const WASH_STRENGTH := 0.88
 const SHAKE_STRENGTH := 2.6
 
 var damage: float = 8.0
@@ -58,12 +64,19 @@ static func cast(parent: Node, damage_per_tick: float,
 func _ready() -> void:
 	# Behind the enemies and the player, so the wash never hides what is
 	# happening in the fight it is going off around.
+	#
+	# THIS ONLY WORKS IF THE LEVEL BACKGROUND IS BELOW IT. level.tscn's
+	# Background sprite is pinned to z_index -10 for exactly that reason - it
+	# was at 0, which drew the whole ultimate underneath the floor and made
+	# casting look like nothing had happened at all.
 	z_index = -5
-	# Additive, so the wash LIGHTS the arena red. Alpha blending a red rect over
-	# a dark background just muddied everything to maroon. Only affects this
-	# node's own _draw - the flame children carry their own colours.
+	# Multiply, so the floor is TINTED red rather than having red added on top of
+	# it. Only affects this node's own _draw; the flame children carry their own
+	# material and stay bright. And because the wash sits at z_index -5 while the
+	# fighters are at 0, it recolours the ground and leaves the player and
+	# enemies fully readable on top of it.
 	var mat := CanvasItemMaterial.new()
-	mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	mat.blend_mode = CanvasItemMaterial.BLEND_MODE_MUL
 	material = mat
 	_left = duration
 	_area = _arena_bounds()
@@ -173,5 +186,7 @@ func _draw() -> void:
 	if _wash <= 0.0:
 		return
 	# Generous margin so the wash still covers the screen while it is shaking.
+	# White multiplies to no change, so the pulse rides between untouched and
+	# WASH_TINT rather than fading a red rect in and out.
 	var r := _area.grow(200.0)
-	draw_rect(r, Color(0.85, 0.12, 0.05, WASH_ALPHA * _wash))
+	draw_rect(r, Color.WHITE.lerp(WASH_TINT, WASH_STRENGTH * _wash))
