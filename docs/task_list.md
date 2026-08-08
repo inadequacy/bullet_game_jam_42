@@ -41,18 +41,21 @@
 - Health bar **complete** ✔️
 
 ## Sounds (Kevin)
-
-- player shoot
-- enemy shoot
-- player hit
-- enemy hit
-- parry
-- level-up
-- boss spawn
-- player death
-- enemy(ies) death
-- heart drop
+### Player
+- shot
+-  hit (low pitch)
+- death (optional)
+- level-up (3 notes)
+- parry (high pitched)
 - heart pickup
+- 
+### Enemy
+- shoot
+
+### Boss
+- Spawn (drone sound)
+
+### Others
 - background music
 
 ## Visuals
