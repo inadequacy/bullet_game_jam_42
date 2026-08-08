@@ -134,7 +134,66 @@ is the only answer, which is exactly the intent — reached by a different route
 
 ### XP and Cards
 
-XP comes from kills. On level-up the game pauses and offers **3 random cards**.
+XP comes from kills. On level-up the game pauses and offers **3 cards — one from
+each pool**, always in the same left-to-right order. The slots are fixed so the
+player learns where to look instead of re-reading three random cards under
+pressure.
+
+| Slot | Pool | Contents |
+| --- | --- | --- |
+| 1 | **Basic** | Utility. Currently only *Renewal* (restore to full health) |
+| 2 | **Mobility** | Dash, parry, move speed — the action kit |
+| 3 | **Attack** | Basic attack upgrades and elemental variants |
+
+### Element lock
+
+The player starts with plain **magic missiles** — no school committed. The Attack
+slot offers three one-time commitment cards:
+
+| Card | Commits to | Effect |
+| --- | --- | --- |
+| **Arcane** | Arcane | Keep your missiles, refined |
+| **Fire** | Fire | Missiles explode on impact |
+| **Ice** | Ice | Missiles slow what they hit |
+
+**Taking one locks the run.** From that point the Attack slot only ever offers
+element-neutral upgrades (damage, cast rate, spread) plus that element's own
+cards — and the **ultimate is that element's ultimate**. The other two schools
+become permanently unreachable.
+
+Arcane is the "stay as you are" option, which matters: it means committing is
+never forced, and a player who likes plain missiles gets rewarded for doubling
+down rather than punished for not switching.
+
+Element-specific cards **do not appear before a commitment**, so the choice is
+never pre-empted by a card the player can't use yet.
+
+### Element tiers
+
+Each school has two numbered chains, offered strictly in order — tier II only
+appears once tier I is taken:
+
+```
+Fire  →  Fire I  →  Fire II  →  Fire III          (spell line)
+      →  Ultimate I  →  Ultimate II  →  Ultimate III   (ultimate line)
+```
+
+`Ultimate I` is the unlock; II and III upgrade it. That means the ultimate is
+still a discovery — it can't be upgraded before it's found — and the E key stays
+dead until the player draws it.
+
+Six element cards plus three element-neutral ones gives the Attack slot enough
+depth to stay interesting for a 12-minute run. Once a line is exhausted the slot
+falls back to the neutral upgrades, which is the intended tail rather than a gap.
+
+*Names are placeholders.* Display names repeat across schools — every element has
+an `Ultimate I` — so cards are tracked internally by `id`, not by name.
+
+Because the Basic pool holds a single card, slot 1 is currently a **guaranteed
+heal** rather than a choice. That is fine early — it means a level-up always
+offers a way out of trouble — but the pool needs more entries before the slot
+feels like a decision.
+
 Cards upgrade **spells and abilities** — they are not generic stat sticks.
 
 | Card group | Examples |
