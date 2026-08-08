@@ -62,14 +62,39 @@ var can_attack: bool = true
 @export_group("")
 
 
-@onready var health_bar: HealthBar = get_tree().current_scene.get_node("HUD/HealthBar")
+## The HUD health bar, found via the "health_bar" group.
+##
+## This used to be get_tree().current_scene.get_node("HUD/HealthBar"), which
+## hard-coded the level's node layout AND required the level to be the current
+## scene. It broke the moment the level was instanced inside anything else -
+## a test harness, a wrapper scene, a future level select. The group lookup does
+## not care where the bar lives or how the level is loaded.
+var health_bar: HealthBar
+
+
+## Resolves the bar lazily and caches it, so a bar that appears later (or one
+## assigned directly, e.g. in a test) is picked up either way.
+func find_health_bar() -> HealthBar:
+	if health_bar != null and is_instance_valid(health_bar):
+		return health_bar
+
+	health_bar = get_tree().get_first_node_in_group("health_bar") as HealthBar
+	if health_bar != null and not health_bar.health_depleted.is_connected(_on_health_depleted):
+		health_bar.health_depleted.connect(_on_health_depleted)
+	return health_bar
+
 
 func take_damage(amount: float) -> void:
 	if invincible:
 		if debug_logs:
 			print("[DEBUG] blocked %s damage (invincible)" % amount)
 		return
-	health_bar.take_damage(amount)
+
+	var bar := find_health_bar()
+	if bar == null:
+		push_warning("No node in the 'health_bar' group - damage ignored.")
+		return
+	bar.take_damage(amount)
 
 
 func toggle_invincible() -> void:
@@ -102,7 +127,9 @@ func _ready() -> void:
 	# Keep the shape in sync so the parry radius is visible with debug collision
 	# shapes on, even though the shape itself stays disabled.
 	parry_collider.shape.set_radius(parry_radius)
-	health_bar.health_depleted.connect(_on_health_depleted)
+	# Also hooks up health_depleted. Missing bar is not fatal - the player still
+	# works, it just cannot show or lose health.
+	find_health_bar()
 
 func _on_health_depleted() -> void:
 	get_tree().change_scene_to_file("res://game/ui/end_menu.tscn")

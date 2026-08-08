@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://ducfpctbp4kf0" path="res://game/ui/health_bar.gd" id="1_pk34a"]
 
-[node name="HealthBar" type="Control" unique_id=2142482034]
+[node name="HealthBar" type="Control" groups=["health_bar"] unique_id=2142482034]
 layout_mode = 3
 anchors_preset = 0
 script = ExtResource("1_pk34a")
