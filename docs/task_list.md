@@ -50,7 +50,8 @@
 - heart pickup ✔️
 
 ### Enemy
-- shoot
+- parry shot
+- parry shot recharge
 
 ### Boss
 - Spawn (drone sound) ✔️
