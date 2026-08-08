@@ -2,7 +2,7 @@
 
 ## Player
 - Dash distance too long
-- 
+- Not a great feel to get hit by things that don't visually hit, we might wanna make the hitbox smaller too.
 
 ## Green Enemy
 - Attack can be parried before you see it, should be as you begin to see it (slightly later)
