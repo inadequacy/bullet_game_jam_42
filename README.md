@@ -74,7 +74,7 @@ halves of one thing.
 | I'm adding… | It goes in |
 | --- | --- |
 | A new enemy type | `game/enemies/` (scene + script together) |
-| A new power-up card | `game/cards/` |
+| A new power-up card | `game/cards/card_database.gd` — data only, nothing else to touch |
 | A boss | `game/enemies/` — bosses subclass `Enemy` like everything else |
 | A HUD element | `game/ui/` |
 | A sound effect | `assets/audio/` — create it |
