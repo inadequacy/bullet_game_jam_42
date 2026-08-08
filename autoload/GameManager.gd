@@ -29,13 +29,18 @@ func reset_game_data():
 func add_score(points: int = 1):
 	experience += points
 	score += points
-	if experience >= exp_threshold:
-		get_node("/root/Level/CardScreen").open()
-		exp_threshold = exp_threshold + (exp_threshold * 1.15)
-		level_up.emit()
 	score_changed.emit(score)
-	exp_changed.emit(experience, exp_threshold)
 
+	if experience >= exp_threshold:
+		exp_changed.emit(exp_threshold, exp_threshold)
+
+		experience -= exp_threshold
+		exp_threshold = exp_threshold + int(exp_threshold * 1.15)
+		level_up.emit()
+		return   # bar stays "full" until card_screen.gd resets it on pick
+
+	exp_changed.emit(experience, exp_threshold)
+	
 func exp_ratio() -> float:
 	if exp_threshold <= 0:
 		return 0.0
