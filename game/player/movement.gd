@@ -1,5 +1,6 @@
 extends CharacterBody2D
 
+
 @export var movespeed: int = 400
 var movement_allowed = true
 
@@ -51,6 +52,13 @@ var projectile = preload("res://game/player/player_projectile.tscn")
 var can_attack: bool = true
 @export_group("")
 
+
+@onready var health_bar: HealthBar = get_tree().current_scene.get_node("HUD/HealthBar")
+
+func take_damage(amount: float) -> void:
+	health_bar.take_damage(amount)
+
+
 ## Press Space to dash
 func dash_direction(direction: Vector2) -> void:
 	movement_allowed = false
@@ -72,7 +80,10 @@ func _ready() -> void:
 	# Keep the shape in sync so the parry radius is visible with debug collision
 	# shapes on, even though the shape itself stays disabled.
 	parry_collider.shape.set_radius(parry_radius)
+	health_bar.health_depleted.connect(_on_health_depleted)
 
+func _on_health_depleted() -> void:
+	get_tree().change_scene_to_file("res://game/ui/end_menu.tscn")
 
 ## Set Parry radius
 ## Maybe update this to be general universal updater later.

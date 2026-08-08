@@ -4,7 +4,7 @@ class_name HealthBar
 signal health_depleted
 signal health_changed(current: int, max: int)
 
-@export var max_health: int = 100
+@export var max_health: int = 10
 var current_health: int
 
 @onready var progress_bar: ProgressBar = $ProgressBar
