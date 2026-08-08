@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://bxufhl5cvsmpq"]
 
 [ext_resource type="Script" uid="uid://bxkb5aexglxbc" path="res://game/levels/level.gd" id="1_nk1il"]
-[ext_resource type="Texture2D" uid="uid://c8qubgrybl6dp" path="res://assets/images/background.png" id="2_dh60h"]
+[ext_resource type="Texture2D" path="res://assets/images/background/ruin_bg.png" id="2_dh60h"]
 [ext_resource type="PackedScene" uid="uid://dfv1w0exg4fps" path="res://game/player/character.tscn" id="2_qmtf6"]
 [ext_resource type="PackedScene" uid="uid://dpu2waoxwk22w" path="res://game/ui/score.tscn" id="5_iincs"]
 [ext_resource type="PackedScene" uid="uid://bu5b1wbkhqegi" path="res://game/ui/health_bar.tscn" id="9_b3dog"]
@@ -23,8 +23,8 @@ script = ExtResource("1_nk1il")
 
 [node name="Background" type="Sprite2D" parent="." unique_id=1863172997]
 z_index = -10
-position = Vector2(596.00006, 320)
-scale = Vector2(0.6484999, 0.64849997)
+position = Vector2(576, 324)
+scale = Vector2(0.52, 0.52)
 texture = ExtResource("2_dh60h")
 
 [node name="Character" parent="." unique_id=876229241 instance=ExtResource("2_qmtf6")]

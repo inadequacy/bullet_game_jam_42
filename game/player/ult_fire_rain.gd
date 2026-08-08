@@ -37,6 +37,15 @@ const FLAME_STRETCH := 1.35
 ## background art changes again.
 const WASH_TINT := Color(1.0, 0.24, 0.16)
 const WASH_STRENGTH := 0.88
+
+## Multiplying alone is not enough on DARK art - it can only take light away, so
+## a dim ruin just went brown. A second additive layer puts red light back in.
+## The two together read as red on a pale stone floor and on a dark one, which
+## one blend mode on its own could not do.
+const GLOW_COLOR := Color(0.95, 0.11, 0.04)
+const GLOW_ALPHA := 0.30
+
+var _glow: ColorRect
 const SHAKE_STRENGTH := 2.6
 
 var damage: float = 8.0
@@ -80,17 +89,41 @@ func _ready() -> void:
 	material = mat
 	_left = duration
 	_area = _arena_bounds()
+	_build_glow()
 	# One damage tick lands immediately - a screen-wide ultimate that did
 	# nothing for its first third of a second would feel like it had misfired.
 	_burn_everything()
 	_damage_tick = DAMAGE_INTERVAL
 
 
+## The additive half of the wash. A ColorRect rather than more _draw calls
+## because this node's own material is already spoken for by the multiply -
+## a CanvasItem gets one blend mode, so the second one needs its own node.
+##
+## Added BEFORE any flame, so the flames draw on top of it.
+func _build_glow() -> void:
+	_glow = ColorRect.new()
+	var mat := CanvasItemMaterial.new()
+	mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	_glow.material = mat
+	_glow.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var r := _area.grow(200.0)
+	_glow.position = r.position
+	_glow.size = r.size
+	_glow.color = Color(GLOW_COLOR.r, GLOW_COLOR.g, GLOW_COLOR.b, 0.0)
+	add_child(_glow)
+
+
 func _process(delta: float) -> void:
 	_left -= delta
 
-	# Pulses rather than holding steady, so the screen feels like it is roaring.
-	_wash = 0.5 + 0.5 * sin(Time.get_ticks_msec() * 0.012)
+	# Pulses rather than holding steady, so the screen feels like it is roaring -
+	# but only between "red" and "very red". The pulse used to swing the whole
+	# way to zero, which left the screen briefly untinted at every trough and
+	# made the ultimate look like it was flickering out.
+	_wash = 0.78 + 0.22 * sin(Time.get_ticks_msec() * 0.012)
+	if _glow != null:
+		_glow.color.a = GLOW_ALPHA * _wash
 	queue_redraw()
 
 	_spawn_flames(delta)
@@ -110,8 +143,17 @@ func _process(delta: float) -> void:
 func _finish() -> void:
 	set_process(false)
 	var tween := create_tween()
-	tween.tween_method(func(v: float): _wash = v; queue_redraw(), _wash, 0.0, 0.4)
+	tween.tween_method(_fade_wash, _wash, 0.0, 0.4)
 	tween.tween_callback(queue_free).set_delay(0.6)
+
+
+## Both halves of the wash have to fade together, or the additive glow would be
+## left hanging on screen after the multiply had gone.
+func _fade_wash(value: float) -> void:
+	_wash = value
+	if _glow != null:
+		_glow.color.a = GLOW_ALPHA * value
+	queue_redraw()
 
 
 func _burn_everything() -> void:
