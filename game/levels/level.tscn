@@ -3,6 +3,11 @@
 [ext_resource type="Script" uid="uid://bxkb5aexglxbc" path="res://game/levels/level.gd" id="1_nk1il"]
 [ext_resource type="Texture2D" uid="uid://c751sti8w420u" path="res://assets/images/Background.webp" id="1_o6mkr"]
 [ext_resource type="PackedScene" uid="uid://dfv1w0exg4fps" path="res://game/player/character.tscn" id="2_qmtf6"]
+[ext_resource type="PackedScene" uid="uid://b3688kcffs0a5" path="res://game/enemies/caster_blue.tscn" id="3_caster"]
+[ext_resource type="PackedScene" uid="uid://csfxnytjea4g" path="res://game/enemies/chaser.tscn" id="4_chaser"]
+[ext_resource type="PackedScene" uid="uid://dpu2waoxwk22w" path="res://game/ui/score.tscn" id="5_iincs"]
+[ext_resource type="PackedScene" uid="uid://ys576ewv3f7h" path="res://game/enemies/caster_green.tscn" id="6_green"]
+[ext_resource type="PackedScene" uid="uid://cpgx3ui4pfsn4" path="res://game/enemies/caster_red.tscn" id="7_red"]
 [ext_resource type="PackedScene" uid="uid://dpu2waoxwk22w" path="res://game/ui/score.tscn" id="5_iincs"]
 [ext_resource type="PackedScene" uid="uid://bu5b1wbkhqegi" path="res://game/ui/health_bar.tscn" id="9_b3dog"]
 [ext_resource type="PackedScene" path="res://game/cards/card_screen.tscn" id="10_cards"]
@@ -10,6 +15,8 @@
 [ext_resource type="PackedScene" path="res://game/ui/parry_bar.tscn" id="13_parry"]
 [ext_resource type="PackedScene" path="res://game/ui/run_timer.tscn" id="14_timer"]
 [ext_resource type="Script" path="res://game/levels/camera_shake.gd" id="12_shake"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_haif4"]
 
 [node name="Level" type="Node2D" unique_id=1836397518]
 script = ExtResource("1_nk1il")
@@ -22,19 +29,6 @@ texture = ExtResource("1_o6mkr")
 
 [node name="Character" parent="." unique_id=876229241 instance=ExtResource("2_qmtf6")]
 position = Vector2(510, 275)
-movespeed = null
-dash_duration = null
-dash_cooldown = null
-dash_speed = null
-parry_duration = null
-parry_cooldown = null
-parry_radius = null
-parry_burst_radius = null
-parry_debug_logs = null
-cast_rate = null
-auto_aim = null
-auto_aim_range = null
-aim_logs = null
 
 [node name="Camera2D" type="Camera2D" parent="."]
 position = Vector2(576, 324)
@@ -50,6 +44,44 @@ script = ExtResource("12_shake")
 offset_transform_enabled = true
 offset_transform_position = Vector2(200, 18)
 
+[node name="LevelBounds" type="Node2D" parent="." unique_id=1625576201]
+
+[node name="LevelBound" type="StaticBody2D" parent="LevelBounds" unique_id=319209070]
+visibility_layer = 31
+position = Vector2(-35, 329)
+scale = Vector2(2.153849, 65.06839)
+collision_layer = 15
+collision_mask = 15
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="LevelBounds/LevelBound" unique_id=325968995]
+shape = SubResource("RectangleShape2D_haif4")
+
+[node name="LevelBound2" type="StaticBody2D" parent="LevelBounds" unique_id=760298545]
+visibility_layer = 31
+position = Vector2(1194, 334)
+scale = Vector2(2.153849, 65.06839)
+collision_layer = 15
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="LevelBounds/LevelBound2" unique_id=444368153]
+shape = SubResource("RectangleShape2D_haif4")
+
+[node name="LevelBound3" type="StaticBody2D" parent="LevelBounds" unique_id=195975662]
+visibility_layer = 31
+position = Vector2(513, -42.000015)
+scale = Vector2(88.70889, 2.2403233)
+collision_layer = 15
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="LevelBounds/LevelBound3" unique_id=1304619831]
+shape = SubResource("RectangleShape2D_haif4")
+
+[node name="LevelBound4" type="StaticBody2D" parent="LevelBounds" unique_id=237353578]
+visibility_layer = 31
+position = Vector2(513, 678.00006)
+scale = Vector2(88.70889, 2.2403233)
+collision_layer = 15
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="LevelBounds/LevelBound4" unique_id=2072502007]
+shape = SubResource("RectangleShape2D_haif4")
 [node name="DashBar" parent="HUD" instance=ExtResource("11_dash")]
 offset_left = 200.0
 offset_top = 48.0
