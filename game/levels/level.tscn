@@ -9,6 +9,7 @@
 [ext_resource type="PackedScene" path="res://game/enemies/caster_green.tscn" id="6_green"]
 [ext_resource type="PackedScene" path="res://game/enemies/caster_red.tscn" id="7_red"]
 [ext_resource type="PackedScene" uid="uid://bu5b1wbkhqegi" path="res://game/ui/health_bar.tscn" id="9_b3dog"]
+[ext_resource type="PackedScene" path="res://game/cards/card_screen.tscn" id="10_cards"]
 
 [node name="Level" type="Node2D" unique_id=1836397518]
 script = ExtResource("1_nk1il")
@@ -57,5 +58,7 @@ position = Vector2(950, 520)
 [node name="HealthBar" parent="HUD" unique_id=2142482034 instance=ExtResource("9_b3dog")]
 offset_transform_enabled = true
 offset_transform_position = Vector2(200, 18)
+
+[node name="CardScreen" parent="." instance=ExtResource("10_cards")]
 
 [connection signal="shoot" from="Character" to="." method="_on_character_shoot"]

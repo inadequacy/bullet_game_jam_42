@@ -53,10 +53,32 @@ var can_attack: bool = true
 @export_group("")
 
 
+# Debug settings
+@export_group("Debug")
+## Press H to toggle. While on, the player takes no damage - for trying out
+## cards without dying. Remove or force off before shipping.
+@export var invincible: bool = false
+@export var debug_logs: bool = true
+@export_group("")
+
+
 @onready var health_bar: HealthBar = get_tree().current_scene.get_node("HUD/HealthBar")
 
 func take_damage(amount: float) -> void:
+	if invincible:
+		if debug_logs:
+			print("[DEBUG] blocked %s damage (invincible)" % amount)
+		return
 	health_bar.take_damage(amount)
+
+
+func toggle_invincible() -> void:
+	invincible = not invincible
+	if debug_logs:
+		if invincible:
+			print("[DEBUG] INVINCIBLE ON - taking no damage")
+		else:
+			print("[DEBUG] invincible off - taking damage normally")
 
 
 ## Press Space to dash
@@ -199,9 +221,12 @@ func toggle_auto_aim() -> void:
 ## Toggle targeting
 
 func get_input() -> void:
-	# Outside the movement gate so the toggle still registers during a dash.
+	# Outside the movement gate so these still register during a dash.
 	if Input.is_action_just_pressed("toggle_aim"):
 		toggle_auto_aim()
+
+	if Input.is_action_just_pressed("debug_invincible"):
+		toggle_invincible()
 
 	if movement_allowed == true:
 		look_at(get_global_mouse_position())

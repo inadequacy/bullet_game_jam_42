@@ -23,7 +23,7 @@
 - More bullets
 - Improved cooldowns
 
-## Pickups
+## Pickups (Ale)
 
 - Ability drops
 - Health restore drops

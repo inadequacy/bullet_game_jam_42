@@ -47,6 +47,9 @@ func _on_enemy_died(enemy: Enemy) -> void:
 func _spawn_random_enemy() -> void:
 	var scene: PackedScene = ENEMY_SCENES.pick_random()
 	var enemy: Enemy = scene.instantiate()
+	# Name it after its scene so the logs stay readable - Godot would otherwise
+	# fall back to names like "@CharacterBody2D@22".
+	enemy.name = scene.resource_path.get_file().get_basename()
 	enemy.position = _pick_spawn_point()
 	add_child(enemy)
 	_watch(enemy)
