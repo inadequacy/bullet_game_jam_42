@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://game/cards/card_screen.gd" id="1_script"]
+[ext_resource type="PackedScene" path="res://game/cards/card_view.tscn" id="2_card"]
 
 [node name="CardScreen" type="CanvasLayer"]
 process_mode = 3
@@ -36,6 +37,7 @@ mouse_filter = 2
 theme_override_constants/separation = 20
 
 [node name="Title" type="Label" parent="Screen/Center/VBox"]
+theme_override_font_sizes/font_size = 32
 text = "CHOOSE AN UPGRADE"
 horizontal_alignment = 1
 
@@ -47,14 +49,11 @@ horizontal_alignment = 1
 [node name="Cards" type="HBoxContainer" parent="Screen/Center/VBox"]
 theme_override_constants/separation = 24
 
-[node name="Card1" type="Button" parent="Screen/Center/VBox/Cards"]
-custom_minimum_size = Vector2(250, 320)
-text = "Card 1"
+[node name="Card1" parent="Screen/Center/VBox/Cards" instance=ExtResource("2_card")]
+layout_mode = 2
 
-[node name="Card2" type="Button" parent="Screen/Center/VBox/Cards"]
-custom_minimum_size = Vector2(250, 320)
-text = "Card 2"
+[node name="Card2" parent="Screen/Center/VBox/Cards" instance=ExtResource("2_card")]
+layout_mode = 2
 
-[node name="Card3" type="Button" parent="Screen/Center/VBox/Cards"]
-custom_minimum_size = Vector2(250, 320)
-text = "Card 3"
+[node name="Card3" parent="Screen/Center/VBox/Cards" instance=ExtResource("2_card")]
+layout_mode = 2

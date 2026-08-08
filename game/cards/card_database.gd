@@ -12,6 +12,8 @@ extends RefCounted
 ##   desc     - the line under the name. "\n" works.
 ##   id       - unique tracking key. Defaults to `name`, so it is only needed
 ##              where two cards share a display name.
+##   icon     - which ICON_* badge to show. Absent falls back to the element's
+##              icon, so element cards only need it to override (the ultimates).
 ##   element  - which school this belongs to. Absent means element-neutral and
 ##              offerable at any point in the run.
 ##   locks    - taking this commits the run to `element`. Only offered while no
@@ -86,6 +88,48 @@ const ELEMENT_NAMES := {
 	Element.ICE: "Ice",
 }
 
+# ------------------------------------------------------------------- icons ---
+# Each card shows one badge from assets/images/cards/. The badges are all cut
+# from the same template - a rounded square in the category colour with a white
+# glyph on it - so a new one is `template.svg` with a new fill and a new glyph.
+#
+# The kind decides the SHAPE, the element decides the ACCENT COLOUR of the card
+# frame. That is why the three ultimates share one starburst badge and still
+# read as fire / ice / arcane on screen.
+
+const ICON_HEALTH := "health"
+const ICON_MOVE := "move"
+const ICON_DASH := "dash"
+const ICON_PARRY := "parry"
+const ICON_ATTACK := "attack"
+const ICON_ARCANE := "arcane"
+const ICON_FIRE := "fire"
+const ICON_ICE := "ice"
+const ICON_ULTIMATE := "ultimate"
+
+const ICON_DIR := "res://assets/images/cards/"
+
+## Kind -> the colour baked into that badge. The card frame, title and pool tag
+## are tinted with this, so a badge and its card always agree.
+const ICON_COLORS := {
+	ICON_HEALTH: Color("35c46e"),
+	ICON_MOVE: Color("9bd32b"),
+	ICON_DASH: Color("f2c230"),
+	ICON_PARRY: Color("5b8dd9"),
+	ICON_ATTACK: Color("d94fa0"),
+	ICON_ARCANE: Color("9a5ce8"),
+	ICON_FIRE: Color("f0602e"),
+	ICON_ICE: Color("3fd0e0"),
+	ICON_ULTIMATE: Color("ffd24a"),
+}
+
+## Fallback badge for a card that names an element but no icon.
+const ELEMENT_ICONS := {
+	Element.ARCANE: ICON_ARCANE,
+	Element.FIRE: ICON_FIRE,
+	Element.ICE: ICON_ICE,
+}
+
 ## Slot order, left to right. One card is drawn from each.
 const OFFER_ORDER := [Pool.BASIC, Pool.ACTION, Pool.ATTACK]
 
@@ -104,6 +148,7 @@ const CARDS := {
 	# heal rather than a choice.
 	Pool.BASIC: [
 		{"name": "Renewal", "desc": "Restore health to full",
+			"icon": ICON_HEALTH,
 			"effect": {"op": "action", "action": "heal_full"}},
 	],
 
@@ -114,34 +159,45 @@ const CARDS := {
 	Pool.ACTION: [
 		# Mobility
 		{"name": "Swift Boots", "desc": "+15% move speed",
+			"icon": ICON_MOVE,
 			"effect": {"op": "mult", "stat": STAT_MOVE_SPEED, "value": 1.15}},
 
 		# Dash
 		{"name": "Fleet Footed", "desc": "-35% dash cooldown",
+			"icon": ICON_DASH,
 			"effect": {"op": "mult", "stat": STAT_DASH_COOLDOWN, "value": 0.65}},
 		{"name": "Second Wind", "desc": "+1 dash charge",
+			"icon": ICON_DASH,
 			"effect": {"op": "add", "stat": STAT_DASH_CHARGES, "value": 1}},
 		{"name": "Phase Step", "desc": "Dash grants invulnerability frames",
+			"icon": ICON_DASH,
 			"effect": {"op": "flag", "flag": FLAG_DASH_IFRAMES}},
 
 		# Parry
 		{"name": "Steady Hand", "desc": "+50% parry window",
+			"icon": ICON_PARRY,
 			"effect": {"op": "mult", "stat": STAT_PARRY_WINDOW, "value": 1.5}},
 		{"name": "Shockwave", "desc": "+40% parry burst radius",
+			"icon": ICON_PARRY,
 			"effect": {"op": "mult", "stat": STAT_PARRY_BURST_RADIUS, "value": 1.4}},
 		{"name": "Quick Recovery", "desc": "-30% parry cooldown",
+			"icon": ICON_PARRY,
 			"effect": {"op": "mult", "stat": STAT_PARRY_COOLDOWN, "value": 0.7}},
 		# NOT WIRED: parried shots are destroyed, not turned around.
 		{"name": "Reflect", "desc": "Parried shots fly back at the caster",
+			"icon": ICON_PARRY,
 			"effect": {"op": "flag", "flag": FLAG_PARRY_REFLECT}},
 
 		# Basic attack
 		{"name": "Sharpened Missile", "desc": "+25% basic attack damage",
+			"icon": ICON_ATTACK,
 			"effect": {"op": "mult", "stat": STAT_ATTACK_DAMAGE, "value": 1.25}},
 		{"name": "Rapid Casting", "desc": "Cast 30% faster",
+			"icon": ICON_ATTACK,
 			"effect": {"op": "mult", "stat": STAT_CAST_INTERVAL, "value": 0.7}},
 		# NOT WIRED: the basic attack fires a single projectile.
 		{"name": "Split Bolt", "desc": "Basic attack fires an extra projectile",
+			"icon": ICON_ATTACK,
 			"effect": {"op": "add", "stat": STAT_PROJECTILE_COUNT, "value": 1}},
 	],
 
@@ -169,11 +225,14 @@ const CARDS := {
 		{"id": "arcane_3", "name": "Arcane III", "element": Element.ARCANE,
 			"unique": true, "requires": "arcane_2", "desc": "Arcane tier 3 - TBD"},
 		{"id": "arcane_ult_1", "name": "Ultimate I", "element": Element.ARCANE,
+			"icon": ICON_ULTIMATE,
 			"unique": true, "desc": "Unlocks the Arcane ultimate - TBD"},
 		{"id": "arcane_ult_2", "name": "Ultimate II", "element": Element.ARCANE,
+			"icon": ICON_ULTIMATE,
 			"unique": true, "requires": "arcane_ult_1",
 			"desc": "Arcane ultimate tier 2 - TBD"},
 		{"id": "arcane_ult_3", "name": "Ultimate III", "element": Element.ARCANE,
+			"icon": ICON_ULTIMATE,
 			"unique": true, "requires": "arcane_ult_2",
 			"desc": "Arcane ultimate tier 3 - TBD"},
 
@@ -185,11 +244,14 @@ const CARDS := {
 		{"id": "fire_3", "name": "Fire III", "element": Element.FIRE,
 			"unique": true, "requires": "fire_2", "desc": "Fire tier 3 - TBD"},
 		{"id": "fire_ult_1", "name": "Ultimate I", "element": Element.FIRE,
+			"icon": ICON_ULTIMATE,
 			"unique": true, "desc": "Unlocks the Fire ultimate - TBD"},
 		{"id": "fire_ult_2", "name": "Ultimate II", "element": Element.FIRE,
+			"icon": ICON_ULTIMATE,
 			"unique": true, "requires": "fire_ult_1",
 			"desc": "Fire ultimate tier 2 - TBD"},
 		{"id": "fire_ult_3", "name": "Ultimate III", "element": Element.FIRE,
+			"icon": ICON_ULTIMATE,
 			"unique": true, "requires": "fire_ult_2",
 			"desc": "Fire ultimate tier 3 - TBD"},
 
@@ -201,11 +263,14 @@ const CARDS := {
 		{"id": "ice_3", "name": "Ice III", "element": Element.ICE,
 			"unique": true, "requires": "ice_2", "desc": "Ice tier 3 - TBD"},
 		{"id": "ice_ult_1", "name": "Ultimate I", "element": Element.ICE,
+			"icon": ICON_ULTIMATE,
 			"unique": true, "desc": "Unlocks the Ice ultimate - TBD"},
 		{"id": "ice_ult_2", "name": "Ultimate II", "element": Element.ICE,
+			"icon": ICON_ULTIMATE,
 			"unique": true, "requires": "ice_ult_1",
 			"desc": "Ice ultimate tier 2 - TBD"},
 		{"id": "ice_ult_3", "name": "Ultimate III", "element": Element.ICE,
+			"icon": ICON_ULTIMATE,
 			"unique": true, "requires": "ice_ult_2",
 			"desc": "Ice ultimate tier 3 - TBD"},
 	],
@@ -228,3 +293,27 @@ static func pool_name(pool: Pool) -> String:
 
 static func element_name(element: Element) -> String:
 	return ELEMENT_NAMES.get(element, "?")
+
+
+## The badge kind for a card: its own `icon`, else the one its element implies,
+## else the neutral attack badge. Never returns "" - every card gets a picture.
+static func icon_kind(card: Dictionary) -> String:
+	var kind: String = card.get("icon", "")
+	if kind != "":
+		return kind
+	var element: Element = card.get("element", Element.NONE)
+	return ELEMENT_ICONS.get(element, ICON_ATTACK)
+
+
+static func icon_path(card: Dictionary) -> String:
+	return ICON_DIR + icon_kind(card) + ".svg"
+
+
+## The card's accent colour, used for its frame, title and pool tag.
+##
+## An element card takes its element's colour even when its badge is the shared
+## ultimate starburst - that is what keeps "Ultimate I" reading as fire or ice.
+static func card_color(card: Dictionary) -> Color:
+	var element: Element = card.get("element", Element.NONE)
+	var kind: String = ELEMENT_ICONS.get(element, icon_kind(card))
+	return ICON_COLORS.get(kind, Color.WHITE)

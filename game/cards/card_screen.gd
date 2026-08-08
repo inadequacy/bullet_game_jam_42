@@ -3,8 +3,9 @@ extends CanvasLayer
 ## Level-up card screen. Freezes the game and offers three cards - one BASIC,
 ## one ACTION, one ATTACK, always in that order.
 ##
-## This file is presentation and selection rules only. **The cards themselves
-## live in card_database.gd** - add or retune them there, not here.
+## This file is selection rules only: which three cards a hand contains. **The
+## cards themselves live in card_database.gd** - add or retune them there - and
+## how one is drawn lives in card_view.gd.
 ##
 ## PLACEHOLDER: picking a card prints, emits `card_chosen`, and applies nothing.
 ## Real effects hook into that signal.
@@ -32,7 +33,9 @@ var chosen_element: CardDatabase.Element:
 
 @onready var _screen: Control = $Screen
 @onready var _hint: Label = $Screen/Center/VBox/Hint
-@onready var _buttons: Array[Button] = [
+## Three card_view.tscn instances. They draw themselves from a card dictionary -
+## see card_view.gd - so this file never touches a label or a texture.
+@onready var _cards: Array[CardView] = [
 	$Screen/Center/VBox/Cards/Card1,
 	$Screen/Center/VBox/Cards/Card2,
 	$Screen/Center/VBox/Cards/Card3,
@@ -41,8 +44,8 @@ var chosen_element: CardDatabase.Element:
 
 func _ready() -> void:
 	_screen.visible = false
-	for i in _buttons.size():
-		_buttons[i].pressed.connect(_on_card_pressed.bind(i))
+	for i in _cards.size():
+		_cards[i].pressed.connect(_on_card_pressed.bind(i))
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -61,14 +64,11 @@ func open() -> void:
 		return
 	_offer = _draw_offer()
 
-	for i in _buttons.size():
-		var button := _buttons[i]
-		if i < _offer.size():
-			var card: Dictionary = _offer[i]
-			button.visible = true
-			button.text = "[ %s ]\n\n%s\n\n%s" % [card["group"], card["name"], card["desc"]]
-		else:
-			button.visible = false
+	for i in _cards.size():
+		var view := _cards[i]
+		view.visible = i < _offer.size()
+		if view.visible:
+			view.show_card(_offer[i])
 
 	if chosen_element == CardDatabase.Element.NONE:
 		_hint.text = "Magic Missiles - taking an element locks it for the whole run"
@@ -78,7 +78,7 @@ func open() -> void:
 	_screen.visible = true
 	is_open = true
 	get_tree().paused = true
-	_buttons[0].grab_focus()
+	_cards[0].grab_focus()
 
 	if logs:
 		var names := []
