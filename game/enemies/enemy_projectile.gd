@@ -53,6 +53,11 @@ const COLORS := {
 ## Extra room outside the visible arena before a shot is culled. A lock that has
 ## been broken flies straight forever, so this is what actually retires it.
 @export var despawn_margin: float = 160.0
+## Shove delivered to the player on contact, along the shot's travel direction.
+##
+## RED only. Blue arrives in volleys, and stacking shoves from several shots in
+## the same second would take control away from the player entirely.
+@export var knockback_strength: float = 320.0
 ## RED is drawn and collides at this multiple of the base size.
 ##
 ## Applied here rather than in the scene because enemy_projectile.tscn is shared
@@ -175,6 +180,9 @@ func _on_body_entered(body: Node2D) -> void:
 	if not body.is_in_group("player"):
 		return
 
+	if kind == Kind.RED and body.has_method("apply_knockback"):
+		body.apply_knockback(direction, knockback_strength)
+
 	# Only spend the shot if the hit actually landed. A blocked hit - i-frames,
 	# or the debug toggle - lets the shot fly on through, so invulnerability
 	# never doubles as a screen clear.
@@ -184,5 +192,9 @@ func _on_body_entered(body: Node2D) -> void:
 		# Older callers returned nothing; treat that as a hit.
 		landed = result != false
 
-	if landed:
+	# RED is the exception: it always spends itself on contact. There is only
+	# ever one in the air, so it cannot be farmed into a screen clear the way a
+	# blue volley could, and a homing shot that phased through the player would
+	# just loop around and come back - reading as a bug rather than as a dodge.
+	if landed or kind == Kind.RED:
 		queue_free()
