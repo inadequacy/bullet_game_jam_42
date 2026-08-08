@@ -16,9 +16,6 @@
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_haif4"]
 
-[sub_resource type="CircleShape2D" id="CircleShape2D_haif4"]
-radius = 52.34501
-
 [node name="Level" type="Node2D" unique_id=1836397518]
 script = ExtResource("1_nk1il")
 
@@ -30,6 +27,8 @@ texture = ExtResource("2_dh60h")
 
 [node name="Character" parent="." unique_id=876229241 instance=ExtResource("2_qmtf6")]
 position = Vector2(510, 275)
+dash_duration = 0.1
+dash_speed = 600
 
 [node name="Camera2D" type="Camera2D" parent="." unique_id=590736892]
 position = Vector2(576, 324)
@@ -117,15 +116,8 @@ collision_layer = 15
 [node name="CollisionShape2D" type="CollisionShape2D" parent="LevelBounds/LevelBound4" unique_id=2072502007]
 shape = SubResource("RectangleShape2D_haif4")
 
-[node name="StaticBody2D" type="StaticBody2D" parent="LevelBounds" unique_id=826851995]
-position = Vector2(777, 232)
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="LevelBounds/StaticBody2D" unique_id=206239726]
-shape = SubResource("CircleShape2D_haif4")
-
 [node name="CardScreen" parent="." unique_id=132707580 instance=ExtResource("10_cards")]
 
 [node name="PauseScreen" parent="." unique_id=485895090 instance=ExtResource("13_6segh")]
-
 
 [connection signal="shoot" from="Character" to="." method="_on_character_shoot"]

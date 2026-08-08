@@ -12,12 +12,12 @@ var experience: int = 0
 ## XP for the first card. Halved from 400 with the run cut to six minutes - the
 ## first level-up was arriving so late that the opening was played with no cards
 ## at all.
-const FIRST_LEVEL_XP := 200
+const FIRST_LEVEL_XP := 350
 ## What the requirement is multiplied by after each level. The old curve added
 ## 115% of the threshold on top of itself, so it MORE THAN DOUBLED every time and
 ## the fifth card was effectively unreachable. 1.6 still slows down, but a run
 ## that goes well keeps paying out.
-const LEVEL_XP_GROWTH := 1.6
+const LEVEL_XP_GROWTH := 1.15
 
 var exp_threshold: int = FIRST_LEVEL_XP
 
