@@ -10,6 +10,13 @@ extends CharacterBody2D
 signal died(enemy: Enemy)
 signal damaged(enemy: Enemy, amount: float)
 
+@export_group("Art")
+## Normal artwork. Also what the sprite reverts to after an attack.
+@export var idle_texture: Texture2D
+## Shown while winding up an attack. Optional - leave empty and the sprite never
+## changes, which is what a boss with a single pose wants.
+@export var attack_texture: Texture2D
+
 @export_group("Stats")
 @export var max_health: float = 30.0
 @export var move_speed: float = 120.0
@@ -50,6 +57,18 @@ var _burn_tick_left: float = 0.0
 const CHILL_TINT := Color(0.62, 0.82, 1.25)
 const FREEZE_TINT := Color(0.45, 0.75, 1.5)
 
+## Seconds of attack artwork still to show. Counted down rather than reverted on
+## a timer or a tween, so overlapping wind-ups cannot leave the sprite stuck in
+## the attack pose.
+var _attack_art_left: float = 0.0
+## Scale that makes the attack artwork read at the same size as the idle art.
+##
+## The two textures are not drawn to a common frame: Attacking_cat.png is
+## 784x783 against Idle_cat.png's 274x407, so swapping them at a fixed scale
+## made the chaser nearly DOUBLE in size the instant it wound up, which read as
+## a bug rather than as an attack.
+var _attack_scale: Vector2 = Vector2.ONE
+
 ## True while walking in from off screen. See enter_from().
 var _entering: bool = false
 var _entry_target: Vector2 = Vector2.ZERO
@@ -70,6 +89,11 @@ func _ready() -> void:
 		_base_modulate = _sprite.modulate
 		if _sprite is Node2D:
 			_base_scale = (_sprite as Node2D).scale
+		_attack_scale = _base_scale
+		if idle_texture != null and attack_texture != null \
+				and attack_texture.get_height() > 0:
+			_attack_scale = _base_scale * (float(idle_texture.get_height())
+				/ float(attack_texture.get_height()))
 	_acquire_player()
 	_on_enemy_ready()
 	died.connect(func(enemy): GameManager.add_score(enemy.xp_value))
@@ -81,6 +105,7 @@ func _physics_process(delta: float) -> void:
 		_acquire_player()
 
 	_tick_status(delta)
+	_tick_attack_art(delta)
 	# Burn can finish the job. Nothing below should run on a corpse.
 	if health <= 0.0:
 		return
@@ -291,22 +316,63 @@ func die() -> void:
 	queue_free()
 
 
-## Turns the sprite toward the player. Only the sprite rotates - rotating the
-## body would rotate its collider with it.
+## Turns the sprite toward the player. Only the sprite is touched - moving the
+## body would move its collider with it.
+##
+## FLIPS rather than rotates. These are drawn characters now, and spinning one
+## to point at the player leaves it lying on its side or fully upside down for
+## half the arena. Rotation is kept only for anything that is not a Sprite2D,
+## where it was the old placeholder behaviour.
 func face_player() -> void:
-	if has_player() and _sprite is Node2D:
+	if not has_player() or _sprite == null:
+		return
+	if _sprite is Sprite2D:
+		(_sprite as Sprite2D).flip_h = player.global_position.x < global_position.x
+	elif _sprite is Node2D:
 		(_sprite as Node2D).rotation = direction_to_player().angle()
+
+
+## Shows the attack artwork for `duration`, then reverts. Does nothing when the
+## enemy has no attack texture, so this is always safe to call.
+func show_attacking(duration: float) -> void:
+	if attack_texture == null or not _sprite is Sprite2D:
+		return
+	(_sprite as Sprite2D).texture = attack_texture
+	(_sprite as Sprite2D).scale = _attack_scale
+	_attack_art_left = maxf(_attack_art_left, duration)
+
+
+func _tick_attack_art(delta: float) -> void:
+	if _attack_art_left <= 0.0:
+		return
+	_attack_art_left -= delta
+	if _attack_art_left <= 0.0 and idle_texture != null and _sprite is Sprite2D:
+		(_sprite as Sprite2D).texture = idle_texture
+		(_sprite as Sprite2D).scale = _base_scale
+
+
+## The sprite's resting scale right now, which depends on which artwork is up.
+## telegraph() has to tween toward this rather than _base_scale, or a wind-up
+## would animate the attack pose back to the idle pose's size.
+func _art_base_scale() -> Vector2:
+	return _attack_scale if _attack_art_left > 0.0 else _base_scale
 
 
 ## Swells the sprite to telegraph an incoming attack, then settles it back to
 ## its authored scale. Every attack in the game gets one of these - it's the
 ## player's cue that something is about to land.
 func telegraph(swell: float, grow_time: float, settle_time: float) -> void:
+	# Every wind-up in the game runs through here, so it is the one place the
+	# attack artwork needs swapping in.
+	show_attacking(grow_time + settle_time)
 	if _sprite == null or not _sprite is Node2D:
 		return
+	# _art_base_scale(), not _base_scale: show_attacking() ran a line ago, so the
+	# resting size may now be the attack artwork's.
+	var resting := _art_base_scale()
 	var tween := create_tween()
-	tween.tween_property(_sprite, "scale", _base_scale * swell, grow_time)
-	tween.tween_property(_sprite, "scale", _base_scale, settle_time)
+	tween.tween_property(_sprite, "scale", resting * swell, grow_time)
+	tween.tween_property(_sprite, "scale", resting, settle_time)
 
 
 ## Briefly tints the sprite, if the scene has one named "Sprite2D". Settles back

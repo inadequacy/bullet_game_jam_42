@@ -1,7 +1,11 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://game/enemies/enemy_projectile.gd" id="1_script"]
-[ext_resource type="Texture2D" uid="uid://bnkwrsxs72ivj" path="res://icon.svg" id="2_icon"]
+[ext_resource type="Texture2D" path="res://assets/images/enemy_magic_ball.png" id="2_icon"]
+[ext_resource type="Shader" path="res://assets/shaders/colorize.gdshader" id="3_colorize"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_colorize"]
+shader = ExtResource("3_colorize")
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_proj"]
 radius = 6.0
@@ -12,7 +16,8 @@ collision_mask = 1
 script = ExtResource("1_script")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
-scale = Vector2(0.09, 0.09)
+material = SubResource("ShaderMaterial_colorize")
+scale = Vector2(0.16, 0.16)
 texture = ExtResource("2_icon")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]

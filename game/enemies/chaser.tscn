@@ -1,26 +1,23 @@
 [gd_scene format=3 uid="uid://csfxnytjea4g"]
 
 [ext_resource type="Script" uid="uid://bnxnt8334sl0j" path="res://game/enemies/chaser.gd" id="1_script"]
-[ext_resource type="Texture2D" uid="uid://bnkwrsxs72ivj" path="res://icon.svg" id="2_icon"]
-[ext_resource type="Shader" uid="uid://cqqrtmw1ylj0x" path="res://assets/shaders/invert.gdshader" id="3_invert"]
-
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_invert"]
-shader = ExtResource("3_invert")
+[ext_resource type="Texture2D" path="res://assets/images/Idle_cat.png" id="2_idle"]
+[ext_resource type="Texture2D" path="res://assets/images/Attacking_cat.png" id="3_attack"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_chaser"]
 radius = 21.0
 
 [node name="Chaser" type="CharacterBody2D" unique_id=1572109770]
 script = ExtResource("1_script")
+idle_texture = ExtResource("2_idle")
+attack_texture = ExtResource("3_attack")
 max_health = 20.0
 move_speed = 190.0
 xp_value = 50
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=1108715902]
-modulate = Color(1, 0.72, 0.72, 1)
-material = SubResource("ShaderMaterial_invert")
-scale = Vector2(0.34, 0.34)
-texture = ExtResource("2_icon")
+scale = Vector2(0.17, 0.17)
+texture = ExtResource("2_idle")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1316732820]
 shape = SubResource("CircleShape2D_chaser")

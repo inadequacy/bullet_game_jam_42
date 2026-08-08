@@ -138,6 +138,9 @@ func _start_wind_up(duration: float) -> void:
 ## Builds the aura and brightens the caster over the whole charge, so "about to
 ## fire" gets progressively louder instead of popping on at the end.
 func _start_charge_glow(duration: float) -> void:
+	# Hitscan casters never call telegraph(), so the attack artwork has to be
+	# swapped in here too - the charge IS this enemy's wind-up.
+	show_attacking(duration)
 	if _aura != null and is_instance_valid(_aura):
 		_aura.queue_free()
 	_aura = ChargeAura.start(self, aura_start_radius, aura_end_radius,

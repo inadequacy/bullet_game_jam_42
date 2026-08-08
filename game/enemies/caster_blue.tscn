@@ -1,18 +1,22 @@
 [gd_scene format=3 uid="uid://b3688kcffs0a5"]
 
 [ext_resource type="Script" uid="uid://d4ghjewgcvovb" path="res://game/enemies/caster.gd" id="1_script"]
-[ext_resource type="Texture2D" uid="uid://bnkwrsxs72ivj" path="res://icon.svg" id="2_icon"]
-[ext_resource type="Shader" uid="uid://cqqrtmw1ylj0x" path="res://assets/shaders/invert.gdshader" id="3_invert"]
+[ext_resource type="Texture2D" path="res://assets/images/Idle_pug.png" id="2_idle"]
+[ext_resource type="Texture2D" path="res://assets/images/attacking_pug.png" id="3_attack"]
+[ext_resource type="Shader" path="res://assets/shaders/team_tint.gdshader" id="5_tint"]
 [ext_resource type="PackedScene" path="res://game/enemies/enemy_projectile.tscn" id="4_projectile"]
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_invert"]
-shader = ExtResource("3_invert")
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_tint"]
+shader = ExtResource("5_tint")
+shader_parameter/team_color = Color(0.35, 0.62, 1, 1)
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_caster"]
 radius = 23.0
 
 [node name="CasterBlue" type="CharacterBody2D" unique_id=1194517075]
 script = ExtResource("1_script")
+idle_texture = ExtResource("2_idle")
+attack_texture = ExtResource("3_attack")
 projectile_scene = ExtResource("4_projectile")
 projectile_speed = 260.0
 cast_interval = 2.2
@@ -23,10 +27,9 @@ move_speed = 110.0
 xp_value = 100
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=1602338676]
-modulate = Color(0.55, 0.78, 1, 1)
-material = SubResource("ShaderMaterial_invert")
-scale = Vector2(0.4, 0.4)
-texture = ExtResource("2_icon")
+material = SubResource("ShaderMaterial_tint")
+scale = Vector2(0.18, 0.18)
+texture = ExtResource("2_idle")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1735848884]
 shape = SubResource("CircleShape2D_caster")
