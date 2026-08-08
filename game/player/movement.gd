@@ -385,9 +385,14 @@ func parry_radius_update(new_radius: float) -> void:
 
 ## Press Shift to parry
 func parry_this_casual() -> void:
-	SoundManager.play_sfx(parry_sound)
 	if not parry_allowed:
 		return
+
+	# After the guard, not before it. Played first, the parry sound fired on every
+	# press including ones the cooldown refused, so a locked-out parry was
+	# indistinguishable by ear from a real one - exactly the confusion the
+	# ParryBar was added to clear up.
+	SoundManager.play_sfx(parry_sound)
 
 	parry_allowed = false
 	is_parrying = true
