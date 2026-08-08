@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://brl2cj0sbtyu5"]
 
 [ext_resource type="Script" uid="uid://b8r8fidbuqfhg" path="res://game/ui/end_menu.gd" id="1_wrsnd"]
-[ext_resource type="Texture2D" uid="uid://c751sti8w420u" path="res://assets/images/Background.webp" id="2_rrpri"]
+[ext_resource type="Texture2D" uid="uid://b0kjja22qvu8t" path="res://assets/images/Idle_Max.png" id="2_f86wk"]
 [ext_resource type="Theme" uid="uid://c5m3g1ayqp1sv" path="res://game/ui/button.tres" id="3_rrpri"]
 [ext_resource type="Script" uid="uid://cdn2plt6n14jn" path="res://game/ui/highscores.gd" id="4_f86wk"]
 
@@ -24,15 +24,14 @@ grow_vertical = 2
 color = Color(0.47216445, 0.45904392, 0.76470226, 1)
 
 [node name="Background" type="TextureRect" parent="." unique_id=1986772845]
-visible = false
 layout_mode = 0
-offset_left = 1227.0
-offset_top = -97.99997
-offset_right = 1867.0
-offset_bottom = 755.0
-rotation = 1.5707964
+offset_left = 812.0
+offset_top = 244.0
+offset_right = 932.0
+offset_bottom = 397.003
 scale = Vector2(1.55, 1.5500001)
-texture = ExtResource("2_rrpri")
+texture = ExtResource("2_f86wk")
+expand_mode = 1
 
 [node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=1165462939]
 layout_mode = 1

@@ -49,6 +49,18 @@ the exports, not here.
 
 ## Open
 
+### Cole's target numbers, not yet applied
+
+Landed on `main` while the patch above was being written, so the shipped values
+were picked independently and two of them disagree. Worth a playtest to settle,
+not worth flipping blind:
+
+| Item | Suggested | Shipped | Why the difference |
+| --- | --- | --- | --- |
+| Dash | `dash_duration` 0.1, `dash_speed` 600 | untouched (0.2 / 800) | 60 px of travel against 160. `break_lock_radius` on red homing is explicitly sized against the current figure — see `enemy_projectile.gd` — so this is a two-part change |
+| First level XP | 350 | 200 | 350 is only a 12% cut off the old 400; the complaint was that the opening is played with no cards at all. The curve was flattened too (x2.15 → x1.6 per level), which matters more than the start |
+| `cast_rate` | 0.7 | 0.8 | Cards multiply this — Rapid Casting is x0.65 and stacks — so a low base compounds. 0.8 is a step toward 0.7 rather than away from it |
+
 - Dash distance may still be too long. Left alone deliberately: `dash_speed` x
   `dash_duration` is what `break_lock_radius` on red homing is sized against, so
   shortening it means retuning that too.

@@ -44,6 +44,7 @@ var chosen_element: CardDatabase.Element:
 
 func _ready() -> void:
 	_screen.visible = false
+	add_to_group("card_screen")
 	for i in _cards.size():
 		_cards[i].pressed.connect(_on_card_pressed.bind(i))
 	# The three views are re-used rather than rebuilt each hand, so wiring their

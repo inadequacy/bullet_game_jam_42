@@ -6,9 +6,10 @@
 [ext_resource type="PackedScene" uid="uid://dpu2waoxwk22w" path="res://game/ui/score.tscn" id="5_iincs"]
 [ext_resource type="PackedScene" uid="uid://bu5b1wbkhqegi" path="res://game/ui/health_bar.tscn" id="9_b3dog"]
 [ext_resource type="PackedScene" path="res://game/cards/card_screen.tscn" id="10_cards"]
-[ext_resource type="PackedScene" path="res://game/ui/dash_bar.tscn" id="11_dash"]
+[ext_resource type="PackedScene" uid="uid://rgf5u31gcvd4" path="res://game/ui/dash_bar.tscn" id="11_dash"]
 [ext_resource type="PackedScene" uid="uid://beexpipvffo0h" path="res://game/ui/exp_bar.tscn" id="11_yqurt"]
 [ext_resource type="Script" uid="uid://bot2idqjveu7p" path="res://game/levels/camera_shake.gd" id="12_shake"]
+[ext_resource type="PackedScene" uid="uid://48s1bqu0sahc" path="res://game/ui/pause_screen.tscn" id="13_6segh"]
 [ext_resource type="PackedScene" uid="uid://dov8juapygxev" path="res://game/ui/parry_bar.tscn" id="13_parry"]
 [ext_resource type="PackedScene" path="res://game/ui/run_timer.tscn" id="14_timer"]
 [ext_resource type="PackedScene" path="res://game/ui/ultimate_bar.tscn" id="15_ult"]
@@ -42,19 +43,18 @@ script = ExtResource("12_shake")
 
 [node name="HealthBar" parent="HUD" unique_id=2142482034 instance=ExtResource("9_b3dog")]
 offset_transform_enabled = true
-offset_transform_position = Vector2(200, 18)
+offset_transform_position = Vector2(150, 18)
 
 [node name="DashBar" parent="HUD" unique_id=1224035391 instance=ExtResource("11_dash")]
-layout_mode = 3
-offset_left = 200.0
+offset_left = 150.0
 offset_top = 48.0
-offset_right = 320.0
+offset_right = 270.0
 offset_bottom = 80.0
 
 [node name="ParryBar" parent="HUD" unique_id=83104074 instance=ExtResource("13_parry")]
-offset_left = 200.0
+offset_left = 150.0
 offset_top = 84.0
-offset_right = 320.0
+offset_right = 270.0
 offset_bottom = 116.0
 
 [node name="UltimateBar" parent="HUD" unique_id=1223132614 instance=ExtResource("15_ult")]
@@ -124,5 +124,8 @@ position = Vector2(777, 232)
 shape = SubResource("CircleShape2D_haif4")
 
 [node name="CardScreen" parent="." unique_id=132707580 instance=ExtResource("10_cards")]
+
+[node name="PauseScreen" parent="." unique_id=485895090 instance=ExtResource("13_6segh")]
+
 
 [connection signal="shoot" from="Character" to="." method="_on_character_shoot"]

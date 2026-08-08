@@ -40,16 +40,22 @@ func reset_game_data():
 func add_score(points: int = 1):
 	experience += points
 	score += points
+	score_changed.emit(score)
+
 	if experience >= exp_threshold:
+		exp_changed.emit(exp_threshold, exp_threshold)
+
+		experience -= exp_threshold
 		exp_threshold = int(exp_threshold * LEVEL_XP_GROWTH)
 		# The card screen is opened by whoever is listening to this - level.gd,
 		# which also plays the fanfare. It used to ALSO be opened from here by
 		# node path, which only worked while the level happened to be called
 		# "Level" and sat at the root.
 		level_up.emit()
-	score_changed.emit(score)
-	exp_changed.emit(experience, exp_threshold)
+		return   # bar stays "full" until card_screen.gd resets it on pick
 
+	exp_changed.emit(experience, exp_threshold)
+	
 func exp_ratio() -> float:
 	if exp_threshold <= 0:
 		return 0.0
