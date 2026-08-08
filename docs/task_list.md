@@ -42,24 +42,24 @@
 
 ## Sounds (Kevin)
 ### Player
-- shot
--  hit (low pitch)
+- shot ✔️
+- hit (low pitch)
 - death (optional)
-- level-up (3 notes)
-- parry (high pitched)
-- heart pickup
+- level-up (3 notes) ✔️
+- parry (high-pitched) ✔️
+- heart pickup ✔️
 
 ### Enemy
 - shoot
 
 ### Boss
-- Spawn (drone sound)
+- Spawn (drone sound) ✔️
 
 ### Others
 - background music
-- ambience
-- Button hover
-- button click
+- ambience ✔️
+- Button hover ✔️
+- button click ✔️
 
 ## Visuals
 
