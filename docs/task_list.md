@@ -37,8 +37,8 @@
 
 - Timer (indicates time to boss)
 - Start Screen / End Screen **complete** ✔️
-- Score: points
-- Health bar
+- Score: points **complete** ✔️
+- Health bar **complete** ✔️
 
 ## Sounds (Kevin)
 
