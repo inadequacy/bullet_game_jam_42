@@ -17,12 +17,17 @@ config/icon="res://icon.svg"
 
 [autoload]
 
+SilentWolf="*uid://dt2btdd1aju5l"
 GameManager="*res://autoload/GameManager.gd"
 
 [display]
 
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/GodotCloudSaveTutorial_SilentWolf-master/addons/silent_wolf/plugin.cfg", "res://addons/silent_wolf/plugin.cfg")
 
 [input]
 

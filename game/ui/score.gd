@@ -1,5 +1,5 @@
 extends Label
 
 
-func _ready() -> void:
+func _process(delta: float) -> void:
 	$".".text = "Score: " + str(GameManager.score)
