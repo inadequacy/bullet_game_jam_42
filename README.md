@@ -24,9 +24,10 @@ menu.
 | **Mouse** | Facing / aim |
 | **Space** | Dash (follows WASD direction; falls back to facing) |
 | **Shift** | Parry |
+| **T** | Toggle aim mode: nearest enemy (default) ⇄ facing |
 | **Q** | Ability *(bound, not implemented)* |
 | **E** | Ultimate *(bound, not implemented)* |
-| *none* | Basic spell auto-fires along facing |
+| *none* | Basic spell auto-fires — at the nearest enemy by default |
 
 ---
 
