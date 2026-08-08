@@ -1,13 +1,13 @@
 [gd_scene format=3 uid="uid://bxufhl5cvsmpq"]
 
-[ext_resource type="Script" uid="uid://bxkb5aexglxbc" path="res://Scripts/level.gd" id="1_nk1il"]
-[ext_resource type="Texture2D" uid="uid://c751sti8w420u" path="res://Images/Background.webp" id="1_o6mkr"]
-[ext_resource type="PackedScene" uid="uid://dfv1w0exg4fps" path="res://Scenes/character.tscn" id="2_qmtf6"]
-[ext_resource type="PackedScene" path="res://Scenes/caster_blue.tscn" id="3_caster"]
-[ext_resource type="PackedScene" path="res://Scenes/chaser.tscn" id="4_chaser"]
-[ext_resource type="PackedScene" path="res://Scenes/caster_green.tscn" id="6_green"]
-[ext_resource type="PackedScene" path="res://Scenes/caster_red.tscn" id="7_red"]
-[ext_resource type="PackedScene" uid="uid://dpu2waoxwk22w" path="res://Scenes/score.tscn" id="5_iincs"]
+[ext_resource type="Script" uid="uid://bxkb5aexglxbc" path="res://game/levels/level.gd" id="1_nk1il"]
+[ext_resource type="Texture2D" uid="uid://c751sti8w420u" path="res://assets/images/Background.webp" id="1_o6mkr"]
+[ext_resource type="PackedScene" uid="uid://dfv1w0exg4fps" path="res://game/player/character.tscn" id="2_qmtf6"]
+[ext_resource type="PackedScene" path="res://game/enemies/caster_blue.tscn" id="3_caster"]
+[ext_resource type="PackedScene" path="res://game/enemies/chaser.tscn" id="4_chaser"]
+[ext_resource type="PackedScene" path="res://game/enemies/caster_green.tscn" id="6_green"]
+[ext_resource type="PackedScene" path="res://game/enemies/caster_red.tscn" id="7_red"]
+[ext_resource type="PackedScene" uid="uid://dpu2waoxwk22w" path="res://game/ui/score.tscn" id="5_iincs"]
 
 [node name="Level" type="Node2D" unique_id=1836397518]
 script = ExtResource("1_nk1il")

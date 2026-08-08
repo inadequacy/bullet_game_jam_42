@@ -1,8 +1,8 @@
 [gd_scene format=3 uid="uid://brl2cj0sbtyu5"]
 
-[ext_resource type="Script" uid="uid://b8r8fidbuqfhg" path="res://Scripts/end_menu.gd" id="1_wrsnd"]
-[ext_resource type="Texture2D" uid="uid://c751sti8w420u" path="res://Images/Background.webp" id="2_rrpri"]
-[ext_resource type="Theme" uid="uid://c5m3g1ayqp1sv" path="res://Resources/button.tres" id="3_rrpri"]
+[ext_resource type="Script" uid="uid://b8r8fidbuqfhg" path="res://game/ui/end_menu.gd" id="1_wrsnd"]
+[ext_resource type="Texture2D" uid="uid://c751sti8w420u" path="res://assets/images/Background.webp" id="2_rrpri"]
+[ext_resource type="Theme" uid="uid://c5m3g1ayqp1sv" path="res://game/ui/button.tres" id="3_rrpri"]
 
 [node name="Menu" type="Control" unique_id=729403175]
 layout_mode = 3

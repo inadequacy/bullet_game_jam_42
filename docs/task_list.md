@@ -1,6 +1,5 @@
 ## Character (Cole)
 
-- Health
 - Movement **complete** ✔️
 - Dash **complete** ✔️
 - Parry **complete** ✔️
@@ -12,12 +11,13 @@
 
 - Health
 - Enemies
--
+- Bosses
+- Difficulty Scale
+- XP & Game Progression
+- Power up cards
 
 ## Abilities (cards) (Everybody brainstorm)
 
-- var work_through = Brainstorm list 3 - 5
-- [work_through].do()
 - Dash has Invincibility Frames
 - Moves faster
 - More bullets

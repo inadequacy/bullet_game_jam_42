@@ -1,9 +1,9 @@
 [gd_scene load_steps=7 format=3]
 
-[ext_resource type="Script" path="res://Scripts/caster.gd" id="1_script"]
+[ext_resource type="Script" path="res://game/enemies/caster.gd" id="1_script"]
 [ext_resource type="Texture2D" uid="uid://bnkwrsxs72ivj" path="res://icon.svg" id="2_icon"]
-[ext_resource type="Shader" path="res://Scenes/invert.gdshader" id="3_invert"]
-[ext_resource type="PackedScene" path="res://Scenes/enemy_projectile.tscn" id="4_projectile"]
+[ext_resource type="Shader" path="res://assets/shaders/invert.gdshader" id="3_invert"]
+[ext_resource type="PackedScene" path="res://game/enemies/enemy_projectile.tscn" id="4_projectile"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_invert"]
 shader = ExtResource("3_invert")

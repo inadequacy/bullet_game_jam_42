@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://1gk0q2uu887u"]
 
-[ext_resource type="Texture2D" uid="uid://c751sti8w420u" path="res://Images/Background.webp" id="1_mqmy7"]
-[ext_resource type="Script" uid="uid://f0ddo4sw3nl4" path="res://Scripts/start_menu.gd" id="2_jgtwh"]
+[ext_resource type="Texture2D" uid="uid://c751sti8w420u" path="res://assets/images/Background.webp" id="1_mqmy7"]
+[ext_resource type="Script" uid="uid://f0ddo4sw3nl4" path="res://game/ui/start_menu.gd" id="2_jgtwh"]
 
 [node name="Menu" type="Control" unique_id=729403175]
 layout_mode = 3
