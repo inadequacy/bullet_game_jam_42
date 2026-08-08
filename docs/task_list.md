@@ -4,13 +4,13 @@
 - Dash **complete** ✔️
 - Parry **complete** ✔️
 - Shooting (standard) **complete** ✔️
-- Shooting (closest enemy)
+- Shooting (closest enemy) ✔️
 
 ## Enemies (Ale)
 
 - Health ✔️
 - Enemies ✔️
-- Auto aim toggle
+- Auto aim toggle ✔️
 - Bosses
 - Difficulty Scale
 - XP & Game Progression
