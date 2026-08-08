@@ -16,7 +16,7 @@
 - XP & Game Progression
 - Power up cards
 
-## Abilities (cards) (Everybody brainstorm)
+## Abilities (cards) (Ale)
 
 - Dash has Invincibility Frames
 - Moves faster
