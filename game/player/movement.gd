@@ -4,6 +4,13 @@ extends CharacterBody2D
 @export var movespeed: int = 400
 var movement_allowed = true
 
+var random_names = ["Aspen", "Landen", "Yousef", 
+		"Lesli", "Kacie", "Tia", "Chancellor", 
+		"Dianna", "Brycen", "Kylee", "Ashlynn", 
+		"Deontae", "Fredrick", "Gwendolyn", "Jaeden", 
+		"Ibrahim", "Alma", "Serenity", "Maranda", 
+		"Emelia", "Beatriz", "Rylee", "Donnie", "Alanis", "Andrea"]
+
 # Dash settings
 @export_group("Dash Settings")
 @export var dash_duration: float = 0.2
@@ -54,8 +61,10 @@ var can_attack: bool = true
 
 
 @onready var health_bar: HealthBar = get_tree().current_scene.get_node("HUD/HealthBar")
+var my_name: String
 
-func take_damage(amount: float) -> void:
+
+func take_damage(amount: int) -> void:
 	health_bar.take_damage(amount)
 
 
@@ -81,9 +90,17 @@ func _ready() -> void:
 	# shapes on, even though the shape itself stays disabled.
 	parry_collider.shape.set_radius(parry_radius)
 	health_bar.health_depleted.connect(_on_health_depleted)
+	if !GameManager.player_name:
+		my_name = random_names.pick_random()
+		GameManager.player_name = my_name
+	else:
+		my_name = GameManager.player_name
 
 func _on_health_depleted() -> void:
+	SilentWolf.Scores.save_score(my_name, GameManager.score)
+	GameManager.message = "You lost, " + my_name + "!"
 	get_tree().change_scene_to_file("res://game/ui/end_menu.tscn")
+
 
 ## Set Parry radius
 ## Maybe update this to be general universal updater later.
