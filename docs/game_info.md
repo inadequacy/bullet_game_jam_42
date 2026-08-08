@@ -229,6 +229,12 @@ Cards upgrade **spells and abilities** — they are not generic stat sticks.
 | --- | --- |
 | **Basic spell** | +damage, +fire rate, +projectile count, pierce, homing shots |
 | **Dash** | **i-frames** *(keystone — weight it rare)*, +charges, −cooldown, +distance |
+
+**Dash i-frames (Phase Step)** make the player invulnerable for the length of
+the dash only — it is not a standing shield. Blocked shots **pass through**
+rather than being destroyed, so invulnerability never doubles as a screen clear;
+clearing bullets stays the parry's job. The player goes translucent and cold
+during an invulnerable dash so the card is visibly doing something.
 | **Parry** | +window duration, −cooldown, +burst radius, heal on successful parry |
 | **Ultimate (E)** | **Unlock Ultimate** *(rare, appears once)*, then +charge rate |
 

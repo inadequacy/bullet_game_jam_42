@@ -39,6 +39,9 @@ var is_dashing = false
 ## Prints parry results to the terminal. Turn off before shipping.
 @export var parry_debug_logs: bool = true
 @onready var parry_collider = $ParryRadius
+## Optional - only used for the i-frame tint, so a renamed sprite is harmless.
+@onready var _body_sprite: Sprite2D = get_node_or_null("CharacterImage")
+var _body_base_modulate: Color = Color.WHITE
 var parry_allowed = true
 var is_parrying = false
 var _parry_window_opened_ms: int = 0
@@ -117,17 +120,40 @@ func find_health_bar() -> HealthBar:
 	return health_bar
 
 
-func take_damage(amount: float) -> void:
+## True while the Phase Step card is owned. A plain dash has NO i-frames - that
+## is the whole reason red homing is dangerous, so this is a keystone upgrade.
+func has_dash_iframes() -> bool:
+	return RunState.flag(CardDatabase.FLAG_DASH_IFRAMES)
+
+
+## Anything that would hurt the player checks this. Covers the debug toggle and
+## an i-frame dash.
+func is_invulnerable() -> bool:
+	return invincible or (is_dashing and has_dash_iframes())
+
+
+## Returns TRUE only if the damage actually landed.
+##
+## Callers that represent a physical object - a projectile - should consume
+## themselves only when it did. Freeing on a blocked hit would turn i-frames
+## into a screen clear, which is the parry's job, not the dash's.
+func take_damage(amount: float) -> bool:
 	if invincible:
 		if debug_logs:
 			print("[DEBUG] blocked %s damage (invincible)" % amount)
-		return
+		return false
+
+	if is_dashing and has_dash_iframes():
+		if debug_logs:
+			print("[DASH] i-frames absorbed %s damage" % amount)
+		return false
 
 	var bar := find_health_bar()
 	if bar == null:
 		push_warning("No node in the 'health_bar' group - damage ignored.")
-		return
+		return false
 	bar.take_damage(amount)
+	return true
 
 
 func toggle_invincible() -> void:
@@ -188,6 +214,18 @@ func _on_run_stats_changed() -> void:
 	dash_charges = clampi(dash_charges, 0, maximum)
 
 
+## Goes translucent and cold for the length of an invulnerable dash, then
+## settles back to whatever the sprite normally looks like.
+func _show_iframes(duration: float) -> void:
+	if _body_sprite == null:
+		return
+	var tween := create_tween()
+	tween.tween_property(_body_sprite, "modulate",
+		Color(0.6, 0.9, 1.0, 0.5), duration * 0.2)
+	tween.tween_property(_body_sprite, "modulate",
+		_body_base_modulate, duration * 0.8)
+
+
 ## Press Space to dash
 func dash_direction(direction: Vector2) -> void:
 	if not can_dash():
@@ -199,6 +237,11 @@ func dash_direction(direction: Vector2) -> void:
 
 	if direction == Vector2(0.0, 0.0):
 		direction = self.transform.x
+
+	# An i-frame dash has to look different, or the player cannot tell whether
+	# the card is doing anything.
+	if has_dash_iframes():
+		_show_iframes(dash_duration)
 
 	velocity = direction * dash_speed
 	await get_tree().create_timer(dash_duration).timeout
@@ -217,6 +260,9 @@ func _ready() -> void:
 	_known_max_charges = max_dash_charges()
 	dash_charges = _known_max_charges
 	RunState.stats_changed.connect(_on_run_stats_changed)
+
+	if _body_sprite != null:
+		_body_base_modulate = _body_sprite.modulate
 
 func _on_health_depleted() -> void:
 	get_tree().change_scene_to_file("res://game/ui/end_menu.tscn")
