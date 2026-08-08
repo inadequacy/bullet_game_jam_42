@@ -119,7 +119,6 @@ const CARDS := {
 		# Dash
 		{"name": "Fleet Footed", "desc": "-35% dash cooldown",
 			"effect": {"op": "mult", "stat": STAT_DASH_COOLDOWN, "value": 0.65}},
-		# NOT WIRED: no dash-charge system yet, the value just accumulates.
 		{"name": "Second Wind", "desc": "+1 dash charge",
 			"effect": {"op": "add", "stat": STAT_DASH_CHARGES, "value": 1}},
 		# NOT WIRED: dash has no i-frames to switch on yet.

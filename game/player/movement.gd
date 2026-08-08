@@ -9,7 +9,17 @@ var movement_allowed = true
 @export var dash_duration: float = 0.2
 @export var dash_cooldown: float = 2.0
 @export var dash_speed: int = 800
-var dash_allowed = true
+## Charges the player starts with. Cards add to this via STAT_DASH_CHARGES.
+@export var base_dash_charges: int = 1
+
+## Charges available right now. Spending is instant; recovery is one charge at
+## a time, each taking a full cooldown - so burning two in a row means waiting
+## one cooldown for the first back, then another for the second.
+var dash_charges: int = 1
+## Seconds accumulated toward the next charge.
+var _dash_recharge: float = 0.0
+## Last known maximum, so a card that raises it can hand over the new charge.
+var _known_max_charges: int = 1
 ## True only while a dash is in progress. Red homing projectiles read this and
 ## sever their lock, which is what makes dash the counter to homing.
 var is_dashing = false
@@ -129,10 +139,62 @@ func toggle_invincible() -> void:
 			print("[DEBUG] invincible off - taking damage normally")
 
 
+# --- Dash charges ------------------------------------------------------------
+
+## How many charges the player can hold, base plus any cards.
+func max_dash_charges() -> int:
+	return maxi(1, int(round(RunState.modified(
+		CardDatabase.STAT_DASH_CHARGES, base_dash_charges))))
+
+
+func can_dash() -> bool:
+	return dash_charges > 0
+
+
+## Progress toward the next charge, 0..1. Zero when the pool is full.
+func dash_recharge_ratio() -> float:
+	if dash_charges >= max_dash_charges():
+		return 0.0
+	var cooldown := effective_dash_cooldown()
+	if cooldown <= 0.0:
+		return 1.0
+	return clampf(_dash_recharge / cooldown, 0.0, 1.0)
+
+
+## Refills one charge per cooldown, never more than one at a time. The leftover
+## is carried so a long frame cannot swallow part of the next recharge.
+func _tick_dash_recharge(delta: float) -> void:
+	var maximum := max_dash_charges()
+	if dash_charges >= maximum:
+		_dash_recharge = 0.0
+		return
+
+	_dash_recharge += delta
+	var cooldown := effective_dash_cooldown()
+	if _dash_recharge >= cooldown:
+		_dash_recharge -= cooldown
+		dash_charges += 1
+		if dash_charges >= maximum:
+			_dash_recharge = 0.0
+
+
+## A card raising the maximum hands over the extra charge immediately, rather
+## than making the player wait a cooldown for something they just bought.
+func _on_run_stats_changed() -> void:
+	var maximum := max_dash_charges()
+	if maximum > _known_max_charges:
+		dash_charges += maximum - _known_max_charges
+	_known_max_charges = maximum
+	dash_charges = clampi(dash_charges, 0, maximum)
+
+
 ## Press Space to dash
 func dash_direction(direction: Vector2) -> void:
+	if not can_dash():
+		return
+
+	dash_charges -= 1
 	movement_allowed = false
-	dash_allowed = false
 	is_dashing = true
 
 	if direction == Vector2(0.0, 0.0):
@@ -142,8 +204,6 @@ func dash_direction(direction: Vector2) -> void:
 	await get_tree().create_timer(dash_duration).timeout
 	is_dashing = false
 	movement_allowed = true
-	await get_tree().create_timer(effective_dash_cooldown()).timeout
-	dash_allowed = true
 
 
 func _ready() -> void:
@@ -153,6 +213,10 @@ func _ready() -> void:
 	# Also hooks up health_depleted. Missing bar is not fatal - the player still
 	# works, it just cannot show or lose health.
 	find_health_bar()
+
+	_known_max_charges = max_dash_charges()
+	dash_charges = _known_max_charges
+	RunState.stats_changed.connect(_on_run_stats_changed)
 
 func _on_health_depleted() -> void:
 	get_tree().change_scene_to_file("res://game/ui/end_menu.tscn")
@@ -285,7 +349,7 @@ func get_input() -> void:
 		var input_direction = Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
 		velocity = input_direction * effective_move_speed()
 
-		if Input.is_action_just_pressed("dash") && dash_allowed:
+		if Input.is_action_just_pressed("dash") && can_dash():
 			dash_direction(input_direction)
 
 		if Input.is_action_just_pressed("parry") && parry_allowed:
@@ -295,6 +359,7 @@ func get_input() -> void:
 func _physics_process(_delta) -> void:
 	get_input()
 	move_and_slide()
+	_tick_dash_recharge(_delta)
 	if is_parrying:
 		_resolve_parry()
 	if can_attack == true:
