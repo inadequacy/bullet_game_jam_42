@@ -111,6 +111,14 @@ var _knockback: Vector2 = Vector2.ZERO
 ## knockback_decay and a weaker one ends sooner.
 var _knockback_drop: float = 0.0
 @export_group("")
+# Sounds
+var attack_sound = preload("res://assets/sounds/magic_attack1.wav")
+var parry_sound = preload("res://assets/sounds/parry1.wav")
+var dash_sound = preload("res://assets/sounds/dash1.wav")
+var healing_sound = preload("res://assets/sounds/healing1.wav")
+var levelup_sound = preload("res://assets/sounds/level_up1.wav")
+var playerhit_dog_sound = preload("res://assets/sounds/playerhit_dog1.wav")
+var playerhit_low_sound = preload("res://assets/sounds/playerhit_low1.wav")
 
 # Attack settings
 @export_group("Attack Settings")
@@ -205,6 +213,8 @@ func is_invulnerable() -> bool:
 ## themselves only when it did. Freeing on a blocked hit would turn i-frames
 ## into a screen clear, which is the parry's job, not the dash's.
 func take_damage(amount: float) -> bool:
+	SoundManager.play_sfx(playerhit_dog_sound, 0, 0.85, 1.1, 0)
+	SoundManager.play_sfx(playerhit_low_sound, 0, 0.85, 1.1, 0)
 	if invincible:
 		if debug_logs:
 			print("[DEBUG] blocked %s damage (invincible)" % amount)
@@ -338,7 +348,6 @@ func dash_direction(direction: Vector2) -> void:
 	is_dashing = false
 	movement_allowed = true
 
-
 func _ready() -> void:
 	# Keep the shape in sync so the parry radius is visible with debug collision
 	# shapes on, even though the shape itself stays disabled.
@@ -380,6 +389,12 @@ func parry_radius_update(new_radius: float) -> void:
 func parry_this_casual() -> void:
 	if not parry_allowed:
 		return
+
+	# After the guard, not before it. Played first, the parry sound fired on every
+	# press including ones the cooldown refused, so a locked-out parry was
+	# indistinguishable by ear from a real one - exactly the confusion the
+	# ParryBar was added to clear up.
+	SoundManager.play_sfx(parry_sound)
 
 	parry_allowed = false
 	is_parrying = true
@@ -585,6 +600,8 @@ func _decay_knockback(delta: float) -> void:
 
 func basic_attack() -> void:
 	can_attack = false
+	SoundManager.play_sfx(attack_sound, 0.2, 0.85, 1.1, 0)
+	
 	shoot.emit(projectile, aim_angle(), position)
 	await get_tree().create_timer(effective_cast_interval()).timeout
 	can_attack = true

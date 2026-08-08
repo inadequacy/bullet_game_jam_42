@@ -1,0 +1,12 @@
+﻿<!-- CARD ICON TEMPLATE.
+     Copy this file, swap the two fills and the glyph, keep everything else.
+       outer rect = dark shade (border)   inner rect = accent (category colour)
+       glyph      = white, drawn inside the 12..52 box so it never touches the edge
+     The accent colour must match CardDatabase.ICON_COLORS for that kind. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 64 64">
+  <rect x="1" y="1" width="62" height="62" rx="15" fill="#4A4A55"/>
+  <rect x="4" y="4" width="56" height="56" rx="12" fill="#8A8A99"/>
+  <g fill="#ffffff">
+    <circle cx="32" cy="32" r="14" fill="none" stroke="#ffffff" stroke-width="5"/>
+  </g>
+</svg>

@@ -11,9 +11,10 @@
 [ext_resource type="PackedScene" uid="uid://bu5b1wbkhqegi" path="res://game/ui/health_bar.tscn" id="9_b3dog"]
 [ext_resource type="PackedScene" path="res://game/cards/card_screen.tscn" id="10_cards"]
 [ext_resource type="PackedScene" path="res://game/ui/dash_bar.tscn" id="11_dash"]
+[ext_resource type="Script" uid="uid://bot2idqjveu7p" path="res://game/levels/camera_shake.gd" id="12_shake"]
 [ext_resource type="PackedScene" path="res://game/ui/parry_bar.tscn" id="13_parry"]
 [ext_resource type="PackedScene" path="res://game/ui/run_timer.tscn" id="14_timer"]
-[ext_resource type="Script" path="res://game/levels/camera_shake.gd" id="12_shake"]
+[ext_resource type="Script" uid="uid://ch2c4m7ly0rc4" path="res://game/levels/sound_manager.gd" id="14_6segh"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_haif4"]
 
@@ -29,7 +30,7 @@ texture = ExtResource("1_o6mkr")
 [node name="Character" parent="." unique_id=876229241 instance=ExtResource("2_qmtf6")]
 position = Vector2(510, 275)
 
-[node name="Camera2D" type="Camera2D" parent="."]
+[node name="Camera2D" type="Camera2D" parent="." unique_id=590736892]
 position = Vector2(576, 324)
 script = ExtResource("12_shake")
 
@@ -42,6 +43,20 @@ script = ExtResource("12_shake")
 [node name="HealthBar" parent="HUD" unique_id=2142482034 instance=ExtResource("9_b3dog")]
 offset_transform_enabled = true
 offset_transform_position = Vector2(200, 18)
+
+[node name="DashBar" parent="HUD" unique_id=1224035391 instance=ExtResource("11_dash")]
+layout_mode = 3
+offset_left = 200.0
+offset_top = 48.0
+offset_right = 320.0
+offset_bottom = 80.0
+
+[node name="ParryBar" parent="HUD" unique_id=83104074 instance=ExtResource("13_parry")]
+layout_mode = 3
+offset_left = 200.0
+offset_top = 84.0
+offset_right = 320.0
+offset_bottom = 116.0
 
 [node name="LevelBounds" type="Node2D" parent="." unique_id=1625576201]
 
@@ -82,18 +97,12 @@ collision_layer = 15
 [node name="CollisionShape2D" type="CollisionShape2D" parent="LevelBounds/LevelBound4" unique_id=2072502007]
 shape = SubResource("RectangleShape2D_haif4")
 
-[node name="DashBar" parent="HUD" instance=ExtResource("11_dash")]
-offset_left = 200.0
-offset_top = 48.0
-offset_right = 320.0
-offset_bottom = 80.0
+[node name="CardScreen" parent="." unique_id=132707580 instance=ExtResource("10_cards")]
 
-[node name="ParryBar" parent="HUD" instance=ExtResource("13_parry")]
-offset_left = 200.0
-offset_top = 84.0
-offset_right = 320.0
-offset_bottom = 116.0
+[node name="SoundManager" type="Node2D" parent="." unique_id=808211865]
+script = ExtResource("14_6segh")
 
-[node name="CardScreen" parent="." instance=ExtResource("10_cards")]
+[node name="PlayerSounds" type="AudioStreamPlayer2D" parent="SoundManager" unique_id=460092337]
+volume_db = -49.57
 
 [connection signal="shoot" from="Character" to="." method="_on_character_shoot"]
