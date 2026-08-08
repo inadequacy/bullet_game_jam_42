@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://beexpipvffo0h"]
 
-[ext_resource type="Script" uid="uid://bjaqem6e7pn1j" path="res://game/ui/exp_bar.gd" id="1_2psns"]
+[ext_resource type="Script" path="res://game/ui/exp_bar.gd" id="1_2psns"]
 
 [node name="EXPBar" type="Control" unique_id=1388852686]
 custom_minimum_size = Vector2(120, 32)
