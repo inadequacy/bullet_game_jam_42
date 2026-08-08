@@ -3,8 +3,10 @@
 [ext_resource type="Script" uid="uid://bxkb5aexglxbc" path="res://Scripts/level.gd" id="1_nk1il"]
 [ext_resource type="Texture2D" uid="uid://c751sti8w420u" path="res://Images/Background.webp" id="1_o6mkr"]
 [ext_resource type="PackedScene" uid="uid://dfv1w0exg4fps" path="res://Scenes/character.tscn" id="2_qmtf6"]
-[ext_resource type="PackedScene" path="res://Scenes/caster.tscn" id="3_caster"]
+[ext_resource type="PackedScene" path="res://Scenes/caster_blue.tscn" id="3_caster"]
 [ext_resource type="PackedScene" path="res://Scenes/chaser.tscn" id="4_chaser"]
+[ext_resource type="PackedScene" path="res://Scenes/caster_green.tscn" id="6_green"]
+[ext_resource type="PackedScene" path="res://Scenes/caster_red.tscn" id="7_red"]
 [ext_resource type="PackedScene" uid="uid://dpu2waoxwk22w" path="res://Scenes/score.tscn" id="5_iincs"]
 
 [node name="Level" type="Node2D" unique_id=1836397518]
@@ -24,6 +26,12 @@ position = Vector2(900, 200)
 
 [node name="CasterBlue2" parent="." unique_id=2039232864 instance=ExtResource("3_caster")]
 position = Vector2(200, 480)
+
+[node name="CasterGreen" parent="." instance=ExtResource("6_green")]
+position = Vector2(180, 130)
+
+[node name="CasterRed" parent="." instance=ExtResource("7_red")]
+position = Vector2(1020, 340)
 
 [node name="Chaser" parent="." unique_id=424083071 instance=ExtResource("4_chaser")]
 position = Vector2(950, 520)

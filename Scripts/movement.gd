@@ -9,6 +9,9 @@ var movement_allowed = true
 @export var dash_cooldown: float = 2.0
 @export var dash_speed: int = 800
 var dash_allowed = true
+## True only while a dash is in progress. Red homing projectiles read this and
+## sever their lock, which is what makes dash the counter to homing.
+var is_dashing = false
 @export_group("")
 
 # Parry settings
@@ -32,12 +35,14 @@ var can_attack: bool = true
 func dash_direction(direction: Vector2) -> void:
 	movement_allowed = false
 	dash_allowed = false
+	is_dashing = true
 
 	if direction == Vector2(0.0, 0.0):
 		direction = self.transform.x
 
 	velocity = direction * dash_speed
 	await get_tree().create_timer(dash_duration).timeout
+	is_dashing = false
 	movement_allowed = true
 	await get_tree().create_timer(dash_cooldown).timeout
 	dash_allowed = true

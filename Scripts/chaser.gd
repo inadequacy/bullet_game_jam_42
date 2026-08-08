@@ -17,12 +17,13 @@ enum State { CHASING, WINDUP, STRIKE, RECOVERY }
 ## MUST stay larger than the combined collider radii of this enemy and the
 ## player, or the two bodies stop each other further apart than the chaser's
 ## own attack range and it bumps into the player forever without ever swinging.
-## Placeholder art is large (128px icons), so this is currently ~150; re-check
-## it when real sprites and smaller colliders land.
-@export var attack_range: float = 150.0
+## With the current 0.4-scaled placeholders the player's box is 50x50 and the
+## chaser's circle is r21, so the bodies stop ~56 apart at the corners. Re-check
+## this whenever either collider changes size.
+@export var attack_range: float = 75.0
 ## Extra reach allowed at the moment of the strike, so walking away barely
 ## escapes but standing still does not.
-@export var strike_reach_bonus: float = 20.0
+@export var strike_reach_bonus: float = 12.0
 @export var damage: float = 1.0
 
 @export_group("Timing")
