@@ -20,13 +20,15 @@ signal element_locked(element: CardDatabase.Element)
 @export var open_action: String = "debug_cards"
 @export var logs: bool = true
 
-## The committed school, or NONE while the player is still on plain missiles.
-## Read this from gameplay code to decide what the basic attack and ultimate do.
-var chosen_element: CardDatabase.Element = CardDatabase.Element.NONE
 var is_open: bool = false
 
 var _offer: Array = []
-var _taken: Dictionary = {}
+
+
+## The committed school. Lives in RunState, not here - this node dies with the
+## level, and the lock has to outlive that.
+var chosen_element: CardDatabase.Element:
+	get: return RunState.chosen_element
 
 @onready var _screen: Control = $Screen
 @onready var _hint: Label = $Screen/Center/VBox/Hint
@@ -98,29 +100,27 @@ func close() -> void:
 
 ## Clears the element lock and taken cards. Call when starting a new run.
 func reset() -> void:
-	chosen_element = CardDatabase.Element.NONE
-	_taken.clear()
+	RunState.reset()
 
 
 func _on_card_pressed(index: int) -> void:
 	var card: Dictionary = _offer[index]
+	var was_unelemented := RunState.chosen_element == CardDatabase.Element.NONE
 
-	# Record every pick - `requires` reads this too, not just the unique check.
-	_taken[CardDatabase.card_id(card)] = true
+	# RunState records the pick and applies the effect. This screen does not
+	# track anything itself - it only presents.
+	RunState.apply_card(card)
 
-	# The first element card taken decides the run. Nothing can change it after.
-	var element: CardDatabase.Element = card.get("element", CardDatabase.Element.NONE)
-	if element != CardDatabase.Element.NONE and chosen_element == CardDatabase.Element.NONE:
-		chosen_element = element
-		element_locked.emit(element)
+	if was_unelemented and RunState.chosen_element != CardDatabase.Element.NONE:
+		element_locked.emit(RunState.chosen_element)
 		if logs:
-			var label := CardDatabase.element_name(element)
+			var label := CardDatabase.element_name(RunState.chosen_element)
 			print("[CARDS] ELEMENT LOCKED: %s - only %s attack cards from here, ultimate included"
 				% [label, label])
 
 	if logs:
-		print("[CARDS] picked '%s' (%s) | PLACEHOLDER - no effect applied"
-			% [card["name"], card["group"]])
+		print("[CARDS] picked '%s' (%s) | %s"
+			% [card["name"], card["group"], RunState.describe()])
 
 	card_chosen.emit(card)
 	close()
@@ -174,12 +174,12 @@ func _available(pool: CardDatabase.Pool, exclude: Dictionary = {}) -> Array:
 ##
 ## Other elements become permanently unreachable the moment one is chosen.
 func _is_available(card: Dictionary) -> bool:
-	if card.get("unique", false) and _taken.has(CardDatabase.card_id(card)):
+	if card.get("unique", false) and RunState.times_taken(CardDatabase.card_id(card)) > 0:
 		return false
 
 	# Numbered tiers arrive in order: "Fire II" waits for "Fire I".
 	var prerequisite: String = card.get("requires", "")
-	if prerequisite != "" and not _taken.has(prerequisite):
+	if prerequisite != "" and RunState.times_taken(prerequisite) == 0:
 		return false
 
 	var element: CardDatabase.Element = card.get("element", CardDatabase.Element.NONE)

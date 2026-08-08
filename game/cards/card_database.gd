@@ -19,12 +19,52 @@ extends RefCounted
 ##   unique   - can only ever be taken once per run. Omit for stacking upgrades.
 ##   requires - id of a card that must already be taken. This is what makes the
 ##              numbered tiers arrive in order.
+##   effect   - what the card actually DOES. See below. Omit for a card that is
+##              still a placeholder.
 ##
 ## To add a card: drop a dictionary in the right pool below. To add a tier, give
 ## it `requires` pointing at the id of the tier before it.
+##
+## EFFECT SHAPES - this is the bit to edit when tuning a card:
+##
+##   {"op": "mult",   "stat": STAT_MOVE_SPEED,   "value": 1.15}
+##       Scales the stat. 1.15 = +15%, 0.7 = -30%. Stacks multiplicatively.
+##
+##   {"op": "add",    "stat": STAT_DASH_CHARGES, "value": 1}
+##       Adds a flat amount before any mult is applied. Stacks additively.
+##
+##   {"op": "flag",   "flag": FLAG_DASH_IFRAMES}
+##       Switches a behaviour on. Taking it twice changes nothing.
+##
+##   {"op": "action", "action": "heal_full"}
+##       Fires once when picked, changes no stat. See RunState._run_action.
+##
+## The final value is (base + total add) * total mult.
 
 ## Every level-up offers exactly one card per pool, so pools ARE the three slots.
 enum Pool { BASIC, ACTION, ATTACK }
+
+# --------------------------------------------------------------- stat keys ---
+# What a card's `effect` can modify. Gameplay never reads a raw export - it asks
+# RunState for the modified value, e.g.
+#
+#     RunState.modified(CardDatabase.STAT_MOVE_SPEED, movespeed)
+#
+# Use these constants rather than bare strings so a typo is a parse error.
+
+const STAT_MOVE_SPEED := "move_speed"
+const STAT_DASH_COOLDOWN := "dash_cooldown"
+const STAT_DASH_CHARGES := "dash_charges"
+const STAT_PARRY_WINDOW := "parry_window"
+const STAT_PARRY_COOLDOWN := "parry_cooldown"
+const STAT_PARRY_BURST_RADIUS := "parry_burst_radius"
+const STAT_CAST_INTERVAL := "cast_interval"
+const STAT_ATTACK_DAMAGE := "attack_damage"
+const STAT_PROJECTILE_COUNT := "projectile_count"
+
+# Booleans rather than numbers - they switch behaviour on, they don't scale it.
+const FLAG_DASH_IFRAMES := "dash_iframes"
+const FLAG_PARRY_REFLECT := "parry_reflect"
 
 ## The player's spell school.
 ##
@@ -63,7 +103,8 @@ const CARDS := {
 	# Utility. Only one entry for now, so this slot is currently a guaranteed
 	# heal rather than a choice.
 	Pool.BASIC: [
-		{"name": "Renewal", "desc": "Restore health to full"},
+		{"name": "Renewal", "desc": "Restore health to full",
+			"effect": {"op": "action", "action": "heal_full"}},
 	],
 
 	# ----------------------------------------------------------------- ACTION
@@ -72,23 +113,38 @@ const CARDS := {
 	# pool never runs dry - which is why ATTACK falls back to it.
 	Pool.ACTION: [
 		# Mobility
-		{"name": "Swift Boots", "desc": "+15% move speed"},
+		{"name": "Swift Boots", "desc": "+15% move speed",
+			"effect": {"op": "mult", "stat": STAT_MOVE_SPEED, "value": 1.15}},
 
 		# Dash
-		{"name": "Second Wind", "desc": "+1 dash charge"},
-		{"name": "Fleet Footed", "desc": "-35% dash cooldown"},
-		{"name": "Phase Step", "desc": "Dash grants invulnerability frames"},
+		{"name": "Fleet Footed", "desc": "-35% dash cooldown",
+			"effect": {"op": "mult", "stat": STAT_DASH_COOLDOWN, "value": 0.65}},
+		# NOT WIRED: no dash-charge system yet, the value just accumulates.
+		{"name": "Second Wind", "desc": "+1 dash charge",
+			"effect": {"op": "add", "stat": STAT_DASH_CHARGES, "value": 1}},
+		# NOT WIRED: dash has no i-frames to switch on yet.
+		{"name": "Phase Step", "desc": "Dash grants invulnerability frames",
+			"effect": {"op": "flag", "flag": FLAG_DASH_IFRAMES}},
 
 		# Parry
-		{"name": "Steady Hand", "desc": "+50% parry window"},
-		{"name": "Shockwave", "desc": "+40% parry burst radius"},
-		{"name": "Quick Recovery", "desc": "-30% parry cooldown"},
-		{"name": "Reflect", "desc": "Parried shots fly back at the caster"},
+		{"name": "Steady Hand", "desc": "+50% parry window",
+			"effect": {"op": "mult", "stat": STAT_PARRY_WINDOW, "value": 1.5}},
+		{"name": "Shockwave", "desc": "+40% parry burst radius",
+			"effect": {"op": "mult", "stat": STAT_PARRY_BURST_RADIUS, "value": 1.4}},
+		{"name": "Quick Recovery", "desc": "-30% parry cooldown",
+			"effect": {"op": "mult", "stat": STAT_PARRY_COOLDOWN, "value": 0.7}},
+		# NOT WIRED: parried shots are destroyed, not turned around.
+		{"name": "Reflect", "desc": "Parried shots fly back at the caster",
+			"effect": {"op": "flag", "flag": FLAG_PARRY_REFLECT}},
 
 		# Basic attack
-		{"name": "Sharpened Missile", "desc": "+25% basic attack damage"},
-		{"name": "Rapid Casting", "desc": "+30% cast rate"},
-		{"name": "Split Bolt", "desc": "Basic attack fires an extra projectile"},
+		{"name": "Sharpened Missile", "desc": "+25% basic attack damage",
+			"effect": {"op": "mult", "stat": STAT_ATTACK_DAMAGE, "value": 1.25}},
+		{"name": "Rapid Casting", "desc": "Cast 30% faster",
+			"effect": {"op": "mult", "stat": STAT_CAST_INTERVAL, "value": 0.7}},
+		# NOT WIRED: the basic attack fires a single projectile.
+		{"name": "Split Bolt", "desc": "Basic attack fires an extra projectile",
+			"effect": {"op": "add", "stat": STAT_PROJECTILE_COUNT, "value": 1}},
 	],
 
 	# ----------------------------------------------------------------- ATTACK

@@ -62,6 +62,29 @@ var can_attack: bool = true
 @export_group("")
 
 
+# --- Card-modified stats -----------------------------------------------------
+# The exports above are BASE values. Never use them directly in gameplay - go
+# through these, so any card that touches the stat applies automatically.
+
+func effective_move_speed() -> float:
+	return RunState.modified(CardDatabase.STAT_MOVE_SPEED, movespeed)
+
+func effective_dash_cooldown() -> float:
+	return RunState.modified(CardDatabase.STAT_DASH_COOLDOWN, dash_cooldown)
+
+func effective_parry_window() -> float:
+	return RunState.modified(CardDatabase.STAT_PARRY_WINDOW, parry_duration)
+
+func effective_parry_cooldown() -> float:
+	return RunState.modified(CardDatabase.STAT_PARRY_COOLDOWN, parry_cooldown)
+
+func effective_parry_burst_radius() -> float:
+	return RunState.modified(CardDatabase.STAT_PARRY_BURST_RADIUS, parry_burst_radius)
+
+func effective_cast_interval() -> float:
+	return RunState.modified(CardDatabase.STAT_CAST_INTERVAL, cast_rate)
+
+
 ## The HUD health bar, found via the "health_bar" group.
 ##
 ## This used to be get_tree().current_scene.get_node("HUD/HealthBar"), which
@@ -119,7 +142,7 @@ func dash_direction(direction: Vector2) -> void:
 	await get_tree().create_timer(dash_duration).timeout
 	is_dashing = false
 	movement_allowed = true
-	await get_tree().create_timer(dash_cooldown).timeout
+	await get_tree().create_timer(effective_dash_cooldown()).timeout
 	dash_allowed = true
 
 
@@ -154,14 +177,15 @@ func parry_this_casual() -> void:
 	# Parry detection is done by distance in _resolve_parry() instead, and this
 	# shape stays disabled. Make it an Area2D child if you ever want real
 	# collision-based parrying.
-	await get_tree().create_timer(parry_duration).timeout
+	var window := effective_parry_window()
+	await get_tree().create_timer(window).timeout
 	is_parrying = false
 
 	if parry_debug_logs and _parried_this_window == 0:
 		print("[PARRY] miss    | nothing green within %dpx | window %.2fs"
-			% [parry_radius, parry_duration])
+			% [parry_radius, window])
 
-	await get_tree().create_timer(parry_cooldown).timeout
+	await get_tree().create_timer(effective_parry_cooldown()).timeout
 	parry_allowed = true
 
 
@@ -184,18 +208,19 @@ func _resolve_parry() -> void:
 		if parry_debug_logs:
 			var into := (Time.get_ticks_msec() - _parry_window_opened_ms) / 1000.0
 			print("[PARRY] SUCCESS | green parried at %dpx | %.2fs into %.2fs window | burst cleared %d blue"
-				% [dist, into, parry_duration, cleared])
+				% [dist, into, effective_parry_window(), cleared])
 
 
 ## Destroys every blue shot inside the burst radius. Returns how many died.
 func _parry_burst() -> int:
 	var cleared := 0
+	var radius := effective_parry_burst_radius()
 	for p in get_tree().get_nodes_in_group("enemy_projectiles"):
 		if not is_instance_valid(p):
 			continue
 		if not p.is_cleared_by_parry_burst():
 			continue
-		if p.global_position.distance_to(global_position) <= parry_burst_radius:
+		if p.global_position.distance_to(global_position) <= radius:
 			p.queue_free()
 			cleared += 1
 	return cleared
@@ -204,7 +229,7 @@ func _parry_burst() -> int:
 func basic_attack() -> void:
 	can_attack = false
 	shoot.emit(projectile, aim_angle(), position)
-	await get_tree().create_timer(cast_rate).timeout
+	await get_tree().create_timer(effective_cast_interval()).timeout
 	can_attack = true
 
 
@@ -258,7 +283,7 @@ func get_input() -> void:
 	if movement_allowed == true:
 		look_at(get_global_mouse_position())
 		var input_direction = Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
-		velocity = input_direction * movespeed
+		velocity = input_direction * effective_move_speed()
 
 		if Input.is_action_just_pressed("dash") && dash_allowed:
 			dash_direction(input_direction)
