@@ -17,3 +17,6 @@
 
 ## Game
 - Time too long half it probably? At least * 0.66.
+
+## Cards
+- Maybe tune them to be more powerful
