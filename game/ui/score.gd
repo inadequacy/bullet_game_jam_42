@@ -1,7 +1,7 @@
 extends Label
 
 
-func _process(delta: float) -> void:
+func _process(_delta: float) -> void:
 	$".".text = "Score: " + str(GameManager.score)
 func _ready() -> void:
 	text = "Score: " + str(GameManager.score)

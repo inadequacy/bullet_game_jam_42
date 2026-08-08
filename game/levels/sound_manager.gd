@@ -18,7 +18,7 @@ func _ready():
 		add_child(player)
 		sfx_players.append(player)
 
-
+# BG music and BG sound fx are yet not implemented nor being called. 
 func play_music(stream: AudioStream):
 	music_player.stream = stream
 	music_player.play()
