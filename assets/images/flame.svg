@@ -1,0 +1,12 @@
+<!-- Falling flame for the Fire ultimate (UltFireRain). The Fire CARD badge is
+     assets/images/cards/fire.svg - this is the same flame with the rounded
+     square stripped off, because raining the badge looked like raining UI.
+     Taller than wide so it reads as falling. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="72" height="112" viewBox="0 0 72 112">
+  <path d="M36 2c3 20 22 30 22 54 0 30-13 44-22 44S14 86 14 56c0-14 7-22 12-30 2 11 6 15 9 11 5-6 2-24 1-35z"
+        fill="#ff6a1e"/>
+  <path d="M36 40c4 12 12 18 12 32 0 16-6 24-12 24s-12-8-12-24c0-10 8-18 12-32z"
+        fill="#ffb638"/>
+  <path d="M36 66c2 7 6 10 6 17 0 8-3 13-6 13s-6-5-6-13c0-6 4-10 6-17z"
+        fill="#ffe89a"/>
+</svg>

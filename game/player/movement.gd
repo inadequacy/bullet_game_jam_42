@@ -125,6 +125,11 @@ var playerhit_low_sound = preload("res://assets/sounds/playerhit_low1.wav")
 signal shoot(projectile, direction, location)
 var projectile = preload("res://game/player/player_projectile.tscn")
 @export var cast_rate: float = 1.0
+## Shots per cast before any card. Arcane Volley and Split Bolt add to this.
+@export var base_projectile_count: int = 1
+## Total arc a multi-shot cast is spread across, in degrees. Only ever visible
+## once a card has raised the count above one.
+@export var volley_spread_degrees: float = 18.0
 ## ON  = shots track the nearest enemy, regardless of where you are facing.
 ## OFF = shots fly along facing (the mouse).
 ## Press T to flip. This is the starting mode.
@@ -135,6 +140,28 @@ var projectile = preload("res://game/player/player_projectile.tscn")
 ## Prints the aim mode to the terminal when toggled.
 @export var aim_logs: bool = true
 var can_attack: bool = true
+@export_group("")
+
+# Ultimate settings
+@export_group("Ultimate")
+## Seconds between casts. LONG on purpose - the ultimate is an event, not part
+## of a rotation - and no card shortens it, so the only way to get more out of it
+## is to make each cast count.
+@export var ultimate_cooldown: float = 30.0
+## Rain of Fire: damage every enemy on screen takes per tick.
+@export var ultimate_fire_damage: float = 8.0
+## Beam: damage per second to anything standing in it.
+@export var ultimate_beam_dps: float = 40.0
+## Frozen Ground: how wide the pool spreads, and how long it holds an enemy.
+@export var ultimate_ice_radius: float = 260.0
+@export var ultimate_ice_freeze: float = 3.0
+## How long every ultimate runs before cards extend it.
+@export var ultimate_duration: float = 3.0
+@export var ultimate_logs: bool = true
+
+## Seconds until the ultimate is ready. Starts at zero, so the card arriving
+## hands the player a charged ultimate rather than a timer to wait out.
+var _ultimate_left: float = 0.0
 @export_group("")
 
 
@@ -171,6 +198,94 @@ func effective_parry_burst_radius() -> float:
 
 func effective_cast_interval() -> float:
 	return RunState.modified(CardDatabase.STAT_CAST_INTERVAL, cast_rate)
+
+## Shots fired per cast. Never below one - a card must not be able to silence
+## the basic attack.
+func effective_projectile_count() -> int:
+	return maxi(1, int(round(RunState.modified(
+		CardDatabase.STAT_PROJECTILE_COUNT, base_projectile_count))))
+
+func effective_ultimate_cooldown() -> float:
+	return maxf(RunState.modified(
+		CardDatabase.STAT_ULTIMATE_COOLDOWN, ultimate_cooldown), 0.1)
+
+func effective_ultimate_duration() -> float:
+	return RunState.modified(
+		CardDatabase.STAT_ULTIMATE_DURATION, ultimate_duration)
+
+
+# --- Ultimate (E) ------------------------------------------------------------
+# Dead until an Ultimate I card is taken. Which one fires is decided by the
+# element the run locked, so this never has to be told - see cast_ultimate().
+
+## True once the unlock card has been taken. The UI uses this to decide whether
+## to show anything at all.
+func has_ultimate() -> bool:
+	return RunState.flag(CardDatabase.FLAG_ULTIMATE)
+
+
+func ultimate_is_ready() -> bool:
+	return has_ultimate() and _ultimate_left <= 0.0
+
+
+## Recharge progress, 0..1. Reads 1.0 whenever the ultimate is up.
+func ultimate_cooldown_ratio() -> float:
+	if ultimate_is_ready():
+		return 1.0
+	var span := effective_ultimate_cooldown()
+	if span <= 0.0:
+		return 1.0
+	return clampf(1.0 - _ultimate_left / span, 0.0, 1.0)
+
+
+## Seconds until it is ready again. Zero when it is up.
+func ultimate_time_left() -> float:
+	return maxf(_ultimate_left, 0.0)
+
+
+func _tick_ultimate(delta: float) -> void:
+	if _ultimate_left > 0.0:
+		_ultimate_left = maxf(_ultimate_left - delta, 0.0)
+
+
+## Fires the ultimate of whichever school the run committed to. Does nothing at
+## all while locked or on cooldown, so the key is safe to mash.
+func cast_ultimate() -> bool:
+	if not ultimate_is_ready():
+		return false
+
+	var element := RunState.chosen_element
+	# The unlock cards all carry an element, so an unlocked run is always
+	# committed. Guarded anyway rather than casting nothing silently.
+	if element == CardDatabase.Element.NONE:
+		push_warning("Ultimate unlocked with no element committed - nothing to cast.")
+		return false
+
+	var arena := get_parent()
+	var length := effective_ultimate_duration()
+	var power := RunState.modified(CardDatabase.STAT_ULTIMATE_DAMAGE, 1.0)
+
+	match element:
+		CardDatabase.Element.FIRE:
+			UltFireRain.cast(arena, ultimate_fire_damage * power, length)
+		CardDatabase.Element.ICE:
+			UltFrozenGround.cast(arena, global_position,
+				RunState.modified(CardDatabase.STAT_ULTIMATE_RADIUS,
+					ultimate_ice_radius),
+				length,
+				RunState.modified(CardDatabase.STAT_ULTIMATE_FREEZE,
+					ultimate_ice_freeze))
+		CardDatabase.Element.ARCANE:
+			# Parented to the player, not the arena - the beam tracks facing.
+			UltArcaneBeam.cast(self, ultimate_beam_dps * power, length)
+
+	_ultimate_left = effective_ultimate_cooldown()
+	SoundManager.play_sfx(levelup_sound, 0, 0.7, 0.8, 0)
+
+	if ultimate_logs:
+		print("[ULT] %s cast | %.1fs | next in %.0fs"
+			% [CardDatabase.element_name(element), length, _ultimate_left])
+	return true
 
 
 ## The HUD health bar, found via the "health_bar" group.
@@ -601,8 +716,20 @@ func _decay_knockback(delta: float) -> void:
 func basic_attack() -> void:
 	can_attack = false
 	SoundManager.play_sfx(attack_sound, 0.2, 0.85, 1.1, 0)
-	
-	shoot.emit(projectile, aim_angle(), position)
+
+	# One sound and one cooldown per CAST, however many shots that cast contains
+	# - a volley is one spell, not three.
+	var count := effective_projectile_count()
+	var aim := aim_angle()
+	var spread := deg_to_rad(volley_spread_degrees)
+	for i in count:
+		# Spread evenly across the arc, centred on the aim. A lone shot gets no
+		# offset at all, so the default attack is unchanged.
+		var offset := 0.0
+		if count > 1:
+			offset = (float(i) / float(count - 1) - 0.5) * spread
+		shoot.emit(projectile, aim + offset, position)
+
 	await get_tree().create_timer(effective_cast_interval()).timeout
 	can_attack = true
 
@@ -654,6 +781,12 @@ func get_input() -> void:
 	if Input.is_action_just_pressed("debug_invincible"):
 		toggle_invincible()
 
+	# Outside the movement gate, like the toggles above: the ultimate is a
+	# three second commitment and must not be eaten by a dash that happens to
+	# be running when the key is pressed.
+	if Input.is_action_just_pressed("ultimate"):
+		cast_ultimate()
+
 	if movement_allowed == true:
 		look_at(get_global_mouse_position())
 		var input_direction = Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
@@ -677,6 +810,7 @@ func _physics_process(_delta) -> void:
 	move_and_slide()
 	_decay_knockback(_delta)
 	_tick_dash_recharge(_delta)
+	_tick_ultimate(_delta)
 	# Resolve before ticking, so the frame that closes the window still counts.
 	if is_parrying:
 		_resolve_parry()

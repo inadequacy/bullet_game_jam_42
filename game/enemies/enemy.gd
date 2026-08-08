@@ -28,6 +28,28 @@ signal damaged(enemy: Enemy, amount: float)
 var health: float
 var player: Node2D = null
 
+# --- Status effects (Ice and Fire cards) -------------------------------------
+# Applied to the BASE class rather than to each enemy, and enforced by scaling
+# `velocity` after _behavior() has set it. Subclasses therefore need no changes
+# at all - a chill works on the chaser, every caster, and any boss written later
+# without one of them knowing status effects exist.
+
+## Speed multiplier while chilled. 1.0 is unaffected.
+var _chill_factor: float = 1.0
+var _chill_left: float = 0.0
+## While above zero the enemy does not move AND does not act - _behavior() is
+## skipped outright, which is what stops a frozen caster from finishing a cast.
+var _freeze_left: float = 0.0
+var _burn_left: float = 0.0
+var _burn_dps: float = 0.0
+## Burn lands in twice-a-second bites rather than per frame, so the damage flash
+## reads as a pulse instead of a strobe.
+const BURN_TICK := 0.5
+var _burn_tick_left: float = 0.0
+
+const CHILL_TINT := Color(0.62, 0.82, 1.25)
+const FREEZE_TINT := Color(0.45, 0.75, 1.5)
+
 ## True while walking in from off screen. See enter_from().
 var _entering: bool = false
 var _entry_target: Vector2 = Vector2.ZERO
@@ -57,10 +79,24 @@ func _physics_process(delta: float) -> void:
 	# The player can be re-instanced between runs, so re-acquire if it went away.
 	if player == null or not is_instance_valid(player):
 		_acquire_player()
+
+	_tick_status(delta)
+	# Burn can finish the job. Nothing below should run on a corpse.
+	if health <= 0.0:
+		return
+
+	if is_frozen():
+		velocity = Vector2.ZERO
+		move_and_slide()
+		return
+
 	if _entering:
 		_walk_in(delta)
 	else:
 		_behavior(delta)
+		# After _behavior, which has just set velocity from whatever the subclass
+		# decided. Scaling here catches chase, strafe and retreat in one place.
+		velocity *= _chill_factor
 	move_and_slide()
 
 
@@ -130,6 +166,94 @@ func _on_death() -> void:
 	pass
 
 
+# --- Status effects ----------------------------------------------------------
+
+## Slows the enemy to `factor` of its speed for `duration`.
+##
+## Refreshing takes the STRONGER factor and the LONGER remaining time, rather
+## than overwriting. Without that, a stream of weak hits landing on a deeply
+## chilled enemy would keep resetting it to the weak slow.
+func apply_chill(factor: float, duration: float) -> void:
+	if duration <= 0.0:
+		return
+	_chill_factor = minf(_chill_factor, clampf(factor, 0.0, 1.0))
+	_chill_left = maxf(_chill_left, duration)
+	_refresh_status_tint()
+
+
+## Stops the enemy dead - no movement, no casting - for `duration`.
+func apply_freeze(duration: float) -> void:
+	if duration <= 0.0:
+		return
+	_freeze_left = maxf(_freeze_left, duration)
+	_refresh_status_tint()
+
+
+## Damage over time. Refreshing takes the higher rate and the longer time, for
+## the same reason chill does.
+func apply_burn(damage_per_second: float, duration: float) -> void:
+	if damage_per_second <= 0.0 or duration <= 0.0:
+		return
+	_burn_dps = maxf(_burn_dps, damage_per_second)
+	_burn_left = maxf(_burn_left, duration)
+
+
+## True while chilled OR frozen. Shatter reads this to decide its damage bonus,
+## so a frozen enemy counts as chilled - being stopped is not less cold.
+func is_chilled() -> bool:
+	return _chill_left > 0.0 or _freeze_left > 0.0
+
+
+func is_frozen() -> bool:
+	return _freeze_left > 0.0
+
+
+func _tick_status(delta: float) -> void:
+	var was_cold := is_chilled()
+
+	if _freeze_left > 0.0:
+		_freeze_left = maxf(_freeze_left - delta, 0.0)
+
+	if _chill_left > 0.0:
+		_chill_left = maxf(_chill_left - delta, 0.0)
+		if _chill_left <= 0.0:
+			_chill_factor = 1.0
+
+	if was_cold and not is_chilled():
+		_refresh_status_tint()
+
+	_tick_burn(delta)
+
+
+func _tick_burn(delta: float) -> void:
+	if _burn_left <= 0.0:
+		return
+	_burn_left = maxf(_burn_left - delta, 0.0)
+	_burn_tick_left -= delta
+	if _burn_tick_left > 0.0:
+		return
+	_burn_tick_left = BURN_TICK
+	take_damage(_burn_dps * BURN_TICK)
+	if _burn_left <= 0.0:
+		_burn_dps = 0.0
+
+
+## What the sprite should be tinted right now, status included. `flash()` and the
+## caster's charge glow both settle back to this rather than to _base_modulate,
+## so a hit or a cast cannot wipe an ice tint that is still running.
+func current_modulate() -> Color:
+	if _freeze_left > 0.0:
+		return FREEZE_TINT
+	if _chill_left > 0.0:
+		return CHILL_TINT
+	return _base_modulate
+
+
+func _refresh_status_tint() -> void:
+	if _sprite != null:
+		_sprite.modulate = current_modulate()
+
+
 # --- Shared helpers ----------------------------------------------------------
 
 func has_player() -> bool:
@@ -185,13 +309,15 @@ func telegraph(swell: float, grow_time: float, settle_time: float) -> void:
 	tween.tween_property(_sprite, "scale", _base_scale, settle_time)
 
 
-## Briefly tints the sprite, if the scene has one named "Sprite2D".
+## Briefly tints the sprite, if the scene has one named "Sprite2D". Settles back
+## to current_modulate(), so flashing a chilled enemy leaves it still looking
+## chilled rather than snapping it back to its normal colour.
 func flash(color: Color, duration: float) -> void:
 	if _sprite == null:
 		return
 	_sprite.modulate = color
 	var tween := create_tween()
-	tween.tween_property(_sprite, "modulate", _base_modulate, duration)
+	tween.tween_property(_sprite, "modulate", current_modulate(), duration)
 
 
 func _acquire_player() -> void:

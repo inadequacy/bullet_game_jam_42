@@ -42,6 +42,11 @@ extends RefCounted
 ##       Fires once when picked, changes no stat. See RunState._run_action.
 ##
 ## The final value is (base + total add) * total mult.
+##
+## A card that does two things gives `effect` an ARRAY of those shapes:
+##
+##   "effect": [{"op": "mult", "stat": STAT_ATTACK_DAMAGE, "value": 1.25},
+##              {"op": "mult", "stat": STAT_PROJECTILE_SPEED, "value": 1.2}]
 
 ## Every level-up offers exactly one card per pool, so pools ARE the three slots.
 enum Pool { BASIC, ACTION, ATTACK }
@@ -63,10 +68,51 @@ const STAT_PARRY_BURST_RADIUS := "parry_burst_radius"
 const STAT_CAST_INTERVAL := "cast_interval"
 const STAT_ATTACK_DAMAGE := "attack_damage"
 const STAT_PROJECTILE_COUNT := "projectile_count"
+const STAT_PROJECTILE_SPEED := "projectile_speed"
+## Extra enemies a shot carries through before dying. 0 = stops at the first.
+const STAT_PIERCE := "pierce"
+
+# --- Element stats. Only ever non-default once that element is locked. ---
+const STAT_EXPLOSION_RADIUS := "explosion_radius"
+const STAT_EXPLOSION_DAMAGE := "explosion_damage"
+const STAT_BURN_DAMAGE := "burn_damage"
+const STAT_BURN_DURATION := "burn_duration"
+## Enemy speed WHILE CHILLED, as a fraction. Lower is a stronger slow, so the
+## cards that deepen it multiply by less than 1.
+const STAT_SLOW_FACTOR := "slow_factor"
+const STAT_SLOW_DURATION := "slow_duration"
+const STAT_FREEZE_DURATION := "freeze_duration"
+## How many hits it takes to land a freeze. Cards lower it; see FLAG_FLASH_FREEZE.
+const STAT_FREEZE_EVERY := "freeze_every"
+## Extra damage taken by a chilled enemy, as a multiplier. See FLAG_SHATTER.
+const STAT_SHATTER_BONUS := "shatter_bonus"
+
+# --- Ultimate (E). Which one you get is decided by the element lock. ---
+## Seconds between casts. Deliberately long - the ultimate is an event, not a
+## rotation - so Ultimate II and III do NOT shorten it.
+const STAT_ULTIMATE_COOLDOWN := "ultimate_cooldown"
+const STAT_ULTIMATE_DAMAGE := "ultimate_damage"
+const STAT_ULTIMATE_DURATION := "ultimate_duration"
+## Frozen Ground only: how wide the pool spreads.
+const STAT_ULTIMATE_RADIUS := "ultimate_radius"
+## Frozen Ground only: how long a caught enemy stays frozen.
+const STAT_ULTIMATE_FREEZE := "ultimate_freeze"
 
 # Booleans rather than numbers - they switch behaviour on, they don't scale it.
 const FLAG_DASH_IFRAMES := "dash_iframes"
 const FLAG_PARRY_REFLECT := "parry_reflect"
+## Set by the element locks. The basic attack reads these to decide what it does
+## on impact beyond dealing damage - see player_projectile.gd.
+const FLAG_EXPLOSIVE_SHOTS := "explosive_shots"
+const FLAG_CHILLING_SHOTS := "chilling_shots"
+const FLAG_HOMING_SHOTS := "homing_shots"
+const FLAG_BURN := "burn"
+const FLAG_CHAIN_EXPLOSION := "chain_explosion"
+const FLAG_SHATTER := "shatter"
+const FLAG_FLASH_FREEZE := "flash_freeze"
+## Unlocks E. Until an Ultimate I card is taken the key does nothing at all -
+## the ultimate is a discovery, not a starting tool.
+const FLAG_ULTIMATE := "ultimate"
 
 ## The player's spell school.
 ##
@@ -206,73 +252,122 @@ const CARDS := {
 	Pool.ATTACK: [
 
 		# The commitment. Exactly one of these can ever be taken, and only
-		# while the run is still unelemented.
+		# while the run is still unelemented. Each turns on the flag its whole
+		# school is built around, so the lock is a real upgrade on its own.
 		{"id": "arcane_lock", "name": "Arcane", "element": Element.ARCANE,
 			"locks": true, "unique": true,
-			"desc": "Keep your missiles, refined\nLOCKS: Arcane"},
+			"desc": "Missiles hit harder and fly faster\nLOCKS: Arcane",
+			"effect": [{"op": "mult", "stat": STAT_ATTACK_DAMAGE, "value": 1.25},
+				{"op": "mult", "stat": STAT_PROJECTILE_SPEED, "value": 1.25}]},
 		{"id": "fire_lock", "name": "Fire", "element": Element.FIRE,
 			"locks": true, "unique": true,
-			"desc": "Missiles explode on impact\nLOCKS: Fire"},
+			"desc": "Missiles explode on impact\nLOCKS: Fire",
+			"effect": {"op": "flag", "flag": FLAG_EXPLOSIVE_SHOTS}},
 		{"id": "ice_lock", "name": "Ice", "element": Element.ICE,
 			"locks": true, "unique": true,
-			"desc": "Missiles slow what they hit\nLOCKS: Ice"},
+			"desc": "Missiles slow what they hit\nLOCKS: Ice",
+			"effect": {"op": "flag", "flag": FLAG_CHILLING_SHOTS}},
 
-		# --- Arcane line. Placeholder tiers; effects TBD. ---
-		{"id": "arcane_1", "name": "Arcane I", "element": Element.ARCANE,
-			"unique": true, "desc": "Arcane tier 1 - TBD"},
-		{"id": "arcane_2", "name": "Arcane II", "element": Element.ARCANE,
-			"unique": true, "requires": "arcane_1", "desc": "Arcane tier 2 - TBD"},
-		{"id": "arcane_3", "name": "Arcane III", "element": Element.ARCANE,
-			"unique": true, "requires": "arcane_2", "desc": "Arcane tier 3 - TBD"},
+		# --- Arcane line: no new verb, just better missiles. ---
+		{"id": "arcane_1", "name": "Piercing Bolt", "element": Element.ARCANE,
+			"unique": true,
+			"desc": "Shots carry through one extra enemy",
+			"effect": {"op": "add", "stat": STAT_PIERCE, "value": 1}},
+		{"id": "arcane_2", "name": "Arcane Volley", "element": Element.ARCANE,
+			"unique": true, "requires": "arcane_1",
+			"desc": "One extra projectile every cast",
+			"effect": {"op": "add", "stat": STAT_PROJECTILE_COUNT, "value": 1}},
+		{"id": "arcane_3", "name": "Seeker Missiles", "element": Element.ARCANE,
+			"unique": true, "requires": "arcane_2",
+			"desc": "Shots curve toward their target",
+			"effect": {"op": "flag", "flag": FLAG_HOMING_SHOTS}},
+		# ARCANE: a huge purple beam from the player. Follows FACING and
+		# deliberately ignores auto-aim - this one is aimed by hand.
 		{"id": "arcane_ult_1", "name": "Ultimate I", "element": Element.ARCANE,
-			"icon": ICON_ULTIMATE,
-			"unique": true, "desc": "Unlocks the Arcane ultimate - TBD"},
+			"icon": ICON_ULTIMATE, "unique": true,
+			"desc": "Unlocks Beam (E)\nA huge purple beam along your facing",
+			"effect": {"op": "flag", "flag": FLAG_ULTIMATE}},
 		{"id": "arcane_ult_2", "name": "Ultimate II", "element": Element.ARCANE,
 			"icon": ICON_ULTIMATE,
 			"unique": true, "requires": "arcane_ult_1",
-			"desc": "Arcane ultimate tier 2 - TBD"},
+			"desc": "Beam hits harder and lasts longer",
+			"effect": [{"op": "mult", "stat": STAT_ULTIMATE_DAMAGE, "value": 1.5},
+				{"op": "mult", "stat": STAT_ULTIMATE_DURATION, "value": 1.35}]},
 		{"id": "arcane_ult_3", "name": "Ultimate III", "element": Element.ARCANE,
 			"icon": ICON_ULTIMATE,
 			"unique": true, "requires": "arcane_ult_2",
-			"desc": "Arcane ultimate tier 3 - TBD"},
+			"desc": "Beam hits harder and lasts longer again",
+			"effect": [{"op": "mult", "stat": STAT_ULTIMATE_DAMAGE, "value": 1.5},
+				{"op": "mult", "stat": STAT_ULTIMATE_DURATION, "value": 1.35}]},
 
-		# --- Fire line. ---
-		{"id": "fire_1", "name": "Fire I", "element": Element.FIRE,
-			"unique": true, "desc": "Fire tier 1 - TBD"},
-		{"id": "fire_2", "name": "Fire II", "element": Element.FIRE,
-			"unique": true, "requires": "fire_1", "desc": "Fire tier 2 - TBD"},
-		{"id": "fire_3", "name": "Fire III", "element": Element.FIRE,
-			"unique": true, "requires": "fire_2", "desc": "Fire tier 3 - TBD"},
+		# --- Fire line: the blast gets wider, then lingers, then spreads. ---
+		{"id": "fire_1", "name": "Wider Blast", "element": Element.FIRE,
+			"unique": true,
+			"desc": "+40% explosion radius\n+25% explosion damage",
+			"effect": [{"op": "mult", "stat": STAT_EXPLOSION_RADIUS, "value": 1.4},
+				{"op": "mult", "stat": STAT_EXPLOSION_DAMAGE, "value": 1.25}]},
+		{"id": "fire_2", "name": "Cinders", "element": Element.FIRE,
+			"unique": true, "requires": "fire_1",
+			"desc": "Anything you burn keeps burning",
+			"effect": {"op": "flag", "flag": FLAG_BURN}},
+		{"id": "fire_3", "name": "Chain Reaction", "element": Element.FIRE,
+			"unique": true, "requires": "fire_2",
+			"desc": "Anything killed by fire explodes too",
+			"effect": {"op": "flag", "flag": FLAG_CHAIN_EXPLOSION}},
+		# FIRE: the screen washes red, flame rains across all of it, the camera
+		# shakes. Hits EVERY enemy on screen - no aiming, no dodging.
 		{"id": "fire_ult_1", "name": "Ultimate I", "element": Element.FIRE,
-			"icon": ICON_ULTIMATE,
-			"unique": true, "desc": "Unlocks the Fire ultimate - TBD"},
+			"icon": ICON_ULTIMATE, "unique": true,
+			"desc": "Unlocks Rain of Fire (E)\nFire falls on the whole screen",
+			"effect": {"op": "flag", "flag": FLAG_ULTIMATE}},
 		{"id": "fire_ult_2", "name": "Ultimate II", "element": Element.FIRE,
 			"icon": ICON_ULTIMATE,
 			"unique": true, "requires": "fire_ult_1",
-			"desc": "Fire ultimate tier 2 - TBD"},
+			"desc": "Rain of Fire hits harder and lasts longer",
+			"effect": [{"op": "mult", "stat": STAT_ULTIMATE_DAMAGE, "value": 1.5},
+				{"op": "mult", "stat": STAT_ULTIMATE_DURATION, "value": 1.35}]},
 		{"id": "fire_ult_3", "name": "Ultimate III", "element": Element.FIRE,
 			"icon": ICON_ULTIMATE,
 			"unique": true, "requires": "fire_ult_2",
-			"desc": "Fire ultimate tier 3 - TBD"},
+			"desc": "Rain of Fire hits harder and lasts longer again",
+			"effect": [{"op": "mult", "stat": STAT_ULTIMATE_DAMAGE, "value": 1.5},
+				{"op": "mult", "stat": STAT_ULTIMATE_DURATION, "value": 1.35}]},
 
-		# --- Ice line. ---
-		{"id": "ice_1", "name": "Ice I", "element": Element.ICE,
-			"unique": true, "desc": "Ice tier 1 - TBD"},
-		{"id": "ice_2", "name": "Ice II", "element": Element.ICE,
-			"unique": true, "requires": "ice_1", "desc": "Ice tier 2 - TBD"},
-		{"id": "ice_3", "name": "Ice III", "element": Element.ICE,
-			"unique": true, "requires": "ice_2", "desc": "Ice tier 3 - TBD"},
+		# --- Ice line: the slow deepens, then it pays off, then it stops them. ---
+		{"id": "ice_1", "name": "Deep Chill", "element": Element.ICE,
+			"unique": true,
+			"desc": "A far heavier slow, and it lasts longer",
+			"effect": [{"op": "mult", "stat": STAT_SLOW_FACTOR, "value": 0.6},
+				{"op": "mult", "stat": STAT_SLOW_DURATION, "value": 1.5}]},
+		{"id": "ice_2", "name": "Shatter", "element": Element.ICE,
+			"unique": true, "requires": "ice_1",
+			"desc": "Chilled enemies take +40% damage",
+			"effect": {"op": "flag", "flag": FLAG_SHATTER}},
+		{"id": "ice_3", "name": "Flash Freeze", "element": Element.ICE,
+			"unique": true, "requires": "ice_2",
+			"desc": "Every 4th hit freezes solid",
+			"effect": {"op": "flag", "flag": FLAG_FLASH_FREEZE}},
+		# ICE: a pool of ice centred on the player. Everything caught inside is
+		# FULLY FROZEN, not slowed. Tiers grow the pool, the ultimate's own
+		# duration, and how long the freeze holds - three knobs, not two.
 		{"id": "ice_ult_1", "name": "Ultimate I", "element": Element.ICE,
-			"icon": ICON_ULTIMATE,
-			"unique": true, "desc": "Unlocks the Ice ultimate - TBD"},
+			"icon": ICON_ULTIMATE, "unique": true,
+			"desc": "Unlocks Frozen Ground (E)\nFreezes everything around you",
+			"effect": {"op": "flag", "flag": FLAG_ULTIMATE}},
 		{"id": "ice_ult_2", "name": "Ultimate II", "element": Element.ICE,
 			"icon": ICON_ULTIMATE,
 			"unique": true, "requires": "ice_ult_1",
-			"desc": "Ice ultimate tier 2 - TBD"},
+			"desc": "Frozen Ground spreads wider and holds longer",
+			"effect": [{"op": "mult", "stat": STAT_ULTIMATE_RADIUS, "value": 1.35},
+				{"op": "mult", "stat": STAT_ULTIMATE_DURATION, "value": 1.35},
+				{"op": "mult", "stat": STAT_ULTIMATE_FREEZE, "value": 1.35}]},
 		{"id": "ice_ult_3", "name": "Ultimate III", "element": Element.ICE,
 			"icon": ICON_ULTIMATE,
 			"unique": true, "requires": "ice_ult_2",
-			"desc": "Ice ultimate tier 3 - TBD"},
+			"desc": "Frozen Ground spreads wider and holds longer again",
+			"effect": [{"op": "mult", "stat": STAT_ULTIMATE_RADIUS, "value": 1.35},
+				{"op": "mult", "stat": STAT_ULTIMATE_DURATION, "value": 1.35},
+				{"op": "mult", "stat": STAT_ULTIMATE_FREEZE, "value": 1.35}]},
 	],
 }
 

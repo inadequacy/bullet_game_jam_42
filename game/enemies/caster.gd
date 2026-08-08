@@ -161,7 +161,9 @@ func _end_charge_glow() -> void:
 	if _sprite == null:
 		return
 	var tween := create_tween()
-	tween.tween_property(_sprite, "modulate", _base_modulate, 0.15)
+	# current_modulate(), not _base_modulate: a caster chilled mid-charge must
+	# still look chilled when the glow drops.
+	tween.tween_property(_sprite, "modulate", current_modulate(), 0.15)
 
 
 func _cast() -> void:

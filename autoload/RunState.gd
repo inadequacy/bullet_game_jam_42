@@ -27,6 +27,11 @@ var _add: Dictionary = {}
 var _mult: Dictionary = {}
 var _flags: Dictionary = {}
 
+## Basic-attack hits landed this run, counted only so Flash Freeze can fire on
+## every Nth one. Deterministic on purpose - "every 4th hit" is something the
+## player can feel and plan around, where a 25% roll is just noise.
+var _hits_landed: int = 0
+
 
 ## Wipes the run. Call when starting a new one.
 func reset() -> void:
@@ -35,7 +40,19 @@ func reset() -> void:
 	_add.clear()
 	_mult.clear()
 	_flags.clear()
+	_hits_landed = 0
 	stats_changed.emit()
+
+
+## Counts one landed hit and reports whether it is a freezing one. Always call
+## it on a hit, even without the card - the count has to keep running or taking
+## Flash Freeze mid-run would start the cycle over.
+func count_hit_and_check_freeze() -> bool:
+	_hits_landed += 1
+	if not flag(CardDatabase.FLAG_FLASH_FREEZE):
+		return false
+	var every := maxi(1, int(round(modified(CardDatabase.STAT_FREEZE_EVERY, 4.0))))
+	return _hits_landed % every == 0
 
 
 ## A base value with every card the player owns folded in:
@@ -64,11 +81,17 @@ func apply_card(card: Dictionary) -> void:
 	if element != CardDatabase.Element.NONE and chosen_element == CardDatabase.Element.NONE:
 		chosen_element = element
 
-	var effect: Dictionary = card.get("effect", {})
-	if effect.is_empty():
+	# `effect` is one shape or an array of them, so a card can do two things.
+	var effect: Variant = card.get("effect", {})
+	var steps: Array = effect if effect is Array else [effect]
+	var applied := 0
+	for step in steps:
+		if step is Dictionary and not (step as Dictionary).is_empty():
+			_apply_effect(step, id)
+			applied += 1
+
+	if applied == 0:
 		push_warning("Card '%s' has no effect - it is still a placeholder." % id)
-	else:
-		_apply_effect(effect, id)
 
 	stats_changed.emit()
 

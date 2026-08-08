@@ -13,6 +13,7 @@
 [ext_resource type="PackedScene" path="res://game/ui/dash_bar.tscn" id="11_dash"]
 [ext_resource type="Script" uid="uid://bot2idqjveu7p" path="res://game/levels/camera_shake.gd" id="12_shake"]
 [ext_resource type="PackedScene" path="res://game/ui/parry_bar.tscn" id="13_parry"]
+[ext_resource type="PackedScene" path="res://game/ui/ultimate_bar.tscn" id="15_ult"]
 [ext_resource type="PackedScene" path="res://game/ui/run_timer.tscn" id="14_timer"]
 [ext_resource type="Script" uid="uid://ch2c4m7ly0rc4" path="res://game/levels/sound_manager.gd" id="14_6segh"]
 
@@ -57,6 +58,13 @@ offset_left = 200.0
 offset_top = 84.0
 offset_right = 320.0
 offset_bottom = 116.0
+
+[node name="UltimateBar" parent="HUD" instance=ExtResource("15_ult")]
+layout_mode = 3
+offset_left = 200.0
+offset_top = 120.0
+offset_right = 320.0
+offset_bottom = 152.0
 
 [node name="LevelBounds" type="Node2D" parent="." unique_id=1625576201]
 
