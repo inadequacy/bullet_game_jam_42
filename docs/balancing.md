@@ -22,3 +22,4 @@
 ## Cards
 - Maybe tune them to be more powerful
 - More IFrames from picking it
+- Parry red ammo as a card would be nice
