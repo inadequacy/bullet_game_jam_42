@@ -28,7 +28,11 @@ texture = ExtResource("2_dh60h")
 [node name="Character" parent="." unique_id=876229241 instance=ExtResource("2_qmtf6")]
 position = Vector2(510, 275)
 
+<<<<<<< Updated upstream
 [node name="Camera2D" type="Camera2D" parent="." unique_id=590736892]
+=======
+[node name="Camera2D" type="Camera2D" parent="." unique_id=285017350]
+>>>>>>> Stashed changes
 position = Vector2(576, 324)
 script = ExtResource("12_shake")
 
@@ -36,20 +40,32 @@ script = ExtResource("12_shake")
 
 [node name="Score" parent="HUD" unique_id=1254480381 instance=ExtResource("5_iincs")]
 
+<<<<<<< Updated upstream
 [node name="RunTimer" parent="HUD" unique_id=1529474774 instance=ExtResource("14_timer")]
+=======
+[node name="RunTimer" parent="HUD" unique_id=79898484 instance=ExtResource("14_timer")]
+>>>>>>> Stashed changes
 
 [node name="HealthBar" parent="HUD" unique_id=2142482034 instance=ExtResource("9_b3dog")]
 offset_transform_enabled = true
 offset_transform_position = Vector2(200, 18)
 
+<<<<<<< Updated upstream
 [node name="DashBar" parent="HUD" unique_id=1224035391 instance=ExtResource("11_dash")]
+=======
+[node name="DashBar" parent="HUD" unique_id=737584842 instance=ExtResource("11_dash")]
+>>>>>>> Stashed changes
 layout_mode = 3
 offset_left = 200.0
 offset_top = 48.0
 offset_right = 320.0
 offset_bottom = 80.0
 
+<<<<<<< Updated upstream
 [node name="ParryBar" parent="HUD" unique_id=83104074 instance=ExtResource("13_parry")]
+=======
+[node name="ParryBar" parent="HUD" unique_id=79000143 instance=ExtResource("13_parry")]
+>>>>>>> Stashed changes
 layout_mode = 3
 offset_left = 200.0
 offset_top = 84.0
@@ -95,6 +111,7 @@ collision_layer = 15
 [node name="CollisionShape2D" type="CollisionShape2D" parent="LevelBounds/LevelBound4" unique_id=2072502007]
 shape = SubResource("RectangleShape2D_haif4")
 
+<<<<<<< Updated upstream
 [node name="StaticBody2D" type="StaticBody2D" parent="LevelBounds" unique_id=826851995]
 position = Vector2(777, 232)
 
@@ -108,5 +125,8 @@ script = ExtResource("14_6segh")
 
 [node name="PlayerSounds" type="AudioStreamPlayer2D" parent="SoundManager" unique_id=460092337]
 volume_db = -49.57
+=======
+[node name="CardScreen" parent="." unique_id=1759674741 instance=ExtResource("10_cards")]
+>>>>>>> Stashed changes
 
 [connection signal="shoot" from="Character" to="." method="_on_character_shoot"]
