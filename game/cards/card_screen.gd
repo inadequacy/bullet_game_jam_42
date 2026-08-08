@@ -110,6 +110,8 @@ func _on_card_pressed(index: int) -> void:
 	# RunState records the pick and applies the effect. This screen does not
 	# track anything itself - it only presents.
 	RunState.apply_card(card)
+	GameManager.experience = 0
+	GameManager.exp_changed.emit(GameManager.experience, GameManager.exp_threshold)
 
 	if was_unelemented and RunState.chosen_element != CardDatabase.Element.NONE:
 		element_locked.emit(RunState.chosen_element)
