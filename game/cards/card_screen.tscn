@@ -1,0 +1,60 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/cards/card_screen.gd" id="1_script"]
+
+[node name="CardScreen" type="CanvasLayer"]
+process_mode = 3
+layer = 10
+script = ExtResource("1_script")
+
+[node name="Screen" type="Control" parent="."]
+visible = false
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Dim" type="ColorRect" parent="Screen"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0.72)
+
+[node name="Center" type="CenterContainer" parent="Screen"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="VBox" type="VBoxContainer" parent="Screen/Center"]
+theme_override_constants/separation = 20
+
+[node name="Title" type="Label" parent="Screen/Center/VBox"]
+text = "CHOOSE AN UPGRADE"
+horizontal_alignment = 1
+
+[node name="Hint" type="Label" parent="Screen/Center/VBox"]
+modulate = Color(1, 1, 1, 0.6)
+text = "placeholder cards - picking one does nothing yet    (G to close)"
+horizontal_alignment = 1
+
+[node name="Cards" type="HBoxContainer" parent="Screen/Center/VBox"]
+theme_override_constants/separation = 24
+
+[node name="Card1" type="Button" parent="Screen/Center/VBox/Cards"]
+custom_minimum_size = Vector2(250, 320)
+text = "Card 1"
+
+[node name="Card2" type="Button" parent="Screen/Center/VBox/Cards"]
+custom_minimum_size = Vector2(250, 320)
+text = "Card 2"
+
+[node name="Card3" type="Button" parent="Screen/Center/VBox/Cards"]
+custom_minimum_size = Vector2(250, 320)
+text = "Card 3"

@@ -29,6 +29,15 @@ menu.
 | **E** | Ultimate *(bound, not implemented)* |
 | *none* | Basic spell auto-fires — at the nearest enemy by default |
 
+### Debug keys
+
+Temporary, for testing. Remove before submitting.
+
+| Input | Action |
+| --- | --- |
+| **G** | Open/close the card screen (freezes the game) |
+| **H** | Toggle invincibility |
+
 ---
 
 ## Folder structure
@@ -65,7 +74,7 @@ halves of one thing.
 | I'm adding… | It goes in |
 | --- | --- |
 | A new enemy type | `game/enemies/` (scene + script together) |
-| A new power-up card | `game/cards/` — create it |
+| A new power-up card | `game/cards/` |
 | A boss | `game/enemies/` — bosses subclass `Enemy` like everything else |
 | A HUD element | `game/ui/` |
 | A sound effect | `assets/audio/` — create it |
