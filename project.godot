@@ -20,6 +20,7 @@ config/icon="res://icon.svg"
 SilentWolf="*uid://dt2btdd1aju5l"
 GameManager="*res://autoload/GameManager.gd"
 RunState="*res://autoload/RunState.gd"
+SoundManager="*uid://ch2c4m7ly0rc4"
 
 [display]
 

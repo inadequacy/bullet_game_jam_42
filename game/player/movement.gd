@@ -111,6 +111,14 @@ var _knockback: Vector2 = Vector2.ZERO
 ## knockback_decay and a weaker one ends sooner.
 var _knockback_drop: float = 0.0
 @export_group("")
+# Sounds
+var attack_sound = preload("res://assets/sounds/magic_attack1.wav")
+var parry_sound = preload("res://assets/sounds/parry1.wav")
+var dash_sound = preload("res://assets/sounds/dash1.wav")
+var healing_sound = preload("res://assets/sounds/healing1.wav")
+var levelup_sound = preload("res://assets/sounds/level_up1.wav")
+var playerhit_dog_sound = preload("res://assets/sounds/playerhit_dog1.wav")
+var playerhit_low_sound = preload("res://assets/sounds/playerhit_low1.wav")
 
 # Attack settings
 @export_group("Attack Settings")
@@ -338,7 +346,6 @@ func dash_direction(direction: Vector2) -> void:
 	is_dashing = false
 	movement_allowed = true
 
-
 func _ready() -> void:
 	# Keep the shape in sync so the parry radius is visible with debug collision
 	# shapes on, even though the shape itself stays disabled.
@@ -378,6 +385,7 @@ func parry_radius_update(new_radius: float) -> void:
 
 ## Press Shift to parry
 func parry_this_casual() -> void:
+	SoundManager.play_sfx(parry_sound)
 	if not parry_allowed:
 		return
 
@@ -585,6 +593,8 @@ func _decay_knockback(delta: float) -> void:
 
 func basic_attack() -> void:
 	can_attack = false
+	SoundManager.play_sfx(attack_sound)
+	
 	shoot.emit(projectile, aim_angle(), position)
 	await get_tree().create_timer(effective_cast_interval()).timeout
 	can_attack = true
