@@ -1,18 +1,18 @@
 [gd_scene format=3 uid="uid://bxufhl5cvsmpq"]
 
 [ext_resource type="Script" uid="uid://bxkb5aexglxbc" path="res://game/levels/level.gd" id="1_nk1il"]
-[ext_resource type="Texture2D" path="res://assets/images/background/ruin_bg.png" id="2_dh60h"]
+[ext_resource type="Texture2D" uid="uid://cd458m3vthaod" path="res://assets/images/background/ruin_bg.png" id="2_dh60h"]
 [ext_resource type="PackedScene" uid="uid://dfv1w0exg4fps" path="res://game/player/character.tscn" id="2_qmtf6"]
 [ext_resource type="PackedScene" uid="uid://dpu2waoxwk22w" path="res://game/ui/score.tscn" id="5_iincs"]
 [ext_resource type="PackedScene" uid="uid://bu5b1wbkhqegi" path="res://game/ui/health_bar.tscn" id="9_b3dog"]
 [ext_resource type="PackedScene" path="res://game/cards/card_screen.tscn" id="10_cards"]
 [ext_resource type="PackedScene" path="res://game/ui/dash_bar.tscn" id="11_dash"]
+[ext_resource type="PackedScene" uid="uid://beexpipvffo0h" path="res://game/ui/exp_bar.tscn" id="11_yqurt"]
 [ext_resource type="Script" uid="uid://bot2idqjveu7p" path="res://game/levels/camera_shake.gd" id="12_shake"]
-[ext_resource type="PackedScene" path="res://game/ui/parry_bar.tscn" id="13_parry"]
+[ext_resource type="PackedScene" uid="uid://dov8juapygxev" path="res://game/ui/parry_bar.tscn" id="13_parry"]
 [ext_resource type="Script" uid="uid://ch2c4m7ly0rc4" path="res://game/levels/sound_manager.gd" id="14_6segh"]
 [ext_resource type="PackedScene" path="res://game/ui/run_timer.tscn" id="14_timer"]
 [ext_resource type="PackedScene" path="res://game/ui/ultimate_bar.tscn" id="15_ult"]
-[ext_resource type="PackedScene" path="res://game/ui/exp_bar.tscn" id="16_exp"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_haif4"]
 
@@ -53,25 +53,31 @@ offset_right = 320.0
 offset_bottom = 80.0
 
 [node name="ParryBar" parent="HUD" unique_id=83104074 instance=ExtResource("13_parry")]
-layout_mode = 3
 offset_left = 200.0
 offset_top = 84.0
 offset_right = 320.0
 offset_bottom = 116.0
 
-[node name="UltimateBar" parent="HUD" instance=ExtResource("15_ult")]
+[node name="UltimateBar" parent="HUD" unique_id=1223132614 instance=ExtResource("15_ult")]
 layout_mode = 3
 offset_left = 200.0
 offset_top = 120.0
 offset_right = 320.0
 offset_bottom = 152.0
 
-[node name="EXPBar" parent="HUD" instance=ExtResource("16_exp")]
-layout_mode = 3
-offset_left = 200.0
-offset_top = 156.0
-offset_right = 320.0
-offset_bottom = 188.0
+[node name="EXPBar" parent="HUD" unique_id=1388852686 instance=ExtResource("11_yqurt")]
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -60.0
+offset_top = -32.0
+offset_right = 60.0
+offset_bottom = 0.0
+grow_horizontal = 2
+grow_vertical = 0
+offset_transform_position = Vector2(0, -20)
 
 [node name="LevelBounds" type="Node2D" parent="." unique_id=1625576201]
 
