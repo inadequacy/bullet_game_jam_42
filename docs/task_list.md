@@ -48,7 +48,7 @@
 - level-up (3 notes)
 - parry (high pitched)
 - heart pickup
-- 
+
 ### Enemy
 - shoot
 
@@ -57,6 +57,7 @@
 
 ### Others
 - background music
+- ambience
 
 ## Visuals
 
