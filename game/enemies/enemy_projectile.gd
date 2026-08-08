@@ -33,7 +33,7 @@ const COLORS := {
 @export var homing_turn_rate: float = 220.0
 ## Homing gives up after this long and the shot flies straight, so every red
 ## projectile eventually becomes escapable even if the player never dashes.
-@export var homing_duration: float = 3.0
+@export var homing_duration: float = 4.0
 ## Dashing severs the lock: the shot stops tracking and continues straight.
 ##
 ## This is what makes dash - and only dash - the answer to red. Tuning turn rate

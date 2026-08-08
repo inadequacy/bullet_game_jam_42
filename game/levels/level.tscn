@@ -11,6 +11,7 @@
 [ext_resource type="PackedScene" uid="uid://bu5b1wbkhqegi" path="res://game/ui/health_bar.tscn" id="9_b3dog"]
 [ext_resource type="PackedScene" path="res://game/cards/card_screen.tscn" id="10_cards"]
 [ext_resource type="PackedScene" path="res://game/ui/dash_bar.tscn" id="11_dash"]
+[ext_resource type="Script" path="res://game/levels/camera_shake.gd" id="12_shake"]
 
 [node name="Level" type="Node2D" unique_id=1836397518]
 script = ExtResource("1_nk1il")
@@ -51,6 +52,10 @@ position = Vector2(1020, 340)
 
 [node name="Chaser" parent="." unique_id=424083071 instance=ExtResource("4_chaser")]
 position = Vector2(950, 520)
+
+[node name="Camera2D" type="Camera2D" parent="."]
+position = Vector2(576, 324)
+script = ExtResource("12_shake")
 
 [node name="HUD" type="CanvasLayer" parent="." unique_id=792891429]
 

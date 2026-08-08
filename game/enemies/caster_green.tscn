@@ -18,13 +18,12 @@ move_speed = 130.0
 xp_value = 2
 preferred_range = 300.0
 range_tolerance = 60.0
+attack_mode = 1
 projectile_scene = ExtResource("4_projectile")
 projectile_kind = 1
-projectile_speed = 330.0
 cast_interval = 2.8
-telegraph_time = 0.8
-projectiles_per_cast = 1
-spread_degrees = 0.0
+charge_time = 0.3
+hitscan_damage = 1.0
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
 modulate = Color(0.55, 1, 0.65, 1)
