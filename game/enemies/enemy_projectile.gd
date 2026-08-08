@@ -176,6 +176,20 @@ func is_cleared_by_parry_burst() -> bool:
 	return kind == Kind.BLUE
 
 
+## Whether touching the player always spends the shot, even when the damage was
+## blocked by i-frames or the debug toggle.
+##
+## This used to be false for every kind, so that invulnerability could never
+## double as a screen clear. In practice a shot visibly sliding through the
+## player reads as a bug, and it costs little: the parry burst is a far better
+## clear than a dash, and RED cannot be farmed at one shot in the air.
+##
+## GREEN keeps the old behaviour. It is the parry target, so a blocked one
+## carrying on gives the player the chance to answer it the intended way.
+func is_consumed_on_contact() -> bool:
+	return kind != Kind.GREEN
+
+
 func _on_body_entered(body: Node2D) -> void:
 	if not body.is_in_group("player"):
 		return
@@ -183,18 +197,11 @@ func _on_body_entered(body: Node2D) -> void:
 	if kind == Kind.RED and body.has_method("apply_knockback"):
 		body.apply_knockback(direction, knockback_strength)
 
-	# Only spend the shot if the hit actually landed. A blocked hit - i-frames,
-	# or the debug toggle - lets the shot fly on through, so invulnerability
-	# never doubles as a screen clear.
 	var landed := true
 	if body.has_method("take_damage"):
 		var result = body.take_damage(damage)
 		# Older callers returned nothing; treat that as a hit.
 		landed = result != false
 
-	# RED is the exception: it always spends itself on contact. There is only
-	# ever one in the air, so it cannot be farmed into a screen clear the way a
-	# blue volley could, and a homing shot that phased through the player would
-	# just loop around and come back - reading as a bug rather than as a dodge.
-	if landed or kind == Kind.RED:
+	if landed or is_consumed_on_contact():
 		queue_free()
