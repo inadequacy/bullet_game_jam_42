@@ -1,14 +1,34 @@
 extends Area2D
 
+## The player's basic spell. Damages the first enemy it touches, then dies.
 
 var velocity = Vector2.RIGHT
 @export var speed: float = 500
+## Enemy health values are 20-40, so 10 means 2-4 hits to kill.
+@export var damage: float = 10.0
+## Failsafe despawn so stray shots never accumulate over a long run.
+@export var lifetime: float = 6.0
 
-# Called when the node enters the scene tree for the first time.
+var _age: float = 0.0
+
+
 func _ready() -> void:
-	pass # Replace with function body.
+	add_to_group("player_projectiles")
+	body_entered.connect(_on_body_entered)
 
 
-# Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta: float) -> void:
+	_age += delta
+	if _age >= lifetime:
+		queue_free()
+		return
 	position += velocity * delta * speed
+
+
+func _on_body_entered(body: Node2D) -> void:
+	# The player is on the same collision layer and the shot spawns on top of
+	# them, so anything that isn't an enemy is ignored rather than filtered out
+	# with layers.
+	if body is Enemy:
+		(body as Enemy).take_damage(damage)
+		queue_free()
