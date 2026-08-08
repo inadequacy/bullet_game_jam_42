@@ -42,15 +42,15 @@
 ## Sounds (Kevin)
 ### Player
 - shot ✔️
-- hit (low pitch)
+- hit (low pitch) ✔️
 - death (optional)
 - level-up (3 notes) ✔️
 - parry (high-pitched) ✔️
 - heart pickup ✔️
 
 ### Enemy
-- parry shot
-- parry shot recharge
+- parry shot ✔️
+- parry shot recharge ✔️
 
 ### Boss
 - Spawn (drone sound) ✔️
