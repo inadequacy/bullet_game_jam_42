@@ -58,6 +58,8 @@
 ### Others
 - background music
 - ambience
+- Button hover
+- button click
 
 ## Visuals
 
