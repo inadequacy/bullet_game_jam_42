@@ -21,7 +21,11 @@ extends Enemy
 ## Seconds between strafe direction reversals, so it doesn't orbit predictably.
 @export var strafe_flip_interval: float = 2.5
 
+## PROJECTILE fires travelling shots. HITSCAN charges, then hits instantly.
+enum AttackMode { PROJECTILE, HITSCAN }
+
 @export_group("Casting")
+@export var attack_mode: AttackMode = AttackMode.PROJECTILE
 @export var projectile_scene: PackedScene
 ## Which spell this caster throws. Drives colour and how the player answers it.
 @export var projectile_kind: EnemyProjectile.Kind = EnemyProjectile.Kind.BLUE
@@ -34,7 +38,31 @@ extends Enemy
 ## Total arc of the spread, in degrees.
 @export var spread_degrees: float = 26.0
 ## Casters root themselves while winding up, which makes them punishable.
+## For HITSCAN this must stay ON - a stationary, glowing caster IS the tell.
 @export var stop_while_casting: bool = true
+
+@export_group("Hitscan")
+## How long the caster charges before firing. THE REACTION WINDOW - the shot
+## itself is far too fast to answer, so this aura is what the player reads.
+## Raise it to make the enemy more forgiving.
+@export var charge_time: float = 0.6
+@export var hitscan_damage: float = 1.0
+## Colour of the aura and the shot.
+@export var charge_color: Color = Color(0.3, 1.0, 0.4)
+## How much brighter the caster's own sprite gets at full charge. Must be well
+## above 1.0 or the tint is lost against an already-green sprite.
+@export var charge_glow_intensity: float = 2.4
+@export var aura_start_radius: float = 26.0
+@export var aura_end_radius: float = 72.0
+
+@export_subgroup("Trace")
+## Pixels per second. Fast enough to be unreactable, slow enough to be seen.
+@export var trace_speed: float = 2500.0
+## Length of the visible streak.
+@export var trace_length: float = 140.0
+@export var trace_width: float = 3.0
+
+var _aura: ChargeAura = null
 
 var _cast_timer: float = 0.0
 var _telegraphing: bool = false
@@ -80,12 +108,19 @@ func _move(delta: float) -> void:
 		velocity = to_player.orthogonal() * _strafe_dir * move_speed * strafe_speed_ratio
 
 
+## The wind-up before a shot. Hitscan uses charge_time - that glow is the only
+## warning the player gets, so the two knobs are kept separate per mode.
+func telegraph_duration() -> float:
+	return charge_time if attack_mode == AttackMode.HITSCAN else telegraph_time
+
+
 func _tick_casting(delta: float) -> void:
 	_cast_timer += delta
+	var wind_up := telegraph_duration()
 
-	if not _telegraphing and _cast_timer >= cast_interval - telegraph_time:
+	if not _telegraphing and _cast_timer >= cast_interval - wind_up:
 		_telegraphing = true
-		telegraph(1.25, telegraph_time, 0.1)
+		_start_wind_up(wind_up)
 
 	if _cast_timer >= cast_interval:
 		_cast_timer = 0.0
@@ -93,7 +128,72 @@ func _tick_casting(delta: float) -> void:
 		_cast()
 
 
+func _start_wind_up(duration: float) -> void:
+	if attack_mode == AttackMode.HITSCAN:
+		_start_charge_glow(duration)
+	else:
+		telegraph(1.25, duration, 0.1)
+
+
+## Builds the aura and brightens the caster over the whole charge, so "about to
+## fire" gets progressively louder instead of popping on at the end.
+func _start_charge_glow(duration: float) -> void:
+	if _aura != null and is_instance_valid(_aura):
+		_aura.queue_free()
+	_aura = ChargeAura.start(self, aura_start_radius, aura_end_radius,
+		duration, charge_color)
+
+	if _sprite == null:
+		return
+	# Overbright, not just "green" - the sprite is already green, so tinting
+	# toward the same hue would be invisible. Brightness is the signal.
+	var lit := charge_color * charge_glow_intensity
+	lit.a = _base_modulate.a
+	var tween := create_tween()
+	tween.tween_property(_sprite, "modulate", lit, duration)
+
+
+func _end_charge_glow() -> void:
+	if _aura != null and is_instance_valid(_aura):
+		_aura.release()
+		_aura = null
+
+	if _sprite == null:
+		return
+	var tween := create_tween()
+	tween.tween_property(_sprite, "modulate", _base_modulate, 0.15)
+
+
 func _cast() -> void:
+	if attack_mode == AttackMode.HITSCAN:
+		_fire_hitscan()
+	else:
+		_fire_projectiles()
+
+
+## Releases the charge as a fast travelling streak aimed at where the player is
+## standing right now. The target is fixed at fire time - green is a committed
+## shot, answered by parrying rather than dodging.
+##
+## The trace resolves damage and parry on ARRIVAL, so it owns that logic, not
+## this caster - it has to keep working even if the caster dies mid-flight.
+func _fire_hitscan() -> void:
+	_end_charge_glow()
+	if not has_player():
+		return
+
+	HitscanTrace.fire(get_parent(), global_position, player.global_position,
+		charge_color, trace_speed, trace_length, trace_width, hitscan_damage)
+
+
+func _on_death() -> void:
+	# Don't leave an aura floating where the caster used to be.
+	if _aura != null and is_instance_valid(_aura):
+		_aura.queue_free()
+		_aura = null
+
+
+func _fire_projectiles() -> void:
 	if projectile_scene == null or not has_player():
 		return
 

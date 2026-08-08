@@ -27,7 +27,7 @@ Everything gained is lost on death. No meta-progression in the jam build.
 | Move | WASD | 8-directional, constant speed. **Does not change facing** |
 | Face | Mouse | Player always faces the cursor, independent of movement |
 | Dash | Space | Short burst along **WASD direction**, ~0.4 s cooldown. **No i-frames by default** — i-frames are a card |
-| Parry | Shift | Short active window (~0.15 s), ~1.5 s cooldown |
+| Parry | Shift | Short active window (~0.2 s), 0.4 s cooldown — **refunded in full if the parry connects** |
 | Ability | Q | **Undecided.** Behavior not designed yet — implement late or cut |
 | Ultimate | E | Fires along **facing**. **Locked** until the Ultimate card is drawn |
 | Toggle aim | T | Switches the basic spell between auto-aim and facing |
@@ -76,8 +76,14 @@ meaningful without punishing imprecision.
 ### Parry
 
 A successful parry (green projectiles only) triggers a **clear burst** — a small
-radius around the player that destroys blue projectiles. Green is the only
-parryable color and the only color that rewards parrying.
+radius around the player that destroys **every other colour inside it, blue and
+red alike**. Green is the only parryable color and the only color that rewards
+parrying.
+
+A parry that connects also **refunds its own cooldown instantly** — the bar is
+full again the moment it lands. The lockout exists to punish a wild press, so
+reading the screen correctly costs nothing and parries can be chained. Miss, and
+the normal cooldown runs.
 
 ### Health
 
@@ -92,15 +98,45 @@ must read a full screen in a quarter second.
 | Color | Behavior | Parryable | Cleared by parry burst | The answer is |
 | --- | --- | --- | --- | --- |
 | 🔵 **Blue** | Straight, slow, dense | No | **Yes** | Parry a green shot to clear the screen |
-| 🟢 **Green** | Straight, telegraphed | **Yes** | n/a (it's the trigger) | Parry it |
-| 🔴 **Red** | **Homing** | No | No | **Dash** — dashing severs its lock |
+| 🟢 **Green** | **Hitscan** after a charge | **Yes** | No — it's the trigger | Parry the charge |
+| 🔴 **Red** | **Homing** | No | **Yes** | **Dash** — dashing severs its lock |
 
 Red is the only projectile that chases you, which makes it the only one that
 demands a dash. Blue is the crowd you clear, green is the opportunity you punish,
 red is the threat that follows you home.
 
+The burst clears red as well as blue, but that does not make the dash redundant:
+the burst only reaches `parry_burst_radius`, and it needs a green shot on screen
+to trigger at all. Red at range is still a dash problem. What the burst buys is
+that a landed parry is never a consolation prize — it does not leave the one shot
+that was actually chasing you still in the air.
+
 Red is introduced by the first boss and only becomes a normal spawn afterwards —
 see §5.
+
+### Green: parry the charge, not the shot
+
+Green fires a **fast travelling trace** after a visible charge. Three stages:
+
+| Stage | Duration | What the player sees |
+| --- | --- | --- |
+| **Charge** | `charge_time` — 0.6 s | Caster roots itself. A green aura swells around it, growing in size and opacity the whole time, while the caster's own sprite brightens |
+| **Shot** | ~0.18 s over 400 px | A green streak crosses the gap at `trace_speed` (2200 px/s) |
+| **Impact** | — | Damage, or nothing if a parry is active |
+
+**The streak is visible but not reactable** — under a fifth of a second in
+flight. The reaction window is the *aura*, which is why it builds gradually
+rather than popping on: how bright it is tells you how close the shot is.
+
+The shot is **committed** — it aims where the player stood at fire time and does
+not track. Green is not answered by dodging; it's answered by parrying.
+
+Damage and the parry check resolve **on arrival, not on firing**. So the real
+window from first glow to impact is ~0.78 s, comfortably reactable, and a parry
+pressed slightly late still catches the shot in flight.
+
+That makes green the one enemy that trains rhythm rather than reflex. Blue and
+red are objects in flight you respond to; green is a clock you learn.
 
 ### Red: how the dash actually escapes it
 
@@ -134,13 +170,83 @@ is the only answer, which is exactly the intent — reached by a different route
 
 ### XP and Cards
 
-XP comes from kills. On level-up the game pauses and offers **3 random cards**.
+XP comes from kills. On level-up the game pauses and offers **3 cards — one from
+each pool**, always in the same left-to-right order. The slots are fixed so the
+player learns where to look instead of re-reading three random cards under
+pressure.
+
+| Slot | Pool | Contents |
+| --- | --- | --- |
+| 1 | **Basic** | Utility. Currently only *Renewal* (restore to full health) |
+| 2 | **Action** | Mobility, dash, parry, and basic attack damage / cast rate / spread |
+| 3 | **Attack** | Elements and their ultimates, nothing else |
+
+Slot 3 is the only one that can run out — the element lines are one-shot chains,
+seven cards deep. When it does, **slot 3 falls back to an Action card**, so the
+player always gets three real choices and never a blank. The fallback never
+repeats whatever slot 2 already offered.
+
+### Element lock
+
+The player starts with plain **magic missiles** — no school committed. The Attack
+slot offers three one-time commitment cards:
+
+| Card | Commits to | Effect |
+| --- | --- | --- |
+| **Arcane** | Arcane | Keep your missiles, refined |
+| **Fire** | Fire | Missiles explode on impact |
+| **Ice** | Ice | Missiles slow what they hit |
+
+**Taking one locks the run.** From that point the Attack slot only ever offers
+element-neutral upgrades (damage, cast rate, spread) plus that element's own
+cards — and the **ultimate is that element's ultimate**. The other two schools
+become permanently unreachable.
+
+Arcane is the "stay as you are" option, which matters: it means committing is
+never forced, and a player who likes plain missiles gets rewarded for doubling
+down rather than punished for not switching.
+
+Element-specific cards **do not appear before a commitment**, so the choice is
+never pre-empted by a card the player can't use yet.
+
+### Element tiers
+
+Each school has two numbered chains, offered strictly in order — tier II only
+appears once tier I is taken:
+
+```
+Fire  →  Fire I  →  Fire II  →  Fire III          (spell line)
+      →  Ultimate I  →  Ultimate II  →  Ultimate III   (ultimate line)
+```
+
+`Ultimate I` is the unlock; II and III upgrade it. That means the ultimate is
+still a discovery — it can't be upgraded before it's found — and the E key stays
+dead until the player draws it.
+
+A commitment card plus six tiers is seven Attack-slot cards per run. Once that
+line is spent the slot falls back to Action cards, which is the intended tail
+rather than a gap.
+
+*Names are placeholders.* Display names repeat across schools — every element has
+an `Ultimate I` — so cards are tracked internally by `id`, not by name.
+
+Because the Basic pool holds a single card, slot 1 is currently a **guaranteed
+heal** rather than a choice. That is fine early — it means a level-up always
+offers a way out of trouble — but the pool needs more entries before the slot
+feels like a decision.
+
 Cards upgrade **spells and abilities** — they are not generic stat sticks.
 
 | Card group | Examples |
 | --- | --- |
 | **Basic spell** | +damage, +fire rate, +projectile count, pierce, homing shots |
 | **Dash** | **i-frames** *(keystone — weight it rare)*, +charges, −cooldown, +distance |
+
+**Dash i-frames (Phase Step)** make the player invulnerable for the length of
+the dash only — it is not a standing shield. Blocked shots **pass through**
+rather than being destroyed, so invulnerability never doubles as a screen clear;
+clearing bullets stays the parry's job. The player goes translucent and cold
+during an invulnerable dash so the card is visibly doing something.
 | **Parry** | +window duration, −cooldown, +burst radius, heal on successful parry |
 | **Ultimate (E)** | **Unlock Ultimate** *(rare, appears once)*, then +charge rate |
 
@@ -182,8 +288,9 @@ the reason the player can't just camp a corner and out-range the casters.
 | **Red caster** | Holds range | Red homing | The "dash now" enemy |
 
 **Spawn blue and green casters together.** The parry burst only means something
-when there's blue on screen to clear, so pairing them is what teaches the
-mechanic without a tutorial.
+when there's something on screen to clear, so pairing them is what teaches the
+mechanic without a tutorial. Green must always be paired with *something* — a
+parry with an empty screen around it is a refunded cooldown and nothing else.
 
 **Gate red casters behind the first boss (3:00).** Red is introduced by the boss,
 so it should be a boss's signature before it becomes a normal spawn. Letting red
@@ -233,6 +340,28 @@ Difficulty escalates through **enemy density** — more enemies on screen, spawn
 faster, as the run clock advances. Enemy stats stay flat; the crowd is the
 pressure. Bosses are punctuation on top of a continuously rising baseline, not
 the only escalation.
+
+`level.gd` holds the arena at a **fixed head count per tier**, stepping up on the
+same three-minute beat as the bosses:
+
+| Clock | Tier | Enemies alive |
+| --- | --- | --- |
+| 12:00 – 9:00 | 1 | 3 |
+| 9:00 – 6:00 | 2 | 4 |
+| 6:00 – 3:00 | 3 | 5 |
+| 3:00 – 0:00 | 4 | 6 |
+
+It is a **cap that is always met**, not a spawn budget: kill one and the arena
+tops itself back up after `respawn_delay`, so the pressure never sags. Which
+enemy arrives is random from `ENEMY_SCENES`. The refill is driven by a head count
+rather than by death signals, so a tier stepping up, several kills landing at
+once, or an enemy lost some other way all resolve identically without anything
+having to report them.
+
+**Enemies never appear in the arena.** They spawn `spawn_offscreen_margin` past
+the nearest edge and walk in, and `_behavior()` is skipped until they arrive — a
+caster that could fire from outside the view would be attacking from somewhere
+the player cannot see, let alone answer.
 
 Normal waves keep spawning during boss fights and after 12:00.
 

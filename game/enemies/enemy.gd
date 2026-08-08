@@ -16,8 +16,22 @@ signal damaged(enemy: Enemy, amount: float)
 ## XP awarded to the player on death. Bosses set this much higher.
 @export var xp_value: int = 1
 
+@export_group("Entry")
+## How close to its entry target an enemy must get before it starts fighting.
+@export var entry_arrive_distance: float = 24.0
+## Failsafe. An enemy blocked on its way in - jammed against another that spawned
+## on the same edge - starts fighting anyway after this long, rather than
+## loitering off screen forever while holding a slot in the population cap.
+@export var entry_timeout: float = 6.0
+@export_group("")
+
 var health: float
 var player: Node2D = null
+
+## True while walking in from off screen. See enter_from().
+var _entering: bool = false
+var _entry_target: Vector2 = Vector2.ZERO
+var _entry_time: float = 0.0
 
 @onready var _sprite: CanvasItem = get_node_or_null("Sprite2D")
 
@@ -34,14 +48,53 @@ func _ready() -> void:
 			_base_scale = (_sprite as Node2D).scale
 	_acquire_player()
 	_on_enemy_ready()
+	died.connect(func(enemy): GameManager.add_score(enemy.xp_value))
 
 
 func _physics_process(delta: float) -> void:
 	# The player can be re-instanced between runs, so re-acquire if it went away.
 	if player == null or not is_instance_valid(player):
 		_acquire_player()
-	_behavior(delta)
+	if _entering:
+		_walk_in(delta)
+	else:
+		_behavior(delta)
 	move_and_slide()
+
+
+# --- Walking in --------------------------------------------------------------
+
+## Drops the enemy at `from` - meant to be somewhere off screen - and sends it
+## walking to `target` inside the arena.
+##
+## Until it arrives, _behavior() is skipped ENTIRELY: it does not cast, swing or
+## strafe. An enemy that could attack from outside the view would be hitting the
+## player from somewhere they cannot see, let alone answer.
+##
+## Call this after add_child(), not before - it writes global_position, which
+## only means anything once the node is in the tree.
+func enter_from(from: Vector2, target: Vector2) -> void:
+	global_position = from
+	_entry_target = target
+	_entry_time = 0.0
+	_entering = true
+
+
+## True while the enemy is still walking in and not yet fighting.
+func is_entering() -> bool:
+	return _entering
+
+
+## Straight line to the entry target, no avoidance - it is a short walk across
+## empty ground at the edge of the arena.
+func _walk_in(delta: float) -> void:
+	_entry_time += delta
+	if (global_position.distance_to(_entry_target) <= entry_arrive_distance
+			or _entry_time >= entry_timeout):
+		_entering = false
+		velocity = Vector2.ZERO
+		return
+	velocity = global_position.direction_to(_entry_target) * move_speed
 
 
 # --- Overridable by subclasses -----------------------------------------------
