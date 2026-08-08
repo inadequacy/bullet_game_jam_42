@@ -37,8 +37,8 @@ var is_dashing = false
 @export var parry_cooldown: float = 0.4
 ## How close a green shot must be to count as parried.
 @export var parry_radius: float = 90.0
-## Radius of the clear burst a successful parry sets off. Destroys blue shots
-## only - red is immune, green is what triggered it.
+## Radius of the clear burst a successful parry sets off. Destroys blue AND red
+## inside it; green is excluded, being what triggered it.
 @export var parry_burst_radius: float = 160.0
 ## Prints parry results to the terminal. Turn off before shipping.
 @export var parry_debug_logs: bool = true
@@ -59,6 +59,11 @@ var _parry_window_left: float = 0.0
 var _parry_cooldown_left: float = 0.0
 ## Length of the lockout currently running, so the bar has a denominator.
 var _parry_cooldown_span: float = 0.0
+## Set by a parry that connected. A parry that lands costs NO cooldown - the
+## lockout exists to punish a wild press, so landing one should not be punished
+## at all. Chaining parries back to back is the intended reward for reading the
+## screen correctly.
+var _parry_refunded: bool = false
 @export_group("")
 
 # Impact settings
@@ -317,6 +322,7 @@ func parry_this_casual() -> void:
 	parry_allowed = false
 	is_parrying = true
 	_parried_this_window = 0
+	_parry_refunded = false
 	_parry_window_opened_ms = Time.get_ticks_msec()
 
 	# NOTE: $ParryRadius is a CollisionShape2D on this CharacterBody2D, so
@@ -347,8 +353,11 @@ func _tick_parry(delta: float) -> void:
 			print("[PARRY] miss    | nothing green within %dpx | window %.2fs"
 				% [parry_radius, effective_parry_window()])
 
-		_parry_cooldown_span = maxf(effective_parry_cooldown(), 0.0)
-		_parry_cooldown_left = _parry_cooldown_span
+		# A parry that connected already refunded itself the moment it landed;
+		# don't hand it a lockout now that the window has run out.
+		if not _parry_refunded:
+			_parry_cooldown_span = maxf(effective_parry_cooldown(), 0.0)
+			_parry_cooldown_left = _parry_cooldown_span
 		parry_allowed = _parry_cooldown_left <= 0.0
 		return
 
@@ -380,7 +389,8 @@ func parry_cooldown_ratio() -> float:
 
 
 ## Runs every physics frame while the window is open. Only GREEN shots can be
-## parried; a success destroys that shot and sets off a burst that clears BLUE.
+## parried; a success destroys that shot and sets off a burst that clears every
+## other colour around the player.
 func _resolve_parry() -> void:
 	for p in get_tree().get_nodes_in_group("enemy_projectiles"):
 		if not is_instance_valid(p):
@@ -396,7 +406,7 @@ func _resolve_parry() -> void:
 
 		if parry_debug_logs:
 			var into := (Time.get_ticks_msec() - _parry_window_opened_ms) / 1000.0
-			print("[PARRY] SUCCESS | green shot parried at %dpx | %.2fs into %.2fs window | burst cleared %d blue"
+			print("[PARRY] SUCCESS | green shot parried at %dpx | %.2fs into %.2fs window | burst cleared %d shots | cooldown refunded"
 				% [dist, into, effective_parry_window(), cleared])
 
 
@@ -413,15 +423,24 @@ func try_parry_hitscan(_from: Vector2) -> bool:
 	var cleared := _parry_succeeded()
 	if parry_debug_logs:
 		var into := (Time.get_ticks_msec() - _parry_window_opened_ms) / 1000.0
-		print("[PARRY] SUCCESS | hitscan parried | %.2fs into %.2fs window | burst cleared %d blue"
+		print("[PARRY] SUCCESS | hitscan parried | %.2fs into %.2fs window | burst cleared %d shots | cooldown refunded"
 			% [into, effective_parry_window(), cleared])
 	return true
 
 
-## Everything a successful parry does, whatever it caught: clears blue, throws
-## up the ring, and thumps the screen. Returns how many blue shots died.
+## Everything a successful parry does, whatever it caught: refunds the cooldown,
+## clears the shots around the player, throws up the ring, and thumps the screen.
+## Returns how many shots the burst destroyed.
 func _parry_succeeded() -> int:
 	_parried_this_window += 1
+
+	# Refunded here rather than when the window shuts, so the bar reads full the
+	# instant the parry connects instead of a fifth of a second later.
+	_parry_refunded = true
+	_parry_cooldown_left = 0.0
+	_parry_cooldown_span = 0.0
+	parry_allowed = true
+
 	var cleared := _parry_burst()
 
 	ParryFlash.burst(get_parent(), global_position, effective_parry_burst_radius())
@@ -440,7 +459,8 @@ func _shake_camera(strength: float = -1.0, duration: float = -1.0) -> void:
 		camera.shake(strength, duration)
 
 
-## Destroys every blue shot inside the burst radius. Returns how many died.
+## Destroys every shot the burst is allowed to take inside its radius - blue and
+## red both, green excluded. Returns how many died.
 func _parry_burst() -> int:
 	var cleared := 0
 	var radius := effective_parry_burst_radius()
