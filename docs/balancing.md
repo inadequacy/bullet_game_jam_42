@@ -10,6 +10,10 @@
 - Attack can be parried before you see it, should be as you begin to see it (slightly later)
 - Lazor doesn't always reach player, maybe its doing range wrong, but even when out of range you get hit
 
+## Blue Enemy
+- Whenever one spawns naturally an extra one (at least) should spawn. They are incredibly weak alone
+- More of these makes all other mobs harder which is good
+
 ## Monsters Generally
 - Needs to ramp up:
 -> Attack frequency
