@@ -55,6 +55,10 @@ func _ready() -> void:
 	_time_left = run_duration
 	for e in get_tree().get_nodes_in_group("enemies"):
 		_watch(e)
+	GameManager.level_up.connect(_on_level_up)
+
+func _on_level_up() -> void:
+	$CardScreen.open()
 
 
 func _process(delta: float) -> void:
