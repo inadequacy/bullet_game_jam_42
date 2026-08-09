@@ -5,3 +5,4 @@
 # Editor / IDE
 .vscode/
 .idea/
+.claude/

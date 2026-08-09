@@ -11,7 +11,7 @@ class_name ParryBar
 ## DashBar does: the recovery value changes every frame anyway, and polling means
 ## the level needs no wiring.
 
-@export var pip_size: Vector2 = Vector2(22, 10)
+@export var pip_size: Vector2 = Vector2(28, 14)
 ## Parry is available.
 @export var ready_color: Color = Color(0.5, 1.0, 0.62)
 ## The window is OPEN right now. It lasts a fifth of a second, so this flash is
@@ -30,6 +30,7 @@ var _player: Node = null
 
 func _ready() -> void:
 	_pip.custom_minimum_size = pip_size
+	HudStyle.paint_bar(_recharge, empty_color, ready_color)
 
 
 func _process(_delta: float) -> void:

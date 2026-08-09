@@ -3,38 +3,48 @@
 [ext_resource type="Script" path="res://game/ui/ultimate_bar.gd" id="1_ult"]
 
 [node name="UltimateBar" type="Control"]
-custom_minimum_size = Vector2(120, 32)
+custom_minimum_size = Vector2(100, 34)
+layout_mode = 3
 anchors_preset = 0
-offset_right = 120.0
-offset_bottom = 32.0
 mouse_filter = 2
 script = ExtResource("1_ult")
 
 [node name="Rows" type="VBoxContainer" parent="."]
+layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_constants/separation = 4
+theme_override_constants/separation = 3
+
+[node name="Label" type="Label" parent="Rows"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.73, 0.78, 0.89, 1)
+theme_override_font_sizes/font_size = 12
+text = "ULTIMATE  [E]"
 
 [node name="Pips" type="HBoxContainer" parent="Rows"]
+layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 6
 
 [node name="Pip" type="ColorRect" parent="Rows/Pips"]
-custom_minimum_size = Vector2(46, 10)
+custom_minimum_size = Vector2(46, 14)
+layout_mode = 2
 color = Color(0.22, 0.26, 0.32, 1)
 
-[node name="Label" type="Label" parent="Rows/Pips"]
+[node name="Timer" type="Label" parent="Rows/Pips"]
 modulate = Color(1, 1, 1, 0.75)
+layout_mode = 2
 theme_override_font_sizes/font_size = 12
 text = "E"
 vertical_alignment = 1
 
 [node name="Recharge" type="ProgressBar" parent="Rows"]
-custom_minimum_size = Vector2(0, 6)
+custom_minimum_size = Vector2(0, 5)
+layout_mode = 2
 mouse_filter = 2
 value = 0.0
 show_percentage = false

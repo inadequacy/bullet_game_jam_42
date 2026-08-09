@@ -1,0 +1,101 @@
+[gd_scene format=3 uid="uid://ba1lkuu2hudbr"]
+
+[ext_resource type="PackedScene" uid="uid://bu5b1wbkhqegi" path="res://game/ui/health_bar.tscn" id="1_health"]
+[ext_resource type="PackedScene" uid="uid://beexpipvffo0h" path="res://game/ui/exp_bar.tscn" id="2_exp"]
+[ext_resource type="PackedScene" uid="uid://rgf5u31gcvd4" path="res://game/ui/dash_bar.tscn" id="3_dash"]
+[ext_resource type="PackedScene" uid="uid://dov8juapygxev" path="res://game/ui/parry_bar.tscn" id="4_parry"]
+[ext_resource type="PackedScene" path="res://game/ui/ultimate_bar.tscn" id="5_ult"]
+[ext_resource type="PackedScene" path="res://game/ui/run_timer.tscn" id="6_timer"]
+[ext_resource type="PackedScene" uid="uid://dpu2waoxwk22w" path="res://game/ui/score.tscn" id="7_score"]
+[ext_resource type="Script" path="res://game/ui/hud.gd" id="8_hud"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_cluster"]
+content_margin_left = 0.0
+content_margin_top = 0.0
+content_margin_right = 0.0
+content_margin_bottom = 0.0
+bg_color = Color(0.035294, 0.043137, 0.070588, 0.7)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.44, 0.51, 0.72, 0.45)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[node name="HUD" type="CanvasLayer"]
+script = ExtResource("8_hud")
+
+[node name="Cluster" type="PanelContainer" parent="."]
+custom_minimum_size = Vector2(472, 98)
+layout_mode = 3
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = -114.0
+offset_right = 488.0
+offset_bottom = -16.0
+grow_vertical = 0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_cluster")
+
+[node name="Pad" type="MarginContainer" parent="Cluster"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 12
+
+[node name="Rows" type="VBoxContainer" parent="Cluster/Pad"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 6
+
+[node name="Vitals" type="HBoxContainer" parent="Cluster/Pad/Rows"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 20
+
+[node name="HealthBar" parent="Cluster/Pad/Rows/Vitals" instance=ExtResource("1_health")]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="EXPBar" parent="Cluster/Pad/Rows/Vitals" instance=ExtResource("2_exp")]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Abilities" type="HBoxContainer" parent="Cluster/Pad/Rows"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 18
+
+[node name="DashBar" parent="Cluster/Pad/Rows/Abilities" instance=ExtResource("3_dash")]
+layout_mode = 2
+size_flags_vertical = 4
+
+[node name="ParryBar" parent="Cluster/Pad/Rows/Abilities" instance=ExtResource("4_parry")]
+layout_mode = 2
+size_flags_vertical = 4
+
+[node name="UltimateBar" parent="Cluster/Pad/Rows/Abilities" instance=ExtResource("5_ult")]
+layout_mode = 2
+size_flags_vertical = 4
+
+[node name="Score" parent="Cluster/Pad/Rows/Abilities" instance=ExtResource("7_score")]
+layout_mode = 2
+size_flags_horizontal = 10
+size_flags_vertical = 4
+
+[node name="RunTimer" parent="." instance=ExtResource("6_timer")]
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -90.0
+offset_top = 12.0
+offset_right = 90.0
+offset_bottom = 52.0
+grow_horizontal = 2

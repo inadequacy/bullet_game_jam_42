@@ -9,8 +9,8 @@ class_name EXPBar
 @export var background_color: Color = Color(0.22, 0.26, 0.32)
 @export var fill_color: Color = Color(0.702, 0.004, 0.996, 1.0)
 
-@onready var _fill: ProgressBar = $Fill
-@onready var _label: Label = $Label
+@onready var _fill: ProgressBar = $Rows/Fill
+@onready var _label: Label = $Rows/Label
 
 
 func _ready() -> void:
@@ -22,15 +22,8 @@ func _ready() -> void:
 func _on_exp_changed(current: int, threshold: int) -> void:
 	_fill.max_value = threshold
 	_fill.value = current
+	_label.text = "XP  %d/%d" % [current, threshold]
 
 
 func _paint() -> void:
-	var bg := StyleBoxFlat.new()
-	bg.bg_color = background_color
-	bg.set_corner_radius_all(4)
-	_fill.add_theme_stylebox_override("background", bg)
-
-	var fg := StyleBoxFlat.new()
-	fg.bg_color = fill_color
-	fg.set_corner_radius_all(4)
-	_fill.add_theme_stylebox_override("fill", fg)
+	HudStyle.paint_bar(_fill, background_color, fill_color)

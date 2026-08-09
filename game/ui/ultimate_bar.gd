@@ -12,7 +12,7 @@ class_name UltimateBar
 ## glance. Polls the player for the same reason those two do: the value changes
 ## every frame while recharging, and polling means no wiring in the level.
 
-@export var pip_size: Vector2 = Vector2(46, 10)
+@export var pip_size: Vector2 = Vector2(46, 14)
 ## Charged and ready to fire.
 @export var ready_color: Color = Color(1.0, 0.82, 0.29)
 ## Spent, waiting on the cooldown.
@@ -25,11 +25,12 @@ var _player: Node = null
 
 @onready var _pip: ColorRect = $Rows/Pips/Pip
 @onready var _recharge: ProgressBar = $Rows/Recharge
-@onready var _label: Label = $Rows/Pips/Label
+@onready var _label: Label = $Rows/Pips/Timer
 
 
 func _ready() -> void:
 	_pip.custom_minimum_size = pip_size
+	HudStyle.paint_bar(_recharge, empty_color, ready_color)
 	visible = false
 
 

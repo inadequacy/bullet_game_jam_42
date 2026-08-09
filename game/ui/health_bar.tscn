@@ -1,25 +1,32 @@
-[gd_scene format=3 uid="uid://bu5b1wbkhqegi"]
+[gd_scene load_steps=2 format=3 uid="uid://bu5b1wbkhqegi"]
 
 [ext_resource type="Script" uid="uid://ducfpctbp4kf0" path="res://game/ui/health_bar.gd" id="1_pk34a"]
 
-[node name="HealthBar" type="Control" unique_id=2142482034 groups=["health_bar"]]
+[node name="HealthBar" type="Control" groups=["health_bar"]]
+custom_minimum_size = Vector2(200, 34)
 layout_mode = 3
 anchors_preset = 0
+mouse_filter = 2
 script = ExtResource("1_pk34a")
 
-[node name="Fill" type="ProgressBar" parent="." unique_id=1163824491]
+[node name="Rows" type="VBoxContainer" parent="."]
 layout_mode = 1
-offset_left = 30.0
-offset_top = 14.0
-offset_right = 150.0
-offset_bottom = 20.0
-offset_transform_enabled = true
-offset_transform_position = Vector2(30, 0)
-show_percentage = false
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/separation = 3
 
-[node name="Label" type="Label" parent="." unique_id=2044640950]
-layout_mode = 1
-offset_left = 2.0
-offset_right = 63.0
-offset_bottom = 23.0
-text = "Health: "
+[node name="Label" type="Label" parent="Rows"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.73, 0.78, 0.89, 1)
+theme_override_font_sizes/font_size = 12
+text = "HEALTH"
+
+[node name="Fill" type="ProgressBar" parent="Rows"]
+custom_minimum_size = Vector2(0, 14)
+layout_mode = 2
+mouse_filter = 2
+show_percentage = false

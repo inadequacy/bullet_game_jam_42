@@ -7,7 +7,7 @@ class_name DashBar
 ## Polls the player rather than listening for signals - the values change every
 ## frame while recharging anyway, and polling means no wiring in the level.
 
-@export var pip_size: Vector2 = Vector2(22, 10)
+@export var pip_size: Vector2 = Vector2(28, 14)
 @export var filled_color: Color = Color(0.55, 0.85, 1.0)
 @export var empty_color: Color = Color(0.22, 0.26, 0.32)
 ## Hide the recovery bar when the pool is full, rather than showing an empty one.
@@ -19,6 +19,10 @@ var _shown_max: int = -1
 
 @onready var _pip_row: HBoxContainer = $Rows/Pips
 @onready var _recharge: ProgressBar = $Rows/Recharge
+
+
+func _ready() -> void:
+	HudStyle.paint_bar(_recharge, empty_color, filled_color)
 
 
 func _process(_delta: float) -> void:
