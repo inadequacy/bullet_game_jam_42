@@ -8,7 +8,10 @@ extends Enemy
 ## `projectile_kind` and tuning, so each new colour costs a scene and no code.
 ##
 ##   BLUE  - short interval, wide spread, many projectiles. The crowd.
-##   GREEN - long telegraph, few projectiles. The parry bait.
+##   GREEN - long charge, one FAST shot. The parry bait: blue's shot, but far
+##           quicker than a player can react to once it is out. That is the
+##           point - the charge aura is the warning, and the answer is a parry
+##           timed off it, not a dodge timed off the shot.
 ##   RED   - homing. Gate behind the first boss (see docs/game_info.md §5).
 
 @export_group("Positioning")
@@ -30,6 +33,14 @@ enum AttackMode { PROJECTILE, HITSCAN }
 ## Which spell this caster throws. Drives colour and how the player answers it.
 @export var projectile_kind: EnemyProjectile.Kind = EnemyProjectile.Kind.BLUE
 ## Overrides the projectile scene's own speed when above zero.
+##
+## HARD CEILING around 2500. Shots are Area2D, so contact is sampled once per
+## physics tick: at speed S the shot jumps S/60 px per tick, and it can only be
+## felt if that step is comfortably shorter than the depth of the player's
+## hurtbox along the shot's path - 40px of player plus 12px of shot, so 52px, so
+## 3120 px/s is where a head-on hit starts being missed outright. Green sits at
+## 1600 (26.7px per tick) for roughly a 2x margin. Past that a shot has to sweep
+## its path rather than test a point, which nothing here does yet.
 @export var projectile_speed: float = 0.0
 @export var cast_interval: float = 2.4
 ## Wind-up before each cast. The player's cue to start moving.
@@ -40,6 +51,22 @@ enum AttackMode { PROJECTILE, HITSCAN }
 ## Casters root themselves while winding up, which makes them punishable.
 ## For HITSCAN this must stay ON - a stationary, glowing caster IS the tell.
 @export var stop_while_casting: bool = true
+
+@export_group("Charge glow")
+## Use the swelling aura as the wind-up instead of the plain telegraph flash.
+##
+## Always on for HITSCAN, where the aura IS the only warning. Available to
+## PROJECTILE casters too: green throws a travelling shot now, but the charge is
+## still what the player reads to time a parry, so it keeps the aura it was
+## taught with rather than dropping to blue's much quieter flash.
+@export var charge_wind_up: bool = false
+## Colour of the aura and the shot.
+@export var charge_color: Color = Color(0.3, 1.0, 0.4)
+## How much brighter the caster's own sprite gets at full charge. Must be well
+## above 1.0 or the tint is lost against an already-green sprite.
+@export var charge_glow_intensity: float = 2.4
+@export var aura_start_radius: float = 26.0
+@export var aura_end_radius: float = 72.0
 
 @export_group("Hitscan")
 ## How long the caster charges before firing. THE REACTION WINDOW - the shot
@@ -55,13 +82,6 @@ enum AttackMode { PROJECTILE, HITSCAN }
 ## does nothing. Without it the beam visibly stopped short of the player and hurt
 ## them anyway, which read as the game cheating.
 @export var hitscan_hit_radius: float = 40.0
-## Colour of the aura and the shot.
-@export var charge_color: Color = Color(0.3, 1.0, 0.4)
-## How much brighter the caster's own sprite gets at full charge. Must be well
-## above 1.0 or the tint is lost against an already-green sprite.
-@export var charge_glow_intensity: float = 2.4
-@export var aura_start_radius: float = 26.0
-@export var aura_end_radius: float = 72.0
 
 @export_subgroup("Trace")
 ## Pixels per second. THIS IS THE PARRY WINDOW, not just a visual.
@@ -78,9 +98,9 @@ enum AttackMode { PROJECTILE, HITSCAN }
 @export var trace_width: float = 3.0
 
 ## The green caster's charge and its release, and nothing else in the game. Blue
-## and red cast silently - there is no sample for a travelling enemy shot - and
-## green is the one the player has to hear coming anyway, because the charge is
-## the parry window and the release is what has to be parried.
+## and red cast silently, and green is the one the player has to hear coming
+## anyway: the charge is the read, and the shot it lets go is the one thing on
+## screen that is meant to be parried.
 const CHARGE_SOUND := preload("res://assets/sounds/magic_attack1.wav")
 
 var _aura: ChargeAura = null
@@ -161,7 +181,7 @@ func _tick_casting(delta: float) -> void:
 
 
 func _start_wind_up(duration: float) -> void:
-	if attack_mode == AttackMode.HITSCAN:
+	if attack_mode == AttackMode.HITSCAN or charge_wind_up:
 		_start_charge_glow(duration)
 	else:
 		telegraph(1.25, duration, 0.1)
@@ -246,8 +266,19 @@ func _on_death() -> void:
 
 
 func _fire_projectiles() -> void:
+	# Drop the glow even if the cast below bails - a caster that loses its player
+	# mid-charge must not be left lit up forever.
+	if charge_wind_up:
+		_end_charge_glow()
+
 	if projectile_scene == null or not has_player():
 		return
+
+	# The release, on the same frame the shot goes out. Paired with the hum from
+	# _start_charge_glow so the two read as one rising cue - "charging" then
+	# "NOW". Only for casters that charge: blue and red still cast silently.
+	if charge_wind_up:
+		SoundManager.play_sfx(CHARGE_SOUND, 0, 0.8, 0.95, -1.0)
 
 	var base_angle := direction_to_player().angle()
 	var spread := deg_to_rad(spread_degrees)
