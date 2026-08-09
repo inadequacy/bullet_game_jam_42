@@ -1,21 +1,16 @@
 extends Control
 class_name ParryBar
 
-## Shows whether the parry is up, and how far the lockout has recovered.
-##
-## Built to match DashBar deliberately - a pip for the ability itself and a bar
-## filling toward its return - so the two cooldowns read the same way at a
-## glance instead of being two separate things to learn.
-##
-## Polls the player rather than listening for signals, for the same reason
-## DashBar does: the recovery value changes every frame anyway, and polling means
-## the level needs no wiring.
+## Whether the parry is up, and how far the lockout has recovered. Matches
+## DashBar so the two cooldowns read the same way rather than being two things
+## to learn, and polls for the same reason: the value changes every frame, so
+## polling costs nothing and needs no wiring.
 
 @export var pip_size: Vector2 = Vector2(28, 14)
 ## Parry is available.
 @export var ready_color: Color = Color(0.5, 1.0, 0.62)
-## The window is OPEN right now. It lasts a fifth of a second, so this flash is
-## the only confirmation the player gets that the press registered at all.
+## The window is open right now. It lasts a fifth of a second, so this flash is
+## the player's confirmation that the press registered.
 @export var active_color: Color = Color(1.0, 1.0, 1.0)
 ## Spent, waiting on the lockout.
 @export var empty_color: Color = Color(0.22, 0.26, 0.32)

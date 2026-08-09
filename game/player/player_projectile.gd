@@ -3,12 +3,12 @@ extends Area2D
 
 ## The player's basic spell, and everything the element cards make it do.
 ##
-## THE ELEMENT LINES LIVE HERE. A shot reads RunState at spawn to find out what
+## The element lines live here. A shot reads RunState at spawn to find out what
 ## it is - plain missile, explosive, chilling, piercing, overcharged - so nothing
 ## that fires one needs to know which school the run committed to.
 ##
-## The exports below are BASE values. Cards scale them through RunState, exactly
-## like `damage` already did, so retuning a card never means editing this file.
+## The exports below are base values; cards scale them through RunState, so
+## retuning a card never means editing this file.
 
 @export var speed: float = 500
 ## Enemy health values are 20-40, so 10 means 2-4 hits to kill.
@@ -17,12 +17,9 @@ extends Area2D
 ## check below is what actually retires nearly every shot; this only catches one
 ## that somehow never leaves the view.
 @export var lifetime: float = 6.0
-## Extra room outside the visible arena before a shot is culled.
-##
-## A shot that leaves the screen is gone - it has nothing left to hit and the
-## player cannot see it. Small, but not zero: the camera shakes a few pixels on
-## a knockback, and a shot skimming the edge should not blink out because the
-## view twitched.
+## Extra room outside the visible arena before a shot is culled. Small, but not
+## zero: the camera shakes a few pixels on a knockback, and a shot skimming the
+## edge should not blink out because the view twitched.
 @export var despawn_margin: float = 64.0
 
 @export_group("Fire")
@@ -40,15 +37,10 @@ extends Area2D
 @export var freeze_duration: float = 1.5
 
 @export_group("Arcane")
-## Overcharge. Extra damage per enemy the shot has ALREADY passed through, as a
+## Overcharge. Extra damage per enemy the shot has already passed through, as a
 ## fraction of the base hit: at 0.5 a shot deals 1.0x to the first enemy, 1.5x
-## to the second, 2.0x to the third.
-##
-## Deliberately worth nothing on its own - a shot with no pierce never reaches a
-## second enemy, so this only pays out on top of Piercing Bolt, and pays more
-## again with the extra shot from Arcane Volley. That dependency is the point:
-## it is a reward for lining a volley up down a row of enemies, which is a thing
-## the player does rather than a thing the shot does for them.
+## to the second, 2.0x to the third. Worth nothing without the pierce from
+## Piercing Bolt, which is what makes it a reward for lining a volley up.
 @export var overcharge_bonus: float = 0.5
 ## Extra damage a chilled enemy takes with Shatter, as a multiplier.
 @export var shatter_bonus: float = 1.4
@@ -87,10 +79,8 @@ func _process(delta: float) -> void:
 
 
 ## True once the shot has left the visible arena by more than despawn_margin.
-##
-## Read off the camera's canvas transform rather than a hard-coded 1152x648, so
-## it still culls correctly if the viewport or the camera zoom ever changes -
-## the same way enemy_projectile.gd retires its own shots.
+## Read off the camera's canvas transform rather than a fixed size, so it still
+## culls correctly if the viewport or camera zoom changes.
 func _is_out_of_bounds() -> bool:
 	var to_world := get_canvas_transform().affine_inverse()
 	var screen := get_viewport_rect()
@@ -119,12 +109,12 @@ func _on_body_entered(body: Node2D) -> void:
 
 ## One enemy taking one hit, with whatever the run's element adds to it.
 func _strike(enemy: Enemy) -> void:
+	# Read before damaging - take_damage can free the enemy outright.
 	var hit_position := enemy.global_position
-	# Read the chill BEFORE damaging - take_damage can free the enemy outright.
 	var dealt := damage
 
 	# Overcharge, before any other multiplier: the shot is heavier for every
-	# enemy already behind it. _already_hit has just had THIS enemy added, so
+	# enemy already behind it. _already_hit has just had this enemy added, so
 	# subtract it back off to get the count it arrived with.
 	if RunState.flag(CardDatabase.FLAG_OVERCHARGE):
 		var passed_through := maxi(_already_hit.size() - 1, 0)

@@ -1,38 +1,33 @@
 class_name UltArcaneBeam
 extends Node2D
 
-## THE ARCANE ULTIMATE. A huge purple beam fired from the player, sweeping with
+## The arcane ultimate. A huge purple beam fired from the player, sweeping with
 ## them for as long as it lasts.
 ##
 ##     UltArcaneBeam.cast(player, damage_per_second, duration)
 ##
-## IT FOLLOWS FACING AND IGNORES AUTO-AIM. That is deliberate and it is the whole
-## character of this ultimate: the other two are placed or screen-wide and ask
-## nothing of the player, while this one is aimed by hand for three seconds and
-## rewards sweeping it across a crowd.
-##
-## Aiming comes for free by being a CHILD OF THE PLAYER at zero rotation -
-## movement.gd already turns the player toward the mouse every frame, so the beam
-## inherits facing and never reads aim_angle(), which is what auto-aim changes.
+## Follows facing and ignores auto-aim - this is the one ultimate aimed by hand.
+## As a child of the player at zero rotation it inherits the facing movement.gd
+## applies, and never reads aim_angle(), which is what auto-aim changes.
 
 ## Long enough to leave the arena from any corner.
 const LENGTH := 1600.0
-## Half-width of the damage band. Generous - a beam you have to thread is not a
-## three second ultimate, it is a puzzle.
+## Half-width of the damage band. Generous, so the beam is not something to
+## thread.
 const HALF_WIDTH := 34.0
-## Damage lands in bites rather than per frame, so damage is frame-rate
-## independent and the hit flashes read as pulses.
+## Damage lands in bites rather than per frame, so it is frame-rate independent
+## and the hit flashes read as pulses.
 const DAMAGE_INTERVAL := 0.12
 
 ## The beam's hum, held for as long as the beam is out. A seamless two second
-## loop - looping is turned on by SoundManager.make_looping(), NOT by the import,
-## which drops it - so a card that extends the ultimate extends the sound too.
+## loop, looped by SoundManager.make_looping() rather than by the import, so a
+## card that extends the ultimate extends the sound too.
 const BEAM_SOUND := preload("res://assets/sounds/ultimate_beam1.wav")
 const BEAM_VOLUME_DB := -10.0
 
-## Its own player, parented to the beam. SoundManager's pool round robins its
-## voices away and offers no way to stop one, neither of which works for a sound
-## that has to be held. Being a child means the hum cannot outlive the beam.
+## Its own player rather than SoundManager's pool, which round robins its voices
+## and cannot stop a sustained sound. Parented here, so it cannot outlive the
+## beam.
 var _hum: AudioStreamPlayer
 
 var damage_per_second: float = 40.0
@@ -50,7 +45,7 @@ static func cast(player: Node2D, dps: float, length: float) -> UltArcaneBeam:
 	var beam := UltArcaneBeam.new()
 	beam.damage_per_second = dps
 	beam.duration = length
-	# Child of the player, at zero rotation: the beam IS the player's facing.
+	# Child of the player, at zero rotation, so the beam is the player's facing.
 	player.add_child(beam)
 	beam.position = Vector2.ZERO
 	beam.rotation = 0.0
@@ -128,8 +123,7 @@ func _burn_along_beam(amount: float) -> void:
 			continue
 
 		var to_enemy := enemy.global_position - origin
-		# Distance ALONG the beam. Negative means it is behind the player, which
-		# is why this is a dot product and not a plain distance check.
+		# Distance along the beam; negative means behind the player.
 		var along := to_enemy.dot(forward)
 		if along < 0.0 or along > LENGTH:
 			continue
@@ -155,6 +149,6 @@ func _draw() -> void:
 		var w: float = half * (layer[0] as float)
 		draw_rect(Rect2(0.0, -w, LENGTH, w * 2.0), layer[1] as Color)
 
-	# A flare at the muzzle, so the beam clearly comes OUT of the caster.
+	# A flare at the muzzle, so the beam clearly comes out of the caster.
 	draw_circle(Vector2.ZERO, half * 2.2, Color(0.75, 0.45, 1.0, 0.35 * _alpha))
 	draw_circle(Vector2.ZERO, half * 1.1, Color(1.0, 0.95, 1.0, 0.8 * _alpha))

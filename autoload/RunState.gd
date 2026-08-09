@@ -1,24 +1,19 @@
 extends Node
 
-## Everything a run accumulates from cards: which cards were taken, which
-## element is locked, and the resulting stat modifiers.
+## Everything a run accumulates from cards: which were taken, which element is
+## locked, and the resulting stat modifiers.
 ##
-## This is an AUTOLOAD on purpose. The card screen is a node inside level.tscn,
-## so anything stored there dies when the level reloads - and end_menu.gd
-## restarts with change_scene_to_file. Run state has to outlive that.
+## An autoload - the card screen lives inside level.tscn and end_menu.gd
+## restarts with change_scene_to_file, so run state has to outlive the level.
+## Gameplay never reads a raw export, it asks for the modified value:
 ##
-## Gameplay never reads a raw export. It asks for the modified value:
-##
-##     velocity = direction * RunState.modified(CardDatabase.STAT_MOVE_SPEED, movespeed)
-##
-## so a card that changes a stat needs no change at the call site.
+##     RunState.modified(CardDatabase.STAT_MOVE_SPEED, movespeed)
 
 ## Emitted whenever a card lands. Anything caching a modified value should
 ## recompute here.
 signal stats_changed
 
-## Played by the "heal_full" card action. Same sample the heart pickup uses -
-## both are the player being healed, so they should sound like the same thing.
+## Played by the "heal_full" card action. Same sample the heart pickup uses.
 const HEALING_SOUND := preload("res://assets/sounds/healing1.wav")
 
 ## The committed spell school, or NONE while the player is on plain missiles.
@@ -31,9 +26,8 @@ var _add: Dictionary = {}
 var _mult: Dictionary = {}
 var _flags: Dictionary = {}
 
-## Basic-attack hits landed this run, counted only so Flash Freeze can fire on
-## every Nth one. Deterministic on purpose - "every 4th hit" is something the
-## player can feel and plan around, where a 25% roll is just noise.
+## Basic-attack hits landed this run, counted so Flash Freeze can fire on every
+## Nth one. Deterministic rather than a roll, so the player can plan around it.
 var _hits_landed: int = 0
 
 
@@ -95,7 +89,7 @@ func apply_card(card: Dictionary) -> void:
 			applied += 1
 
 	if applied == 0:
-		push_warning("Card '%s' has no effect - it is still a placeholder." % id)
+		push_warning("Card '%s' has no effect - it is a placeholder." % id)
 
 	stats_changed.emit()
 

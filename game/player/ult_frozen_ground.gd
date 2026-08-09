@@ -1,18 +1,13 @@
 class_name UltFrozenGround
 extends Node2D
 
-## THE ICE ULTIMATE. A pool of ice centred on where the player stood, holding
-## everything inside it FULLY FROZEN - not slowed, stopped.
+## The ice ultimate. A pool of ice centred on where the player stood, holding
+## everything inside it fully frozen - not slowed, stopped.
 ##
 ##     UltFrozenGround.cast(level, player.global_position, radius, duration, freeze)
 ##
-## Control rather than damage, which is the ice school's whole identity: the
-## other two ultimates kill things, this one takes the fight away from the enemy
-## and hands the player the arena for a few seconds.
-##
-## The pool is PLACED, not carried. It stays where it was cast, so dropping it is
-## a decision about ground rather than a button that follows you around - and the
-## player can walk out of their own pool to reposition while the enemies cannot.
+## Control rather than damage. Placed, not carried: it stays where it was cast,
+## so the player can walk out of their own pool while the enemies cannot.
 
 ## How often enemies inside are re-frozen. The freeze itself lasts far longer
 ## than this, so the refresh is what catches anything that wanders in later.
@@ -44,7 +39,7 @@ static func cast(parent: Node, where: Vector2, pool_radius: float,
 func _ready() -> void:
 	# Under the fighters - this is ground, and it must not hide the enemies
 	# standing frozen on it. Requires level.tscn's Background to stay at
-	# z_index -10; at 0 the floor draws over the pool and it vanishes.
+	# z_index -10, or the floor would draw over the pool.
 	z_index = -4
 	_left = duration
 	_freeze_everything_inside()
@@ -85,7 +80,7 @@ func _finish() -> void:
 
 
 ## Everything standing on the ice is frozen for freeze_duration. Enemy.apply_freeze
-## takes the LONGER of the two, so refreshing never cuts an existing freeze short.
+## takes the longer of the two, so refreshing never cuts an existing freeze short.
 func _freeze_everything_inside() -> void:
 	for e in get_tree().get_nodes_in_group("enemies"):
 		var enemy := e as Enemy

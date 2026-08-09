@@ -1,16 +1,14 @@
 extends Control
 class_name UltimateBar
 
-## Shows whether the ultimate is charged, and how far the cooldown has come back.
+## Whether the ultimate is charged, and how far the cooldown has come back.
 ##
-## HIDDEN ENTIRELY until the unlock card is taken. The ultimate is a discovery -
-## a greyed-out slot sitting on the HUD from the first second of the run would
-## give that away and turn the card into an inevitability rather than a find.
+## Hidden entirely until the unlock card is taken, so the ultimate stays a
+## discovery rather than a greyed-out slot waited on from the first second.
 ##
-## Built to match DashBar and ParryBar deliberately - a pip for the ability and a
-## bar filling toward its return - so all three cooldowns read the same way at a
-## glance. Polls the player for the same reason those two do: the value changes
-## every frame while recharging, and polling means no wiring in the level.
+## Matches DashBar and ParryBar so all three cooldowns read the same way, and
+## polls the player for the same reason they do: the value changes every frame
+## while recharging, so polling costs nothing and needs no wiring.
 
 @export var pip_size: Vector2 = Vector2(46, 14)
 ## Charged and ready to fire.

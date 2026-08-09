@@ -1,54 +1,30 @@
 class_name CardDatabase
 extends RefCounted
 
-## THE CARD DATABASE. Edit this file to add, remove or retune cards.
+## The card database. Edit this file to add, remove or retune cards; a new card
+## is a dictionary in the right pool below and needs no changes anywhere else.
 ##
-## Never instantiated - it is a namespace for the card data and the enums that
-## describe it. `card_screen.gd` only presents whatever it finds here, so adding
-## a card needs no changes anywhere else.
+## Card keys - only `name` is required:
+##   name / desc  - shown on the card. `name` is not unique; every element has
+##                  an "Ultimate I".
+##   id           - unique tracking key, defaults to `name`. Needed only where
+##                  two cards share a display name.
+##   icon         - ICON_* badge. Defaults to the element's own icon.
+##   element      - school. Absent means neutral, offerable any time.
+##   locks        - taking it commits the run to `element`.
+##   unique       - takeable once per run. Omit for stacking upgrades.
+##   requires     - id that must already be taken. Makes tiers arrive in order.
+##   effect       - one shape below, or an ARRAY of them. Omit for a
+##                  placeholder card.
 ##
-## Card keys:
-##   name     - shown on the card. NOT unique: every element has an "Ultimate I".
-##   desc     - the line under the name. "\n" works.
-##   id       - unique tracking key. Defaults to `name`, so it is only needed
-##              where two cards share a display name.
-##   icon     - which ICON_* badge to show. Absent falls back to the element's
-##              icon, so element cards only need it to override (the ultimates).
-##   element  - which school this belongs to. Absent means element-neutral and
-##              offerable at any point in the run.
-##   locks    - taking this commits the run to `element`. Only offered while no
-##              element is committed yet.
-##   unique   - can only ever be taken once per run. Omit for stacking upgrades.
-##   requires - id of a card that must already be taken. This is what makes the
-##              numbered tiers arrive in order.
-##   effect   - what the card actually DOES. See below. Omit for a card that is
-##              still a placeholder.
+##   {"op": "mult",   "stat": STAT_MOVE_SPEED,   "value": 1.15}  +15%, stacks
+##   {"op": "add",    "stat": STAT_DASH_CHARGES, "value": 1}     flat, stacks
+##   {"op": "flag",   "flag": FLAG_DASH_IFRAMES}                 on/off
+##   {"op": "action", "action": "heal_full"}                     see RunState
 ##
-## To add a card: drop a dictionary in the right pool below. To add a tier, give
-## it `requires` pointing at the id of the tier before it.
-##
-## EFFECT SHAPES - this is the bit to edit when tuning a card:
-##
-##   {"op": "mult",   "stat": STAT_MOVE_SPEED,   "value": 1.15}
-##       Scales the stat. 1.15 = +15%, 0.7 = -30%. Stacks multiplicatively.
-##
-##   {"op": "add",    "stat": STAT_DASH_CHARGES, "value": 1}
-##       Adds a flat amount before any mult is applied. Stacks additively.
-##
-##   {"op": "flag",   "flag": FLAG_DASH_IFRAMES}
-##       Switches a behaviour on. Taking it twice changes nothing.
-##
-##   {"op": "action", "action": "heal_full"}
-##       Fires once when picked, changes no stat. See RunState._run_action.
-##
-## The final value is (base + total add) * total mult.
-##
-## A card that does two things gives `effect` an ARRAY of those shapes:
-##
-##   "effect": [{"op": "mult", "stat": STAT_ATTACK_DAMAGE, "value": 1.25},
-##              {"op": "mult", "stat": STAT_PROJECTILE_SPEED, "value": 1.2}]
+## Final value is (base + total add) * total mult.
 
-## Every level-up offers exactly one card per pool, so pools ARE the three slots.
+## Every level-up offers exactly one card per pool, so pools are the three slots.
 enum Pool { BASIC, ACTION, ATTACK }
 
 # --------------------------------------------------------------- stat keys ---
@@ -80,7 +56,7 @@ const STAT_EXPLOSION_RADIUS := "explosion_radius"
 const STAT_EXPLOSION_DAMAGE := "explosion_damage"
 const STAT_BURN_DAMAGE := "burn_damage"
 const STAT_BURN_DURATION := "burn_duration"
-## Enemy speed WHILE CHILLED, as a fraction. Lower is a stronger slow, so the
+## Enemy speed while chilled, as a fraction. Lower is a stronger slow, so the
 ## cards that deepen it multiply by less than 1.
 const STAT_SLOW_FACTOR := "slow_factor"
 const STAT_SLOW_DURATION := "slow_duration"
@@ -91,10 +67,8 @@ const STAT_FREEZE_EVERY := "freeze_every"
 const STAT_SHATTER_BONUS := "shatter_bonus"
 
 # --- Ultimate (E). Which one you get is decided by the element lock. ---
-## Seconds between casts. Deliberately long - the ultimate is an event, not part
-## of a rotation - so only the LAST card in a school's ultimate line touches it,
-## and only by a quarter. Ultimate II makes the cast bigger; Ultimate III is the
-## one that also lets it come round again.
+## Seconds between casts. Only Ultimate III, the last card in a school's line,
+## touches it, and only by a quarter.
 const STAT_ULTIMATE_COOLDOWN := "ultimate_cooldown"
 const STAT_ULTIMATE_DAMAGE := "ultimate_damage"
 const STAT_ULTIMATE_DURATION := "ultimate_duration"
@@ -106,7 +80,7 @@ const STAT_ULTIMATE_FREEZE := "ultimate_freeze"
 # Booleans rather than numbers - they switch behaviour on, they don't scale it.
 const FLAG_DASH_IFRAMES := "dash_iframes"
 const FLAG_PARRY_REFLECT := "parry_reflect"
-## Makes RED homing shots parryable as well as green. Red is otherwise a dash
+## Makes red homing shots parryable as well as green. Red is otherwise a dash
 ## problem exclusively - see enemy_projectile.is_parryable().
 const FLAG_PARRY_RED := "parry_red"
 ## Set by the element locks. The basic attack reads these to decide what it does
@@ -121,8 +95,7 @@ const FLAG_BURN := "burn"
 const FLAG_CHAIN_EXPLOSION := "chain_explosion"
 const FLAG_SHATTER := "shatter"
 const FLAG_FLASH_FREEZE := "flash_freeze"
-## Unlocks E. Until an Ultimate I card is taken the key does nothing at all -
-## the ultimate is a discovery, not a starting tool.
+## Unlocks E. Until an Ultimate I card is taken the key does nothing at all.
 const FLAG_ULTIMATE := "ultimate"
 
 ## The player's spell school.
@@ -150,9 +123,9 @@ const ELEMENT_NAMES := {
 # from the same template - a rounded square in the category colour with a white
 # glyph on it - so a new one is `template.svg` with a new fill and a new glyph.
 #
-# The kind decides the SHAPE, the element decides the ACCENT COLOUR of the card
-# frame. That is why the three ultimates share one starburst badge and still
-# read as fire / ice / arcane on screen.
+# The kind decides the shape, the element decides the accent colour of the card
+# frame, so the three ultimates share one starburst badge and still read as
+# fire / ice / arcane on screen.
 
 const ICON_HEALTH := "health"
 const ICON_MOVE := "move"
@@ -226,8 +199,7 @@ const CARDS := {
 		{"name": "Second Wind", "desc": "+1 dash charge",
 			"icon": ICON_DASH,
 			"effect": {"op": "add", "stat": STAT_DASH_CHARGES, "value": 1}},
-		# Unique, like every flag card here: taking a switch twice does nothing,
-		# so re-offering one costs the player a whole slot for no gain.
+		# Unique, like every flag card here: a switch only ever flips once.
 		{"name": "Phase Step", "unique": true,
 			"desc": "Dash grants invulnerability,\nand for a beat afterwards",
 			"icon": ICON_DASH,
@@ -243,8 +215,7 @@ const CARDS := {
 		{"name": "Quick Recovery", "desc": "-40% parry cooldown",
 			"icon": ICON_PARRY,
 			"effect": {"op": "mult", "stat": STAT_PARRY_COOLDOWN, "value": 0.6}},
-		# The answer to red that is not the dash. Unique - it either flips red
-		# into parryable or it does not, so a second copy would do nothing.
+		# The answer to red that is not the dash.
 		{"name": "Crimson Guard", "unique": true,
 			"desc": "Red homing shots can be parried too",
 			"icon": ICON_PARRY,
@@ -296,18 +267,14 @@ const CARDS := {
 			"unique": true, "requires": "arcane_1",
 			"desc": "One extra projectile every cast",
 			"effect": {"op": "add", "stat": STAT_PROJECTILE_COUNT, "value": 1}},
-		# Replaced Seeker Missiles, which curved shots onto the nearest enemy.
-		# Seeking was the wrong card for this line twice over: it made aiming
-		# pointless, and stacked on Arcane Volley it just sent BOTH shots at the
-		# same target, so the line's own previous card made it worse. This one
-		# runs the other way - it pays out only when the volley is lined up
-		# through several enemies, which is a thing the player has to set up.
+		# Pays out only when the volley is lined up through several enemies,
+		# which is something the player has to set up.
 		{"id": "arcane_3", "name": "Overcharge", "element": Element.ARCANE,
 			"unique": true, "requires": "arcane_2",
 			"desc": "Shots hit harder for every enemy they pass through",
 			"effect": {"op": "flag", "flag": FLAG_OVERCHARGE}},
-		# ARCANE: a huge purple beam from the player. Follows FACING and
-		# deliberately ignores auto-aim - this one is aimed by hand.
+		# Arcane: a huge purple beam from the player. Follows facing and ignores
+		# auto-aim - this one is aimed by hand.
 		{"id": "arcane_ult_1", "name": "Ultimate I", "element": Element.ARCANE,
 			"icon": ICON_ULTIMATE, "unique": true,
 			"desc": "Unlocks Beam (E)\nA huge purple beam along your facing",
@@ -340,8 +307,8 @@ const CARDS := {
 			"unique": true, "requires": "fire_2",
 			"desc": "Anything killed by fire explodes too",
 			"effect": {"op": "flag", "flag": FLAG_CHAIN_EXPLOSION}},
-		# FIRE: the screen washes red, flame rains across all of it, the camera
-		# shakes. Hits EVERY enemy on screen - no aiming, no dodging.
+		# Fire: the screen washes red, flame rains across all of it, the camera
+		# shakes. Hits every enemy on screen - no aiming, no dodging.
 		{"id": "fire_ult_1", "name": "Ultimate I", "element": Element.FIRE,
 			"icon": ICON_ULTIMATE, "unique": true,
 			"desc": "Unlocks Rain of Fire (E)\nFire falls on the whole screen",
@@ -376,9 +343,9 @@ const CARDS := {
 			"desc": "Every 3rd hit freezes solid",
 			"effect": [{"op": "flag", "flag": FLAG_FLASH_FREEZE},
 				{"op": "add", "stat": STAT_FREEZE_EVERY, "value": -1}]},
-		# ICE: a pool of ice centred on the player. Everything caught inside is
-		# FULLY FROZEN, not slowed. Tiers grow the pool, the ultimate's own
-		# duration, and how long the freeze holds - three knobs, not two.
+		# Ice: a pool of ice centred on the player. Everything caught inside is
+		# fully frozen, not slowed. Tiers grow the pool, the ultimate's duration,
+		# and how long the freeze holds.
 		{"id": "ice_ult_1", "name": "Ultimate I", "element": Element.ICE,
 			"icon": ICON_ULTIMATE, "unique": true,
 			"desc": "Unlocks Frozen Ground (E)\nFreezes everything around you",

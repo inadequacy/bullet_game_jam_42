@@ -1,9 +1,9 @@
 extends Node2D
 class_name ChargeAura
 
-## The green aura a hitscan caster builds while charging. Grows in radius and
-## opacity across the whole charge, so "about to fire" is readable at a glance
-## and gets louder the closer the shot is.
+## The aura a charging caster builds. Grows in radius and opacity across the
+## whole charge, so "about to fire" is readable at a glance and gets louder the
+## closer the shot is.
 ##
 ## Parented to the caster so it follows it, drawn behind the sprite.
 

@@ -1,20 +1,19 @@
 # GameJam42
 
-A top-down **bullet hell** with ARPG progression and roguelite runs, built in
-**Godot 4.7**. High medieval sorcery — wands, staves, grimoires, no guns.
+A top-down **bullet hell** with roguelite runs, built in **Godot 4.7**. High
+medieval sorcery — wands, staves, grimoires, no guns.
 
 Design doc: [`docs/game_info.md`](docs/game_info.md) ·
-Task board: [`docs/task_list.md`](docs/task_list.md)
+Cards: [`docs/cards.md`](docs/cards.md) ·
+Balancing: [`docs/balancing.md`](docs/balancing.md) ·
+Tasks: [`docs/task_list.md`](docs/task_list.md)
 
 ---
 
 ## Running it
 
-Open the project in Godot 4.7 and press F5. The game boots to the start menu
-(`game/ui/start_menu.tscn`); the playable arena is `game/levels/level.tscn`.
-
-To iterate on gameplay, run `game/levels/level.tscn` directly (F6) and skip the
-menu.
+Open in Godot 4.7 and press F5 — the game boots to the start menu. To iterate on
+gameplay, run `game/levels/level.tscn` directly (F6) and skip the menu.
 
 ## Controls
 
@@ -22,143 +21,140 @@ menu.
 | --- | --- |
 | **W A S D** | Move — does **not** turn the character |
 | **Mouse** | Facing / aim |
-| **Space** | Dash (follows WASD direction; falls back to facing) |
+| **Space** | Dash (follows WASD; falls back to facing) |
 | **Shift** | Parry |
-| **T** | Toggle aim mode: nearest enemy (default) ⇄ facing |
+| **E** | Ultimate — dead until an Ultimate I card is taken |
+| **T** | Toggle aim: nearest enemy (default) ⇄ facing |
+| **Esc** | Pause |
 | **Q** | Ability *(bound, not implemented)* |
-| **E** | Ultimate *(bound, not implemented)* |
-| *none* | Basic spell auto-fires — at the nearest enemy by default |
+| *none* | Basic spell auto-fires, at the nearest enemy by default |
 
-### Debug keys
-
-Temporary, for testing. Remove before submitting.
-
-| Input | Action |
-| --- | --- |
-| **G** | Open/close the card screen (freezes the game) |
-| **H** | Toggle invincibility |
+**Debug keys** — remove before submitting: **G** opens the card screen, **H**
+toggles invincibility.
 
 ---
 
 ## Folder structure
 
 ```
-├── assets/                  Raw art and shaders — anything authored outside Godot
-│   ├── images/              Backgrounds, sprites
-│   └── shaders/             .gdshader files
-│
-├── autoload/                Global singletons registered in Project Settings
-│   └── GameManager.gd
-│
-├── docs/                    Design doc and task board
-│
-├── game/                    Everything that makes up the game itself.
-│   │                        Each scene lives NEXT TO its script.
-│   ├── enemies/             Enemy base class, casters, chaser, enemy spells
-│   ├── levels/              Playable arenas
-│   ├── player/              Player character and player projectiles
-│   └── ui/                  Menus, score display, shared button theme
-│
-├── icon.svg                 Project icon (also the placeholder art for everything)
+├── assets/            Art, shaders and audio authored outside Godot
+├── autoload/          Globals: GameManager (score/XP), RunState (cards)
+├── docs/              Design doc, card list, balancing notes, task board
+├── game/
+│   ├── cards/         Card database + the level-up screen
+│   ├── enemies/       Enemy base class, casters, chaser, enemy spells
+│   ├── levels/        Arena, spawn director, camera shake, sound manager
+│   ├── pickups/       Health hearts
+│   ├── player/        Character, projectiles, ultimates, parry visuals
+│   └── ui/            HUD, menus, bars
 └── project.godot
 ```
 
-### The one rule
-
-**A scene and its script live in the same folder.** `chaser.tscn` sits beside
-`chaser.gd`. No hunting across a `Scenes/` and a `Scripts/` tree to find the two
-halves of one thing.
-
-### Where do I put a new file?
+**The one rule: a scene and its script live in the same folder.** `chaser.tscn`
+sits beside `chaser.gd`. No hunting across parallel `Scenes/`+`Scripts/` trees.
 
 | I'm adding… | It goes in |
 | --- | --- |
-| A new enemy type | `game/enemies/` (scene + script together) |
-| A new power-up card | `game/cards/card_database.gd` — data only, nothing else to touch |
-| A boss | `game/enemies/` — bosses subclass `Enemy` like everything else |
-| A HUD element | `game/ui/` |
-| A sound effect | `assets/audio/` — create it |
-| Sprites, backgrounds | `assets/images/` |
-| Something global, always loaded | `autoload/` + register in Project Settings |
+| A power-up card | `game/cards/card_database.gd` — data only, nothing else to touch |
+| An enemy or boss | `game/enemies/` — bosses subclass `Enemy` like everything else |
+| A HUD element | `game/ui/`, then instance it in `hud.tscn` |
+| Something always loaded | `autoload/` + register in Project Settings |
 
 ---
 
 ## Code layout
 
+### Cards and run state
+
+A run is shaped by cards. `card_database.gd` is **pure data** — adding a card
+there needs no other change. `card_screen.gd` picks which three are offered,
+`RunState` applies them and remembers what a run has accumulated.
+
+Gameplay never reads a raw export. It asks for the modified value:
+
+```gdscript
+RunState.modified(CardDatabase.STAT_MOVE_SPEED, movespeed)
+```
+
+so a card can retune anything without that system knowing cards exist. `RunState`
+is an autoload because it has to outlive the level reload on restart.
+
+The first attack card **locks an element** — Arcane, Fire or Ice — and every
+attack card after it comes from that school, ultimate included.
+
 ### Enemies
 
-Every enemy — bosses included — extends one base class.
+Every enemy, bosses included, extends one base class.
 
 ```
-Enemy (game/enemies/enemy.gd)     health, damage, death, signals,
-│                                 player lookup, face_player(), telegraph()
-├── Caster (caster.gd)            holds range from the player, casts spells
-└── Chaser (chaser.gd)            closes to contact, melee wind-up → strike → recovery
+Enemy (game/enemies/enemy.gd)   health, damage, death, player lookup,
+│                               face_player(), telegraph()
+├── Caster (caster.gd)          holds range, casts spells
+└── Chaser (chaser.gd)          closes to contact, wind-up → strike → recovery
 ```
 
-Subclasses override four hooks and never touch the rest: `_on_enemy_ready()`,
+Subclasses override four hooks and touch nothing else: `_on_enemy_ready()`,
 `_behavior(delta)`, `_on_damaged()`, `_on_death()`. `_behavior()` sets
 `velocity`; the base class calls `move_and_slide()`.
 
-**All three casters are the same script.** Blue, green and red differ only by
-exported values in their scenes, so a new spell colour costs a scene and zero
-code.
+**All three casters are the same script**, differing only by exported values, so
+a new spell colour costs a scene and zero code.
 
 | Scene | Fires | Role |
 | --- | --- | --- |
 | `caster_blue.tscn` | Blue, 2-shot spread | The crowd you clear |
-| `caster_green.tscn` | Green, single telegraphed shot | The parry bait |
+| `caster_green.tscn` | Green, one fast shot after a long charge | The parry bait |
 | `caster_red.tscn` | Red, homing | The dash bait |
 
 **Enemies are not placed in `level.tscn`.** `level.gd` owns the population: it
-counts heads every frame and tops the arena back up to the cap for the current
-tier (3 enemies for the first three minutes, then 4, 5, 6). Adding an instance by
-hand only puts the count over cap until it dies.
+counts heads every frame and tops the arena back up to a cap that climbs by one
+every `population_step` seconds, from `starting_population` to `max_population`.
+Placing one by hand only puts the count over cap until it dies.
 
-New arrivals start off screen and walk in. `Enemy.enter_from()` skips
-`_behavior()` until they reach their target, so nothing attacks from outside the
-view — if you add an enemy type, that comes for free as long as its logic lives
-in `_behavior()`.
+New arrivals start off screen and walk in — `Enemy.enter_from()` skips
+`_behavior()` until they arrive, so nothing attacks from outside the view. A new
+enemy type gets that for free as long as its logic lives in `_behavior()`.
 
-### Projectile colours
+### The colour language
 
-The colour language is the whole combat vocabulary:
+The three projectile colours are the whole combat vocabulary:
 
 - **Blue** — not parryable, but destroyed by a successful parry's burst.
-- **Green** — the only parryable colour. Parrying one triggers the burst, and
-  costs no cooldown: a parry that connects is refunded instantly.
-- **Red** — homing. Not parryable, but the burst clears it like everything else.
-  Outside the burst radius, **dashing severs its lock** and remains the answer —
-  and severing one **refunds the dash charge**, so the counter to red is free.
-  A hit taken mid-dash shoves the player not at all: the dash owns movement, and
-  stacking a knockback on top of `dash_speed` threw them across the arena.
+- **Green** — the only parryable colour, and too fast to dodge on reaction. The
+  charge aura is the warning; the answer is a parry timed off it. Parrying one
+  triggers the burst and costs no cooldown.
+- **Red** — homing. Not parryable, but the burst clears it. Outside the burst,
+  **dashing severs its lock** and remains the answer — and severing one refunds
+  the dash charge, so the counter to red is free.
 
 Red reads `is_dashing` off the player. If the dash is ever rewritten, that flag
 has to survive or red becomes unavoidable.
 
-### Placeholder art
+### HUD
 
-Everything is `icon.svg`. Enemies use `assets/shaders/invert.gdshader` to render
-as the player's negative, then tint per type. All characters are scaled to 0.4.
+Everything except the clock lives in one cluster in the bottom-left
+(`game/ui/hud.tscn`); the run timer sits top-centre. The cluster fades while the
+player stands behind it, so the corner stays playable. Bars find what they need
+through groups (`health_bar`, `player`, `run_clock`) rather than node paths, so
+the level needs no wiring.
 
 > Chaser `attack_range` must stay larger than the combined collider radii of the
-> chaser and the player, or it bumps into the player forever without swinging.
-> Re-check it whenever a collider changes size.
+> chaser and the player, or it bumps into them forever without swinging.
+> Re-check whenever a collider changes size.
 
 ---
 
 ## Working together
 
-`.tscn` files merge badly. A conflicted scene file looks fine in a diff and is
-fatal to Godot.
+`.tscn` files merge badly. A conflicted scene looks fine in a diff and is fatal
+to Godot.
 
-- **Before committing after any merge or stash pop**, check for conflict markers:
-  `git diff --check`, or grep for `<<<<<<<`. This has already broken the project
-  once.
-- **Commit `.uid` files.** Godot generates a `.gd.uid` next to every script. If
-  one is missing, everyone else's Godot invents a different UID and scene
-  references silently fall back or break. Three UI scripts had this problem.
-- **Avoid two people editing `level.tscn` at once** — it's where everything gets
+- **After any merge or stash pop**, check for conflict markers before committing:
+  `git diff --check`, or grep for `<<<<<<<`. This has broken the project once.
+- **Commit `.uid` files.** Godot writes a `.gd.uid` beside every script; a
+  missing one makes everyone else's Godot invent a different UID and scene
+  references silently break.
+- **Avoid two people editing `level.tscn` at once** — it's where everything is
   instanced, so it's the natural collision point.
-- `.godot/` is generated and gitignored. If the editor behaves strangely after
-  files move, delete it and let Godot rebuild.
+- `.godot/` is generated and gitignored. If the editor misbehaves after files
+  move, delete it and let Godot rebuild.

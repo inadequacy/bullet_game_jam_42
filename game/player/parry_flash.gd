@@ -1,23 +1,21 @@
 extends Node2D
 class_name ParryFlash
 
-## Expanding ring drawn at the parry burst radius - the visual confirmation that
-## a parry landed. Created in code and frees itself; no scene needed.
+## Expanding ring confirming a parry. Created in code and frees itself.
 ##
 ##     ParryFlash.burst(get_parent(), global_position, burst_radius)
 ##
-## This ring is a PROMISE: everything it covers is destroyed. movement.gd holds
-## its clear field open for exactly `duration` at exactly `to_radius`, so pass
-## both from the same values the burst itself used - a ring that outlives or
-## outgrows the field is a ring that visibly sweeps over survivors.
+## Everything the ring covers is destroyed. movement.gd holds its clear field
+## open for exactly `duration` at exactly `to_radius`, so pass both from the
+## values the burst used - a ring that outlives or outgrows the field would
+## visibly sweep over survivors.
 
 @export var color: Color = Color(0.45, 1.0, 0.55)
 ## Floor on the stroke, so a tiny burst still draws a visible line.
 @export var width: float = 4.0
-## Stroke thickness as a fraction of the final radius. A burst grown by cards
-## should read as HEAVIER and not merely wider - at a fixed stroke a 40% larger
-## ring looks about the same, which is what made the upgrade feel like it had not
-## applied. 0.025 reproduces the original 4px at the default 160 radius.
+## Stroke thickness as a fraction of the final radius, so a burst grown by cards
+## reads as heavier and not merely wider. 0.025 gives 4px at the default 160
+## radius.
 @export var width_ratio: float = 0.025
 
 var radius: float = 0.0:
@@ -33,7 +31,7 @@ var alpha: float = 1.0:
 
 ## Spawns a ring that expands to `to_radius` while fading, then frees itself.
 ##
-## `peak_alpha` is what it fades FROM. A parry that landed draws at full
+## `peak_alpha` is what it fades from. A parry that landed draws at full
 ## strength; a window that closed empty draws the same ring fainter, so the two
 ## outcomes are told apart by how loud the ring is rather than by its presence.
 static func burst(parent: Node, at: Vector2, to_radius: float,

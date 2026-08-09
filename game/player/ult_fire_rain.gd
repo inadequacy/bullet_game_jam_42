@@ -1,39 +1,32 @@
 class_name UltFireRain
 extends Node2D
 
-## THE FIRE ULTIMATE. The screen washes red, flame rains across the whole of it,
+## The fire ultimate. The screen washes red, flame rains across the whole of it,
 ## the camera shakes, and every enemy on screen burns.
 ##
 ##     UltFireRain.cast(level, damage_per_tick, duration)
 ##
-## There is no aiming this and no dodging it - it is the whole arena at once.
-## That is the point of the fire school's ultimate: fire is area, so its ultimate
-## is the largest area there is.
-##
-## The falling flames are the same flame as the Fire card badge, minus the
-## rounded square the badge draws it on - raining the badge itself looked like
-## raining UI cards. See assets/images/flame.svg.
+## No aiming and no dodging - fire is area, so its ultimate is the whole arena
+## at once.
 
 const FLAME_TEXTURE := preload("res://assets/images/flame.svg")
 
-## The roar, held for the whole ultimate. A seamless two second loop - looping is
-## turned on by SoundManager.make_looping(), NOT by the import, which drops it -
-## so it covers any duration a card stretches this to rather than needing one
-## file per length.
+## The roar, held for the whole ultimate. A seamless two second loop, looped by
+## SoundManager.make_looping() rather than by the import, so it covers whatever
+## duration a card stretches this to.
 const ROAR_SOUND := preload("res://assets/sounds/ultimate_fire1.wav")
 ## Under the effects it plays over - it is a bed, not a hit.
 const ROAR_VOLUME_DB := -8.0
 
-## Its own player rather than SoundManager's pool: a pooled voice is round
-## robined away by the next sound effect, and nothing sustained can be stopped
-## through it. Parented to this node, so the roar cannot outlive the fire.
+## Its own player rather than SoundManager's pool, which round robins its voices
+## and cannot stop a sustained sound. Parented here, so it cannot outlive the
+## fire.
 var _roar: AudioStreamPlayer
 
 ## Seconds between damage ticks. Every enemy takes `damage` on each one, so the
 ## total is roughly duration/DAMAGE_INTERVAL times it.
 const DAMAGE_INTERVAL := 0.35
-## New flames per second. High enough that the screen reads as a downpour -
-## this is the ultimate, so it should be far too much fire.
+## New flames per second. High enough that the screen reads as a downpour.
 const FLAMES_PER_SECOND := 48.0
 const FALL_SPEED := Vector2(760.0, 1150.0)
 const FLAME_SCALE := Vector2(0.30, 0.62)
@@ -41,20 +34,14 @@ const FLAME_SCALE := Vector2(0.30, 0.62)
 ## sprite dropping down the screen.
 const FLAME_STRETCH := 1.35
 ## The colour the arena floor is multiplied by at the peak of the pulse, and how
-## far toward it the pulse actually goes.
-##
-## MULTIPLIED, not added or alpha blended - see _ready. Both of those depend on
-## how bright the floor already is: additive red washed the pale stone
-## background out to pink, and alpha blending muddied a dark one to maroon.
-## Multiplying turns whatever is underneath red and keeps working if the
-## background art changes again.
+## far toward it the pulse goes. Multiplied rather than added or alpha blended,
+## so it turns whatever is underneath red regardless of the background art.
 const WASH_TINT := Color(1.0, 0.24, 0.16)
 const WASH_STRENGTH := 0.88
 
-## Multiplying alone is not enough on DARK art - it can only take light away, so
-## a dim ruin just went brown. A second additive layer puts red light back in.
-## The two together read as red on a pale stone floor and on a dark one, which
-## one blend mode on its own could not do.
+## Multiplying can only take light away, so dark art would just go brown. This
+## additive layer puts red light back in, and the two together read as red on a
+## pale floor and a dark one alike.
 const GLOW_COLOR := Color(0.95, 0.11, 0.04)
 const GLOW_ALPHA := 0.30
 
@@ -84,19 +71,13 @@ static func cast(parent: Node, damage_per_tick: float,
 
 
 func _ready() -> void:
-	# Behind the enemies and the player, so the wash never hides what is
-	# happening in the fight it is going off around.
-	#
-	# THIS ONLY WORKS IF THE LEVEL BACKGROUND IS BELOW IT. level.tscn's
-	# Background sprite is pinned to z_index -10 for exactly that reason - it
-	# was at 0, which drew the whole ultimate underneath the floor and made
-	# casting look like nothing had happened at all.
+	# Behind the enemies and the player, so the wash never hides the fight going
+	# on inside it. Requires the level background below this - level.tscn's
+	# Background sprite is pinned to z_index -10 for that reason.
 	z_index = -5
-	# Multiply, so the floor is TINTED red rather than having red added on top of
+	# Multiply, so the floor is tinted red rather than having red added on top of
 	# it. Only affects this node's own _draw; the flame children carry their own
-	# material and stay bright. And because the wash sits at z_index -5 while the
-	# fighters are at 0, it recolours the ground and leaves the player and
-	# enemies fully readable on top of it.
+	# material and stay bright.
 	var mat := CanvasItemMaterial.new()
 	mat.blend_mode = CanvasItemMaterial.BLEND_MODE_MUL
 	material = mat
@@ -104,17 +85,14 @@ func _ready() -> void:
 	_area = _arena_bounds()
 	_build_glow()
 	_start_roar()
-	# One damage tick lands immediately - a screen-wide ultimate that did
-	# nothing for its first third of a second would feel like it had misfired.
+	# One damage tick lands immediately, so the cast bites the moment it goes off.
 	_burn_everything()
 	_damage_tick = DAMAGE_INTERVAL
 
 
-## The additive half of the wash. A ColorRect rather than more _draw calls
-## because this node's own material is already spoken for by the multiply -
-## a CanvasItem gets one blend mode, so the second one needs its own node.
-##
-## Added BEFORE any flame, so the flames draw on top of it.
+## The additive half of the wash. A ColorRect rather than more _draw calls: a
+## CanvasItem gets one blend mode, and this node's is already the multiply.
+## Added before any flame, so the flames draw on top of it.
 func _build_glow() -> void:
 	_glow = ColorRect.new()
 	var mat := CanvasItemMaterial.new()
@@ -142,10 +120,8 @@ func _start_roar() -> void:
 func _process(delta: float) -> void:
 	_left -= delta
 
-	# Pulses rather than holding steady, so the screen feels like it is roaring -
-	# but only between "red" and "very red". The pulse used to swing the whole
-	# way to zero, which left the screen briefly untinted at every trough and
-	# made the ultimate look like it was flickering out.
+	# Pulses rather than holding steady, but only between "red" and "very red" -
+	# a trough that reached zero would look like the ultimate flickering out.
 	_wash = 0.78 + 0.22 * sin(Time.get_ticks_msec() * 0.012)
 	if _glow != null:
 		_glow.color.a = GLOW_ALPHA * _wash
@@ -171,9 +147,8 @@ func _finish() -> void:
 	tween.tween_method(_fade_wash, _wash, 0.0, 0.4)
 	tween.tween_callback(queue_free).set_delay(0.6)
 
-	# Faded over the whole tail, flames included, rather than cut with the wash -
-	# there is still fire in the air for another half second after the tint has
-	# gone, and silence over it would read as the sound having broken.
+	# Faded over the whole tail rather than cut with the wash - there is still
+	# fire in the air for another half second after the tint has gone.
 	if _roar != null:
 		create_tween().tween_property(_roar, "volume_db", -50.0, 0.9)
 
@@ -224,9 +199,8 @@ func _drop_one_flame() -> void:
 	flame.texture = FLAME_TEXTURE
 	var size := randf_range(FLAME_SCALE.x, FLAME_SCALE.y)
 	flame.scale = Vector2(size, size * FLAME_STRETCH)
-	# Left pointing UP. Flipping it to point down the way it travels made the
-	# flames read as falling rockets; a flame trailing upward off something
-	# dropping is what fire actually looks like in the air.
+	# Left pointing up, trailing off something falling, rather than turned to
+	# face its travel - which would read as falling rockets.
 	flame.rotation = randf_range(-0.22, 0.22)
 	# The art already carries its colour; modulate only varies the heat a little
 	# and thins the smaller ones so the rain has depth.

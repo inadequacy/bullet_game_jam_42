@@ -1,16 +1,14 @@
 class_name ParrySparkle
 extends Node2D
 
-## Green sparkles thrown out around the player when a parry LANDS.
+## Green sparkles thrown around the player when a parry lands. Created in code
+## and frees itself, same as ParryFlash.
 ##
 ##     ParrySparkle.burst(get_parent(), global_position, texture)
 ##
-## Created in code and frees itself; no scene needed, same as ParryFlash.
-##
-## This and the expanding ring are doing different jobs and both are needed.
-## The ring is a PROMISE about reach - what it covers, dies - so it has to stay
-## exactly the burst radius. The sparkles are the reward: they say "that worked"
-## right where the player is looking, which is at their own character.
+## Distinct job from the ring: the ring shows reach and must stay exactly the
+## burst radius, while the sparkles say "that worked" right where the player is
+## looking - at their own character.
 
 ## How many sparkles a parry throws.
 const COUNT := 4
@@ -45,8 +43,8 @@ func _add_sparkle(texture: Texture2D, index: int) -> void:
 	sparkle.texture = texture
 	add_child(sparkle)
 
-	# Spread evenly around the player with a little jitter, rather than fully at
-	# random - four random angles clump often enough to look like a mistake.
+	# Spread evenly around the player with a little jitter - four fully random
+	# angles clump often enough to look like a mistake.
 	var angle := TAU * (float(index) / float(COUNT)) + randf_range(-0.35, 0.35)
 	var distance := randf_range(SPREAD_MIN, SPREAD_MAX)
 	var target := Vector2.RIGHT.rotated(angle) * distance

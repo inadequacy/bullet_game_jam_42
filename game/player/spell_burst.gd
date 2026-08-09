@@ -1,25 +1,22 @@
 class_name SpellBurst
 extends Node2D
 
-## Expanding filled disc with a bright rim - the visual for a Fire explosion.
-## Created in code and frees itself; no scene needed.
+## Expanding filled disc with a bright rim - a Fire explosion. Created in code
+## and frees itself.
 ##
 ##     SpellBurst.at(get_parent(), global_position, radius)
 ##
-## Built to the same contract as ParryFlash: what the circle covers is what the
-## effect hit. player_projectile.gd damages everything inside `radius` in the
-## same frame this is spawned at that same radius, so the picture and the
-## damage can never disagree.
+## Same contract as ParryFlash: what the circle covers is what the effect hit.
+## player_projectile.gd damages everything inside `radius` on the frame this is
+## spawned at that radius, so picture and damage cannot disagree.
 
 @export var color: Color = Color(1.0, 0.45, 0.15)
 ## Stroke of the rim as a fraction of the final radius, so a blast grown by
 ## cards reads as heavier rather than merely wider. Same trick as ParryFlash.
 @export var rim_ratio: float = 0.06
 
-## Fire is LIGHT, so the burst adds to what is under it instead of covering it.
-## Alpha-blended, the disc came out as a flat brown lid over the fight - it hid
-## the enemies it was going off around, which is the one thing an explosion in a
-## bullet hell must never do.
+## Additive, so the burst brightens what is under it instead of covering it -
+## an explosion must never hide the enemies it is going off around.
 func _init() -> void:
 	var mat := CanvasItemMaterial.new()
 	mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
@@ -60,9 +57,7 @@ static func at(parent: Node, where: Vector2, to_radius: float,
 ## Rings used to fake a radial falloff. draw_circle cannot take a gradient, but
 ## additive blending gives one for free: stack shrinking discs of low alpha and
 ## the contributions pile up toward the middle, so the centre burns white-hot
-## and the edge fades out. A single flat disc read as a solid brown ball.
-## Enough rings that the steps blur into a gradient. At 10 the banding was
-## visible as distinct rings on a still frame.
+## and the edge fades out. Any fewer rings and the steps band visibly.
 const GLOW_STEPS := 18
 
 

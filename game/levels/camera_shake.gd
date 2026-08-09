@@ -1,14 +1,14 @@
 extends Camera2D
 class_name CameraShake
 
-## Screen shake, kept deliberately subtle. Joins the "camera_shake" group so
-## anything can trigger it without holding a reference:
+## Screen shake, kept subtle. Joins the "camera_shake" group so anything can
+## trigger it without holding a reference:
 ##
 ##     var cam := get_tree().get_first_node_in_group("camera_shake")
 ##     if cam != null:
 ##         cam.shake()
 ##
-## The camera sits still at the centre of the fixed arena - it exists only so
+## The camera sits still at the centre of the fixed arena; it exists only so
 ## there is something to shake.
 
 ## Pixels of offset at the very start of a shake. Small on purpose: a parry

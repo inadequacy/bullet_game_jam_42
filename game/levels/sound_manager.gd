@@ -29,11 +29,9 @@ func _ready():
 	# paused AudioStreamPlayer stops.
 	process_mode = Node.PROCESS_MODE_ALWAYS
 
-	# Reproductor de música
 	music_player = AudioStreamPlayer.new()
 	add_child(music_player)
 
-	# Crear reproductores para los SFX
 	for i in SFX_PLAYERS:
 		var player := AudioStreamPlayer.new()
 		add_child(player)
@@ -42,21 +40,15 @@ func _ready():
 	play_music(make_looping(MUSIC), music_volume_db)
 
 
-## Marks a sample as looping, and returns it so it can be used inline.
+## Marks a sample as looping and returns it, so it can be used inline.
 ##
-## THIS CANNOT BE DONE ON THE IMPORT. Godot 4.7.1's WAV importer silently drops
-## `edit/loop_mode` - a file whose .import says loop_mode=1 still loads as
-## LOOP_DISABLED, confirmed by clearing .godot/imported and reimporting from
-## scratch. Every sound that has to sustain - the music and both held ultimate
-## loops - therefore gets its loop set here, in code, where a reimport cannot
-## quietly take it away again.
-##
-## Mutates the shared resource, which is what we want: these samples exist only
-## to be looped. Idempotent, so calling it on every cast costs nothing.
+## Cannot be done on the import: Godot 4.7.1's WAV importer silently drops
+## `edit/loop_mode`, so a file whose .import says loop_mode=1 still loads as
+## LOOP_DISABLED. Mutates the shared resource, and is idempotent.
 func make_looping(stream: AudioStreamWAV) -> AudioStreamWAV:
 	if stream == null or stream.loop_mode == AudioStreamWAV.LOOP_FORWARD:
 		return stream
-	# Read the length BEFORE touching loop_mode, and in frames - loop_end is a
+	# Read the length before touching loop_mode, and in frames - loop_end is a
 	# frame index, not seconds.
 	var frames := int(stream.get_length() * stream.mix_rate)
 	stream.loop_begin = 0
@@ -69,10 +61,6 @@ func play_music(stream: AudioStream, volume_db: float = 0.0):
 	music_player.stream = stream
 	music_player.volume_db = volume_db
 	music_player.play()
-
-
-func stop_music():
-	music_player.stop()
 
 
 func play_sfx(
@@ -94,17 +82,13 @@ func play_sfx(
 
 # --- UI ------------------------------------------------------------------------
 
-## Gives every Button under `root` the shared hover and click sounds.
-##
-## Done by walking the tree rather than by wiring each button in its scene: menus
-## here are plain VBoxes of Buttons, and the card screen rebuilds its three cards
-## every level-up, so one call per screen is both less to maintain and impossible
-## to forget a button in.
+## Gives every Button under `root` the shared hover and click sounds. Walks the
+## tree rather than wiring each button in its scene, so one call covers a screen.
 func attach_button_sounds(root: Node) -> void:
 	for node in _buttons_under(root):
 		# focus_entered as well as mouse_entered, so keyboard and gamepad
 		# navigation sound the same as the mouse. Guarded against double
-		# connection in case a screen ever calls this more than once.
+		# connection in case a screen calls this more than once.
 		if not node.mouse_entered.is_connected(play_button_hover):
 			node.mouse_entered.connect(play_button_hover)
 		if not node.focus_entered.is_connected(_on_button_focused):
@@ -117,10 +101,9 @@ func play_button_hover() -> void:
 	play_sfx(BUTTON_HOVER, 0, 0.98, 1.04, -6.0)
 
 
-## A Button takes focus when it is clicked, not only when it is navigated to, so
-## connecting focus straight to the hover sound made every mouse click play hover
-## and select on top of each other. A held mouse button means this focus came
-## from a click, which the select sound is already covering.
+## A Button takes focus when it is clicked, not only when it is navigated to. A
+## held mouse button means this focus came from a click, which the select sound
+## already covers, so the hover sound is skipped.
 func _on_button_focused() -> void:
 	if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
 		return

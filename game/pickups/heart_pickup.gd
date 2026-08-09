@@ -3,15 +3,14 @@ extends Area2D
 
 ## A heart left behind by a dead enemy. Walking over it heals the player.
 ##
-## Dropped by Enemy._disappear() at a flat chance, and only once the corpse has
-## finished fading - the heart is what is left where the body was, so it must not
-## appear on top of one.
+## Dropped by Enemy._disappear() at a flat chance, once the corpse has finished
+## fading, so the heart appears where the body was rather than on top of it.
 ##
-## Healing is a PERCENTAGE of the player's maximum, not a flat number, so the
-## drop is worth the same whether or not the run has picked up health cards.
+## Healing is a percentage of the player's maximum, so the drop is worth the same
+## whether or not the run has picked up health cards.
 
-## Fraction of maximum health restored. 0.2 is the 20% the drop is designed
-## around; the heal is rounded UP so it can never come out as zero on a small bar.
+## Fraction of maximum health restored. Rounded up, so it can never come out as
+## zero on a small bar.
 @export var heal_fraction: float = 0.2
 ## Seconds the heart lies there before it fades and frees itself. Long enough to
 ## be worth crossing the arena for, short enough that hearts cannot be banked and
@@ -82,8 +81,7 @@ func _on_body_entered(body: Node2D) -> void:
 		return
 
 	_taken = true
-	# Rounded up: at 20% of a 10 point bar this is 2, and on any bar small enough
-	# to round to zero it still returns something.
+	# Rounded up, so a small bar still heals at least one point.
 	var amount := int(ceil(float(bar.max_health) * heal_fraction))
 	bar.heal(amount)
 	SoundManager.play_sfx(_healing_sound, 0, 0.95, 1.05, 0)
@@ -95,8 +93,8 @@ func _on_body_entered(body: Node2D) -> void:
 	_collect_effect()
 
 
-## The bar the player is using. Asked of the player first, so a test harness that
-## assigned one directly is honoured, with the group as the normal path.
+## The bar the player is using. Asked of the player first, so a directly
+## assigned bar is honoured, with the group as the normal path.
 func _find_health_bar(body: Node2D) -> HealthBar:
 	if body.has_method("find_health_bar"):
 		var bar = body.find_health_bar()

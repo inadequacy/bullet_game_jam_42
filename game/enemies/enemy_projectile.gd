@@ -8,8 +8,8 @@ extends Area2D
 ##   RED   - homing. Not parryable, but the burst clears it. At range the dash
 ##           is still the only answer, since the burst is a short radius.
 ##
-## RED must travel faster than the player's walk speed, or it never closes the
-## gap and the homing is decorative. Set that per-caster via `projectile_speed`.
+## RED must outpace the player's walk, or the homing is decorative. Its speed is
+## set per-caster via `projectile_speed`.
 
 enum Kind { BLUE, GREEN, RED }
 
@@ -22,47 +22,29 @@ const COLORS := {
 @export var kind: Kind = Kind.BLUE
 @export var speed: float = 260.0
 @export var damage: float = 1.0
-## Failsafe despawn so stray shots never accumulate over a 12 minute run.
+## Failsafe despawn so stray shots never accumulate over a long run.
 @export var lifetime: float = 8.0
 
 @export_group("Homing (RED only)")
-## Degrees per second the shot can turn toward the player. A CONSTANT pull:
-## it is a property of the projectile, never scaled by how fast the player is
-## moving, so outrunning the shot does not weaken its tracking.
-##
-## A rate-limited pursuit re-aims every frame, so raw displacement - walking OR
-## dashing - does not beat it; the dash escapes by severing the lock outright,
-## not by out-running the turn.
+## Degrees per second the shot turns toward the player. A constant pull, never
+## scaled by player speed - it re-aims every frame, so no amount of running beats
+## it. The dash escapes by severing the lock, not by out-turning it.
 @export var homing_turn_rate: float = 220.0
-## Dashing severs the lock: the shot stops tracking and continues straight.
-##
-## This is what makes dash - and only dash - the answer to red. Tuning turn rate
-## alone cannot do it: measured across projectile speeds 600-900 and turn rates
-## 90-400, there is no setting where a walking player is hit but a dashing one
-## escapes, because a dash is just a brief burst of the same lateral movement.
+## Dashing severs the lock and the shot continues straight. This is what makes
+## dash the answer to red.
 @export var breaks_lock_on_dash: bool = true
-## How close the shot must ALREADY BE for a dash to sever its lock.
-##
-## Without this the dash is a screen-wide cancel: one press unhooked every red
-## on the map no matter how far away, so the answer to red was to dash on
-## cooldown and never look at it. Gating on distance makes the dash a timed
-## commitment - dodge too early and the shot simply re-aims and keeps coming.
-##
-## Sized against the dash itself: dash_speed 800 x dash_duration 0.2 = 160px of
-## travel, so a shot released at this range is displaced clear of the player.
+## How close the shot must already be for a dash to sever its lock, so one press
+## cannot unhook every red on the map. Sized against the dash: 800 x 0.2 = 160px
+## of travel.
 @export var break_lock_radius: float = 200.0
 ## Extra room outside the visible arena before a shot is culled. A lock that has
 ## been broken flies straight forever, so this is what actually retires it.
 @export var despawn_margin: float = 160.0
-## Shove delivered to the player on contact, along the shot's travel direction.
-##
-## RED only. Blue arrives in volleys, and stacking shoves from several shots in
-## the same second would take control away from the player entirely.
+## Shove on contact, along the shot's travel. RED only - stacking shoves from a
+## blue volley would take control away from the player entirely.
 @export var knockback_strength: float = 320.0
-## RED is drawn and collides at this multiple of the base size.
-##
-## Applied here rather than in the scene because enemy_projectile.tscn is shared
-## by all three colours - growing it there would fatten blue and green too.
+## RED draws and collides at this multiple of base size. Applied here, not in
+## the scene, which all three colours share.
 @export var red_size_scale: float = 2.0
 
 var lock_broken: bool = false
@@ -84,13 +66,11 @@ func _ready() -> void:
 		_apply_red_size()
 
 
-## Grows RED's sprite and its hurtbox together, so what you see is what hits you.
+## Grows RED's sprite and hurtbox together, so what you see is what hits you.
 ##
-## The shape is DUPLICATED first. A sub-resource is shared by every instance of a
-## packed scene, so scaling the radius in place would fatten blue and green as
-## well - and permanently, since the resource outlives the projectile that
-## touched it. Scaling the Area2D root instead would be simpler but puts a scale
-## on a physics node, which Godot handles poorly.
+## Duplicates the shape first - the sub-resource is shared by every instance of
+## the scene, so scaling it in place would fatten blue and green too. The Area2D
+## root is left unscaled, since Godot handles a scaled physics node poorly.
 func _apply_red_size() -> void:
 	if is_equal_approx(red_size_scale, 1.0):
 		return
@@ -117,15 +97,9 @@ func _physics_process(delta: float) -> void:
 		queue_free()
 
 
-## Steers toward the player at a capped turn rate, for as long as the shot lives.
-##
-## There is no age-based giveup. The pull is unconditional - the shot is coming
-## for you until you break it or it leaves the arena - so a red on screen is a
-## problem you have to answer rather than one you can wait out.
-##
-## The dash only counts as an answer from inside break_lock_radius. Dash while
-## the shot is still distant and this falls straight through to the steering
-## below: the shot re-aims and keeps coming, and the dash is spent for nothing.
+## Steers toward the player at a capped rate for as long as the shot lives -
+## there is no age-based giveup. The dash only counts from inside
+## break_lock_radius, so dashing early spends the charge for nothing.
 func _home(delta: float) -> void:
 	if lock_broken:
 		return
@@ -151,10 +125,8 @@ func launch(from: Vector2, dir: Vector2) -> void:
 
 
 ## True once the shot has left the visible arena by more than despawn_margin.
-##
-## Derived from the camera's view rather than a hard-coded 1152x648 rect, so it
-## still culls correctly if the viewport or the camera zoom ever changes. The
-## margin absorbs camera shake, which nudges the view a few pixels per frame.
+## Read off the camera rather than a fixed size, so a viewport or zoom change
+## still culls correctly.
 func _is_out_of_bounds() -> bool:
 	var to_world := get_canvas_transform().affine_inverse()
 	var screen := get_viewport_rect()
@@ -162,12 +134,8 @@ func _is_out_of_bounds() -> bool:
 	return not world.grow(despawn_margin).has_point(global_position)
 
 
-## Severs the lock and dims the shot, so the player can see the dash worked.
-##
-## Also hands the dash charge straight back. Breaking a lock is the one thing the
-## dash exists for, so spending a charge on it and then standing there on
-## cooldown - while the caster winds up the next shot - punished the player for
-## answering correctly.
+## Severs the lock, dims the shot so the player can see the dash worked, and
+## refunds the charge that broke it.
 func _break_lock() -> void:
 	lock_broken = true
 	_sprite.modulate = COLORS[Kind.RED].darkened(0.45)
@@ -176,45 +144,25 @@ func _break_lock() -> void:
 		_player.refund_dash_charge()
 
 
-## Whether a parry window can catch this shot outright.
-##
-## GREEN always. RED only once the Crimson Guard card is taken - that card is
-## the whole reason this reads a flag instead of comparing to a constant. It does
-## not replace the dash: a parry answers the red that is already on top of you,
-## while the dash is what you use on one still crossing the arena, and the parry
-## has a lockout the dash's charges do not share.
+## Whether a parry window can catch this shot outright. GREEN always; RED only
+## with Crimson Guard. Even then a parry only answers the red already on top of
+## you - the dash is still what answers one crossing the arena.
 func is_parryable() -> bool:
 	if kind == Kind.GREEN:
 		return true
 	return kind == Kind.RED and RunState.flag(CardDatabase.FLAG_PARRY_RED)
 
 
-## Whether a successful parry's clear burst destroys this projectile.
-##
-## Every colour but green. Red used to be immune, which meant a landed parry
-## still left the one shot that was actually chasing you - the burst read as a
-## consolation prize rather than a reward. Clearing red too makes the parry a
-## genuine panic button, and red is still answered by the dash at range, since
-## the burst only reaches parry_burst_radius.
-##
-## GREEN is excluded because it is what the burst is FOR. The shot that triggered
-## the parry is already destroyed by the parry itself, and letting the burst take
-## the rest would mean one parry answers a whole volley of the only colour the
-## player is supposed to read individually.
+## Whether a parry's clear burst destroys this shot. Every colour but green -
+## green is excluded so one parry cannot answer a whole volley of the colour
+## meant to be read shot by shot.
 func is_cleared_by_parry_burst() -> bool:
 	return kind != Kind.GREEN
 
 
-## Whether touching the player always spends the shot, even when the damage was
-## blocked by i-frames or the debug toggle.
-##
-## This used to be false for every kind, so that invulnerability could never
-## double as a screen clear. In practice a shot visibly sliding through the
-## player reads as a bug, and it costs little: the parry burst is a far better
-## clear than a dash, and RED cannot be farmed at one shot in the air.
-##
-## GREEN keeps the old behaviour. It is the parry target, so a blocked one
-## carrying on gives the player the chance to answer it the intended way.
+## Whether touching the player spends the shot even when the damage was blocked
+## by i-frames. True for all but GREEN, which carries on so it can still be
+## parried.
 func is_consumed_on_contact() -> bool:
 	return kind != Kind.GREEN
 
@@ -229,7 +177,7 @@ func _on_body_entered(body: Node2D) -> void:
 	var landed := true
 	if body.has_method("take_damage"):
 		var result = body.take_damage(damage)
-		# Older callers returned nothing; treat that as a hit.
+		# A caller that returns nothing counts as a hit.
 		landed = result != false
 
 	if landed or is_consumed_on_contact():

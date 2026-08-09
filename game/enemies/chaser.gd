@@ -14,12 +14,10 @@ enum State { CHASING, WINDUP, STRIKE, RECOVERY }
 @export_group("Melee")
 ## Distance at which it commits to a swing.
 ##
-## MUST stay larger than the combined collider radii of this enemy and the
-## player, or the two bodies stop each other further apart than the chaser's
-## own attack range and it bumps into the player forever without ever swinging.
-## With the current 0.4-scaled placeholders the player's box is 50x50 and the
-## chaser's circle is r21, so the bodies stop ~56 apart at the corners. Re-check
-## this whenever either collider changes size.
+## Must stay larger than the combined collider radii of this enemy and the
+## player, or the two bodies stop each other further apart than this range and
+## the chaser bumps into the player forever without ever swinging. Re-check
+## whenever either collider changes size.
 @export var attack_range: float = 75.0
 ## Extra reach allowed at the moment of the strike, so walking away barely
 ## escapes but standing still does not.

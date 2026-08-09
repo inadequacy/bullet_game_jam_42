@@ -2,18 +2,12 @@ extends CanvasLayer
 
 ## The run readouts.
 ##
-## The cluster sits in the bottom-left corner of an arena the player can still
-## use every pixel of, so sooner or later they WILL stand behind it. Rather than
-## fencing that corner off - which would cost real dodging room in a bullet hell -
-## the cluster fades out of the way while they are under it and comes straight
-## back when they leave.
-##
-## Polls for the player the same way DashBar and ParryBar do, so the level needs
-## no wiring for this.
+## The cluster sits in a corner of an arena the player can use every pixel of,
+## so it fades out of the way when they stand behind it rather than fencing off
+## dodging room.
 
-## What the cluster fades to while the player is behind it. Not zero: the bars
-## still have to be readable at the moment the player is cornered, which is
-## exactly when knowing your health matters most.
+## What the cluster fades to while the player is behind it. Not zero - the bars
+## still have to be readable while the player is cornered.
 @export_range(0.0, 1.0, 0.05) var faded_alpha: float = 0.32
 ## Alpha per second. Fast enough not to lag the player, slow enough not to blink.
 @export var fade_speed: float = 5.0

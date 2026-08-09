@@ -8,7 +8,7 @@ class_name RunTimer
 ## frame anyway, and the HUD stays independent of where the clock actually lives.
 ##
 ## Formatting belongs to the clock, not here - level.gd prints the same string to
-## its logs, and two copies of the formatting would eventually disagree.
+## its logs, so the two can never disagree.
 
 ## Colour for most of the run.
 @export var normal_color: Color = Color(0.92, 0.94, 1.0)

@@ -4,21 +4,10 @@ extends Node2D
 ## ramp has reached, and spawns the player's shots.
 ##
 ## Density is the difficulty ramp (docs/game_info.md §"Difficulty Ramp") - enemy
-## stats stay flat and the crowd is what grows. Two things ramp, both driven off
-## the run clock and both read from here:
-##
-##   POPULATION - the cap climbs by one every `population_step` seconds, from
-##                `starting_population` up to a hard `max_population`.
-##   ATTACK RATE - every enemy multiplies its attack interval by
-##                `attack_interval_scale()`, which slides from 1.0 to
-##                `final_attack_interval_scale` across the run.
-##
-## The cap replaced a table of fixed per-tier head counts. A table cannot follow
-## a run length that changes, and it stepped in three minute jumps that landed as
-## a difficulty wall rather than as pressure building.
+## stats stay flat and the crowd is what grows. Two things ramp off the clock:
+## the population cap climbs one every `population_step`, and every enemy scales
+## its attack interval by `attack_interval_scale()`.
 
-## Fanfare for an actual level-up. The ultimate borrows the same sample from
-## movement.gd - there is only the one - but this is the cue it was named for.
 const LEVEL_UP_SOUND := preload("res://assets/sounds/level_up1.wav")
 
 const ENEMY_SCENES := [
@@ -35,24 +24,15 @@ const ENEMY_SCENES := [
 @export_group("Difficulty ramp")
 ## Enemies alive at once when the run starts.
 @export var starting_population: int = 3
-## HARD CEILING on enemies alive at once. Nothing - not the ramp, not a blue
-## pack - is allowed to put more than this on screen: past ten the arena reads as
-## clutter rather than as pressure, and the player can no longer pick out the one
-## caster that is about to fire.
+## Hard ceiling on enemies alive at once - past ten the arena reads as clutter
+## rather than pressure. Nothing, not even a blue pack, may exceed it.
 @export var max_population: int = 10
-## Seconds of run time per +1 to the cap. At 35s over a 6 minute run the arena
-## fills from 3 to the ceiling of 10 by about 4:05, leaving the last two minutes
-## at full density.
+## Seconds of run time per +1 to the cap. At 35s the arena fills from 3 to 10 by
+## about 4:05 of a 6 minute run, leaving the last two minutes at full density.
 @export var population_step: float = 35.0
-## What every enemy's attack interval is multiplied by at the END of the run;
-## 1.0 at the start, sliding to this. 0.65 = each enemy attacks about half again
-## as often by the time the clock runs out.
-##
-## Kept modest ON PURPOSE. It multiplies with the population ramp, which is
-## already more than tripling the number of things shooting, so the two together
-## are a ~5x wall of fire in the closing minute even at this value. Density is
-## still the main ramp; this stops a late-run screen of ten enemies from feeling
-## slower per enemy than an early screen of three.
+## Attack interval multiplier at the end of the run, sliding from 1.0. Modest on
+## purpose: it compounds with a population ramp that already triples the number
+## of things shooting.
 @export var final_attack_interval_scale: float = 0.65
 
 @export_group("Spawning")
@@ -68,18 +48,12 @@ const ENEMY_SCENES := [
 ## Beat between a slot opening and it being filled, so kills feel like they
 ## landed instead of being instantly undone.
 @export var respawn_delay: float = 0.8
-## Once the arena is this far under its cap it refills at catch_up_delay instead,
-## so a screen the player has just cleared does not then trickle back one enemy
-## per second while they stand around with nothing to shoot.
+## Once this far under cap the arena refills at catch_up_delay instead, so a
+## screen the player just cleared does not trickle back one enemy at a time.
 @export var catch_up_gap: int = 3
 @export var catch_up_delay: float = 0.25
-## How many blue casters arrive together when one is rolled.
-##
-## Blue is the crowd enemy - a wide, slow spread that is trivial to walk around
-## on its own and only becomes a real screen once several are firing across each
-## other. It spawned one at a time like everything else, so it read as the weak
-## enemy rather than as the one that makes the others dangerous. Now rolling blue
-## rolls a PACK.
+## How many blue casters arrive together. Blue is the crowd enemy: trivial
+## alone, a real screen only once several are firing across each other.
 @export var blue_pack_size: int = 2
 ## Chance that pack is one bigger again.
 @export_range(0.0, 1.0, 0.05) var blue_pack_bonus_chance: float = 0.35
@@ -119,8 +93,8 @@ func _process(delta: float) -> void:
 		_fill_to_cap()
 
 	# Stops at zero rather than running negative. Per docs/game_info.md the run
-	# continues past the final beat until the last boss dies, so a frozen clock is
-	# the documented behaviour - this is not the place that ends the run.
+	# continues past the final beat until the last boss dies, so this is not the
+	# place that ends the run.
 	_time_left = maxf(_time_left - delta, 0.0)
 	_log_cap_change()
 	_maintain_population(delta)
@@ -153,22 +127,17 @@ func population_cap() -> int:
 	return clampi(grown, 1, maxi(max_population, 1))
 
 
-## What every enemy multiplies its attack interval by right now.
-##
-## Read by Enemy.attack_interval_scale(), which every attacking enemy goes
-## through - so the whole roster speeds up together and a new enemy type inherits
-## the ramp without being told about it. Slides linearly rather than stepping:
-## the player should never be able to point at the moment it got harder.
+## What every enemy multiplies its attack interval by right now. Read through
+## Enemy.attack_interval_scale(), so a new enemy type inherits the ramp for
+## free. Slides rather than steps - the player should never be able to point at
+## the moment it got harder.
 func attack_interval_scale() -> float:
 	var through := clampf(elapsed() / maxf(run_duration, 0.001), 0.0, 1.0)
 	return lerpf(1.0, final_attack_interval_scale, through)
 
 
-## Living enemies, ignoring any already freed this frame.
-##
-## queue_free() does not remove a node from its groups until the end of the
-## frame, so counting the group raw would see a just-killed enemy as alive and
-## stall the refill by a tick.
+## Living enemies, ignoring any freed this frame - queue_free() leaves a node in
+## its groups until the frame ends, which would stall the refill by a tick.
 func _living_enemy_count() -> int:
 	var alive := 0
 	for e in get_tree().get_nodes_in_group("enemies"):
@@ -177,11 +146,9 @@ func _living_enemy_count() -> int:
 	return alive
 
 
-## Tops the arena back up to the cap, one spawn per respawn_delay.
-##
-## Driven by a head count rather than by the died signal, so it self-corrects:
-## the cap stepping up, several deaths in the same instant, or an enemy lost some
-## other way all resolve the same way without anything having to report them.
+## Tops the arena back up to the cap, one spawn per respawn_delay. Driven by a
+## head count rather than the died signal, so it self-corrects no matter how an
+## enemy went missing.
 func _maintain_population(delta: float) -> void:
 	var cap := population_cap()
 	var alive := _living_enemy_count()
@@ -190,9 +157,7 @@ func _maintain_population(delta: float) -> void:
 		return
 
 	# A big hole - the player cleared the screen, or the cap just stepped up -
-	# closes fast. The full respawn_delay is there so a single kill feels like it
-	# landed; making the player wait it out four times over for a screen they
-	# earned is just dead air.
+	# closes fast; a single kill gets the full respawn_delay.
 	var delay := catch_up_delay if alive <= cap - catch_up_gap else respawn_delay
 
 	_refill_timer += delta
@@ -237,11 +202,10 @@ func _on_enemy_died(enemy: Enemy) -> void:
 	print("[ENEMY] %s died | refilling to %d" % [enemy.name, population_cap()])
 
 
-## Rolls one enemy type and puts it in the arena - as a PACK if it rolled blue.
+## Rolls one enemy type and puts it in the arena - as a pack if it rolled blue.
 ##
-## The pack is allowed to overshoot the current cap, and only the hard
-## max_population ceiling stops it. A pack trimmed to the last free slot would be
-## a lone blue again, which is the exact thing this exists to prevent; the cap
+## The pack may overshoot the current cap, and only the hard max_population
+## ceiling stops it, so a pack is never trimmed down to a lone blue. The cap
 ## simply stops refilling until the extras are dead.
 func _spawn_random_enemy() -> void:
 	var scene: PackedScene = ENEMY_SCENES.pick_random()
@@ -260,11 +224,9 @@ func _spawn_enemy(scene: PackedScene) -> void:
 	var enemy: Enemy = scene.instantiate()
 	var target := _pick_spawn_point()
 	add_child(enemy)
-	# Named AFTER add_child, not before: a blue pack puts several enemies from
-	# the same scene in the arena at once, and a name that collides with a
-	# sibling already in the tree is thrown away for something like
-	# "@CharacterBody2D@22". Renaming a node that is already in the tree appends
-	# a number instead, so the pack reads as caster_blue, caster_blue2 in the log.
+	# Named after add_child: renaming a node already in the tree appends a number
+	# on collision, so a blue pack reads as caster_blue, caster_blue2 in the log
+	# instead of being given a generated name.
 	enemy.name = scene.resource_path.get_file().get_basename()
 	_watch(enemy)
 	# After add_child: enter_from writes global_position, which only means
@@ -333,6 +295,4 @@ func _on_character_shoot(projectile: Variant, direction: Variant, location: Vari
 	spawned_projectile.rotation = direction
 	spawned_projectile.position = location
 	spawned_projectile.velocity = spawned_projectile.velocity.rotated(direction)
-	# The projectile despawns itself now (on enemy hit, or after its lifetime).
-	# The old timer here called queue_free() on shots that had already freed
-	# themselves, which errors.
+	# The projectile despawns itself, on enemy hit or after its lifetime.

@@ -1,7 +1,7 @@
 extends Label
 
 
-# Called when the node enters the scene tree for the first time.
+## Fetches the leaderboard from SilentWolf and appends it to the label.
 func _ready() -> void:
 	var sw_result: Dictionary = await SilentWolf.Scores.get_scores(100).sw_get_scores_complete
 	var new_text: String = ""
@@ -16,8 +16,3 @@ func _ready() -> void:
 
 				new_text += player_name + ": " + score + "\n"
 	set_text(get_text() + "\n" + new_text)
-
-
-# Called every frame. 'delta' is the elapsed time since the previous frame.
-func _process(_delta: float) -> void:
-	pass

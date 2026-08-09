@@ -3,21 +3,18 @@ extends CanvasLayer
 ## Level-up card screen. Freezes the game and offers three cards - one BASIC,
 ## one ACTION, one ATTACK, always in that order.
 ##
-## This file is selection rules only: which three cards a hand contains. **The
-## cards themselves live in card_database.gd** - add or retune them there - and
-## how one is drawn lives in card_view.gd.
+## Holds the selection rules only: which three cards a hand contains. The cards
+## themselves live in card_database.gd, drawing one lives in card_view.gd, and
+## applying one lives in RunState - so a new card needs no change here.
 ##
-## PLACEHOLDER: picking a card prints, emits `card_chosen`, and applies nothing.
-## Real effects hook into that signal.
-##
-## Opened with G for now. When XP is wired up, call open() on level-up instead
-## and drop the debug key.
+## Opened by level.gd on GameManager.level_up; `open_action` is a debug key that
+## opens it on demand.
 
 signal card_chosen(card: Dictionary)
 ## Fired the first time an element is committed to. Never fires again in a run.
 signal element_locked(element: CardDatabase.Element)
 
-## Debug key that opens the screen. Remove once XP drives this.
+## Debug key that opens the screen on demand, alongside the normal level-up.
 @export var open_action: String = "debug_cards"
 @export var logs: bool = true
 
@@ -47,8 +44,8 @@ func _ready() -> void:
 	add_to_group("card_screen")
 	for i in _cards.size():
 		_cards[i].pressed.connect(_on_card_pressed.bind(i))
-	# The three views are re-used rather than rebuilt each hand, so wiring their
-	# hover and click sounds once here is enough.
+	# The three views are re-used rather than rebuilt each hand, so their hover
+	# and click sounds only need wiring once.
 	SoundManager.attach_button_sounds(self)
 
 
