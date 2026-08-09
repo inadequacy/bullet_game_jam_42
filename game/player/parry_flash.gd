@@ -32,14 +32,19 @@ var alpha: float = 1.0:
 
 
 ## Spawns a ring that expands to `to_radius` while fading, then frees itself.
+##
+## `peak_alpha` is what it fades FROM. A parry that landed draws at full
+## strength; a window that closed empty draws the same ring fainter, so the two
+## outcomes are told apart by how loud the ring is rather than by its presence.
 static func burst(parent: Node, at: Vector2, to_radius: float,
-		duration: float = 0.28) -> ParryFlash:
+		duration: float = 0.28, peak_alpha: float = 1.0) -> ParryFlash:
 	var flash := ParryFlash.new()
 	parent.add_child(flash)
 	flash.global_position = at
 	flash.width = maxf(to_radius * flash.width_ratio, flash.width)
 	# Start part-grown so the ring reads as a shockwave, not a dot.
 	flash.radius = to_radius * 0.3
+	flash.alpha = peak_alpha
 
 	var tween := flash.create_tween().set_parallel(true)
 	tween.tween_property(flash, "radius", to_radius, duration) \

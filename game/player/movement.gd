@@ -79,6 +79,17 @@ var _iframes_left: float = 0.0
 ## measured. Holding the field open for the ring's whole life makes the promise
 ## the visual is making true: what the circle covers, dies.
 @export var parry_burst_duration: float = 0.28
+## How strongly the ring draws on the PRESS itself.
+##
+## Every press that opens a window draws this, on the frame of the keypress -
+## it is input feedback, so it cannot wait to find out whether the parry landed.
+## A press that catches nothing gets this ring and NOTHING ELSE: no sparkles, no
+## sound, no shake. Those three are the payout for a parry that connected, and a
+## miss that borrowed them would be telling the player they succeeded.
+##
+## Drawn fainter than a landed parry so the two read apart at a glance. Set to
+## 1.0 for a press ring as loud as a success.
+@export_range(0.0, 1.0, 0.05) var parry_attempt_flash_alpha: float = 0.55
 ## Prints parry results to the terminal. Turn off before shipping.
 @export var parry_debug_logs: bool = true
 @onready var parry_collider = $ParryRadius
@@ -87,6 +98,9 @@ var _iframes_left: float = 0.0
 var _body_base_modulate: Color = Color.WHITE
 var parry_allowed = true
 var is_parrying = false
+## The press ring, kept only so a parry that lands can take it back down - see
+## _parry_succeeded(). Null whenever there is nothing to retract.
+var _parry_attempt_flash: ParryFlash = null
 var _parry_window_opened_ms: int = 0
 var _parried_this_window: int = 0
 ## Seconds left in the open window, then in the lockout after it.
@@ -719,6 +733,8 @@ func parry_this_casual() -> void:
 	_parry_cooldown_left = 0.0
 	_parry_cooldown_span = 0.0
 
+	_show_parry_attempt()
+
 
 ## Runs the open window down, then the lockout. Split from the window itself so
 ## _resolve_parry() and the UI can both read where in the cycle we are.
@@ -831,8 +847,42 @@ func try_parry_hitscan(_from: Vector2, fired_at_ms: int = -1) -> bool:
 ## Everything a successful parry does, whatever it caught: refunds the cooldown,
 ## clears the shots around the player, throws up the ring, and thumps the screen.
 ## Returns how many shots the burst destroyed.
+## The ring for the press itself, drawn on the frame Shift goes down.
+##
+## On the PRESS and not on the outcome. It is input feedback - it says "your
+## parry went off, here", which is true the instant the key is hit and does not
+## depend on what the window goes on to catch. Waiting for the window to close
+## put it a fifth of a second behind the key, which read as lag rather than as a
+## verdict. A press refused by the lockout never gets here: no window opened, so
+## there was no parry to draw.
+##
+## Drawn at PARRY_RADIUS, not at the burst radius a success uses. The big ring is
+## documented as a promise - what it covers is destroyed - and a swing that
+## catches nothing destroys nothing, so borrowing it would be drawing a claim
+## that is not true. The catch radius is the honest circle: it is the reach the
+## press actually had, and seeing it is how the player learns how far it goes.
+##
+## Deliberately silent and still. parry_this_casual() explains why a press must
+## never sound; the same argument applies to the shake and the sparkles.
+func _show_parry_attempt() -> void:
+	var parent := get_parent()
+	if parent == null:
+		return
+	_parry_attempt_flash = ParryFlash.burst(parent, global_position, parry_radius,
+		parry_burst_duration, parry_attempt_flash_alpha)
+
+
 func _parry_succeeded() -> int:
 	_parried_this_window += 1
+
+	# Take the press ring back down. It only ever meant "a parry went off here",
+	# and the burst ring below now says that louder and at the real radius -
+	# leaving the faint one under it would draw two circles for one parry. Safe
+	# to do abruptly: it vanishes on the same frame the bright ring, the sparkles
+	# and the shake all arrive, so there is nothing quiet enough to notice it go.
+	if _parry_attempt_flash != null and is_instance_valid(_parry_attempt_flash):
+		_parry_attempt_flash.queue_free()
+	_parry_attempt_flash = null
 
 	# The one and only parry sound. Both kinds of parry - a green projectile and
 	# a hitscan trace - funnel through here, so a success always sounds and a
