@@ -50,7 +50,7 @@ lock, three numbered spell tiers, and three ultimate tiers.
 
 | | Lock | I | II | III |
 | --- | --- | --- | --- | --- |
-| **Arcane** | Missiles hit harder and fly faster | **Pierce** - shots carry through one extra enemy | **Volley** - one extra projectile per cast | **Seeker** - shots curve toward their target |
+| **Arcane** | Missiles hit harder and fly faster | **Pierce** - shots carry through one extra enemy | **Volley** - one extra projectile per cast | **Overcharge** - shots hit harder for every enemy they pass through |
 | **Fire** | Missiles explode on impact, splashing neighbours | Wider blast radius | **Cinders** - hits burn over time | **Chain Reaction** - anything killed by fire explodes too |
 | **Ice** | Missiles slow what they hit | Deeper, longer slow | **Shatter** - chilled enemies take extra damage | **Flash Freeze** - every Nth hit freezes solid |
 

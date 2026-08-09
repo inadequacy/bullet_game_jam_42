@@ -271,7 +271,7 @@ Cards upgrade **spells and abilities** — they are not generic stat sticks.
 
 | Card group | Examples |
 | --- | --- |
-| **Basic spell** | +damage, +fire rate, +projectile count, pierce, homing shots |
+| **Basic spell** | +damage, +fire rate, +projectile count, pierce, overcharge |
 | **Dash** | **i-frames** *(keystone — weight it rare)*, +charges, −cooldown, +distance |
 
 **Dash i-frames (Phase Step)** make the player invulnerable for the length of

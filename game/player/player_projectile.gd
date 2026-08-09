@@ -4,7 +4,7 @@ extends Area2D
 ## The player's basic spell, and everything the element cards make it do.
 ##
 ## THE ELEMENT LINES LIVE HERE. A shot reads RunState at spawn to find out what
-## it is - plain missile, explosive, chilling, piercing, homing - so nothing
+## it is - plain missile, explosive, chilling, piercing, overcharged - so nothing
 ## that fires one needs to know which school the run committed to.
 ##
 ## The exports below are BASE values. Cards scale them through RunState, exactly
@@ -13,8 +13,17 @@ extends Area2D
 @export var speed: float = 500
 ## Enemy health values are 20-40, so 10 means 2-4 hits to kill.
 @export var damage: float = 10.0
-## Failsafe despawn so stray shots never accumulate over a long run.
+## Failsafe despawn so stray shots never accumulate over a long run. The bounds
+## check below is what actually retires nearly every shot; this only catches one
+## that somehow never leaves the view.
 @export var lifetime: float = 6.0
+## Extra room outside the visible arena before a shot is culled.
+##
+## A shot that leaves the screen is gone - it has nothing left to hit and the
+## player cannot see it. Small, but not zero: the camera shakes a few pixels on
+## a knockback, and a shot skimming the edge should not blink out because the
+## view twitched.
+@export var despawn_margin: float = 64.0
 
 @export_group("Fire")
 @export var explosion_radius: float = 85.0
@@ -31,9 +40,16 @@ extends Area2D
 @export var freeze_duration: float = 1.5
 
 @export_group("Arcane")
-## Degrees per second a Seeker shot can turn. High enough to correct a near
-## miss, low enough that it cannot loop back on something it flew past.
-@export var homing_turn_rate: float = 260.0
+## Overcharge. Extra damage per enemy the shot has ALREADY passed through, as a
+## fraction of the base hit: at 0.5 a shot deals 1.0x to the first enemy, 1.5x
+## to the second, 2.0x to the third.
+##
+## Deliberately worth nothing on its own - a shot with no pierce never reaches a
+## second enemy, so this only pays out on top of Piercing Bolt, and pays more
+## again with the extra shot from Arcane Volley. That dependency is the point:
+## it is a reward for lining a volley up down a row of enemies, which is a thing
+## the player does rather than a thing the shot does for them.
+@export var overcharge_bonus: float = 0.5
 ## Extra damage a chilled enemy takes with Shatter, as a multiplier.
 @export var shatter_bonus: float = 1.4
 @export_group("")
@@ -64,38 +80,22 @@ func _process(delta: float) -> void:
 		queue_free()
 		return
 
-	if RunState.flag(CardDatabase.FLAG_HOMING_SHOTS):
-		_steer_toward_target(delta)
-
 	position += velocity * delta * speed
 
-
-## Seeker Missiles. Turns the shot toward the nearest enemy at a capped rate, so
-## it corrects rather than snaps - a shot that turned instantly would make aiming
-## and the auto-aim toggle both meaningless.
-func _steer_toward_target(delta: float) -> void:
-	var target := _nearest_enemy()
-	if target == null:
-		return
-	var wanted := global_position.direction_to(target.global_position)
-	var max_turn := deg_to_rad(homing_turn_rate) * delta
-	velocity = velocity.rotated(
-		clampf(velocity.angle_to(wanted), -max_turn, max_turn)).normalized()
-	# Keep the sprite pointing where it is actually going.
-	rotation = velocity.angle()
+	if _is_out_of_bounds():
+		queue_free()
 
 
-func _nearest_enemy() -> Node2D:
-	var best: Node2D = null
-	var best_dist := INF
-	for e in get_tree().get_nodes_in_group("enemies"):
-		if not _is_live_enemy(e):
-			continue
-		var d: float = global_position.distance_squared_to((e as Node2D).global_position)
-		if d < best_dist:
-			best_dist = d
-			best = e
-	return best
+## True once the shot has left the visible arena by more than despawn_margin.
+##
+## Read off the camera's canvas transform rather than a hard-coded 1152x648, so
+## it still culls correctly if the viewport or the camera zoom ever changes -
+## the same way enemy_projectile.gd retires its own shots.
+func _is_out_of_bounds() -> bool:
+	var to_world := get_canvas_transform().affine_inverse()
+	var screen := get_viewport_rect()
+	var world := Rect2(to_world * screen.position, to_world.basis_xform(screen.size))
+	return not world.grow(despawn_margin).has_point(global_position)
 
 
 func _on_body_entered(body: Node2D) -> void:
@@ -122,6 +122,16 @@ func _strike(enemy: Enemy) -> void:
 	var hit_position := enemy.global_position
 	# Read the chill BEFORE damaging - take_damage can free the enemy outright.
 	var dealt := damage
+
+	# Overcharge, before any other multiplier: the shot is heavier for every
+	# enemy already behind it. _already_hit has just had THIS enemy added, so
+	# subtract it back off to get the count it arrived with.
+	if RunState.flag(CardDatabase.FLAG_OVERCHARGE):
+		var passed_through := maxi(_already_hit.size() - 1, 0)
+		var per_enemy := RunState.modified(CardDatabase.STAT_OVERCHARGE_BONUS,
+			overcharge_bonus)
+		dealt *= 1.0 + per_enemy * float(passed_through)
+
 	if RunState.flag(CardDatabase.FLAG_SHATTER) and enemy.is_chilled():
 		dealt *= RunState.modified(CardDatabase.STAT_SHATTER_BONUS, shatter_bonus)
 

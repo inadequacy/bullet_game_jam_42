@@ -71,6 +71,9 @@ const STAT_PROJECTILE_COUNT := "projectile_count"
 const STAT_PROJECTILE_SPEED := "projectile_speed"
 ## Extra enemies a shot carries through before dying. 0 = stops at the first.
 const STAT_PIERCE := "pierce"
+## Overcharge's damage step per enemy already pierced, as a fraction of the base
+## hit. Only read while FLAG_OVERCHARGE is set.
+const STAT_OVERCHARGE_BONUS := "overcharge_bonus"
 
 # --- Element stats. Only ever non-default once that element is locked. ---
 const STAT_EXPLOSION_RADIUS := "explosion_radius"
@@ -110,7 +113,10 @@ const FLAG_PARRY_RED := "parry_red"
 ## on impact beyond dealing damage - see player_projectile.gd.
 const FLAG_EXPLOSIVE_SHOTS := "explosive_shots"
 const FLAG_CHILLING_SHOTS := "chilling_shots"
-const FLAG_HOMING_SHOTS := "homing_shots"
+## Arcane's third card. A shot hits harder for every enemy already behind it,
+## which is worth exactly nothing without the pierce from Arcane's first card -
+## see player_projectile._strike().
+const FLAG_OVERCHARGE := "overcharge"
 const FLAG_BURN := "burn"
 const FLAG_CHAIN_EXPLOSION := "chain_explosion"
 const FLAG_SHATTER := "shatter"
@@ -290,10 +296,16 @@ const CARDS := {
 			"unique": true, "requires": "arcane_1",
 			"desc": "One extra projectile every cast",
 			"effect": {"op": "add", "stat": STAT_PROJECTILE_COUNT, "value": 1}},
-		{"id": "arcane_3", "name": "Seeker Missiles", "element": Element.ARCANE,
+		# Replaced Seeker Missiles, which curved shots onto the nearest enemy.
+		# Seeking was the wrong card for this line twice over: it made aiming
+		# pointless, and stacked on Arcane Volley it just sent BOTH shots at the
+		# same target, so the line's own previous card made it worse. This one
+		# runs the other way - it pays out only when the volley is lined up
+		# through several enemies, which is a thing the player has to set up.
+		{"id": "arcane_3", "name": "Overcharge", "element": Element.ARCANE,
 			"unique": true, "requires": "arcane_2",
-			"desc": "Shots curve toward their target",
-			"effect": {"op": "flag", "flag": FLAG_HOMING_SHOTS}},
+			"desc": "Shots hit harder for every enemy they pass through",
+			"effect": {"op": "flag", "flag": FLAG_OVERCHARGE}},
 		# ARCANE: a huge purple beam from the player. Follows FACING and
 		# deliberately ignores auto-aim - this one is aimed by hand.
 		{"id": "arcane_ult_1", "name": "Ultimate I", "element": Element.ARCANE,
