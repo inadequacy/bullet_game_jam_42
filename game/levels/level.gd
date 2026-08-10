@@ -127,13 +127,19 @@ func population_cap() -> int:
 	return clampi(grown, 1, maxi(max_population, 1))
 
 
+## How far through the run we are, 0.0 at the opening and 1.0 at the final beat.
+## The one place run time is turned into a fraction, so the sliding ramps below
+## and the stepped enemy upgrades in caster.gd agree on where we are.
+func run_progress() -> float:
+	return clampf(elapsed() / maxf(run_duration, 0.001), 0.0, 1.0)
+
+
 ## What every enemy multiplies its attack interval by right now. Read through
 ## Enemy.attack_interval_scale(), so a new enemy type inherits the ramp for
 ## free. Slides rather than steps - the player should never be able to point at
 ## the moment it got harder.
 func attack_interval_scale() -> float:
-	var through := clampf(elapsed() / maxf(run_duration, 0.001), 0.0, 1.0)
-	return lerpf(1.0, final_attack_interval_scale, through)
+	return lerpf(1.0, final_attack_interval_scale, run_progress())
 
 
 ## Living enemies, ignoring any freed this frame - queue_free() leaves a node in

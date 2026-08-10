@@ -400,6 +400,26 @@ The two multiply. Ten enemies attacking 1.5x as often is roughly a fivefold wall
 of fire against the opening minute, which is why the attack-rate half is kept
 modest.
 
+**Colour upgrades** are the third axis, and the only one that steps rather than
+slides. Each caster colour learns a new trick at fixed fractions of the run —
+authored per scene in `caster.gd`'s Escalation group, read off `run_progress()`
+so every caster of a colour changes at the same moment:
+
+| Colour | Opening | 30% | 50% | 60% |
+| --- | --- | --- | --- | --- |
+| 🔵 **Blue** | 1 shot | 2 shots | — | 3 shots, one down the middle |
+| 🟢 **Green** | 1 charged shot | — | fires 2x as often | — |
+| 🔴 **Red** | 1 heavy homing shot | — | 2 smaller ones in succession | — |
+
+Stepping is deliberate here where the other two axes slide. Density and attack
+rate are meant to be felt and not noticed; a colour changing what it does is
+something the player has to *re-read*, so it lands as a moment. Each upgrade also
+keeps the colour's answer intact — blue's third shot widens the wall but a parry
+burst still clears it, green fires oftener but still charges first, and red's two
+lighter shots are still severed by one dash. **No upgrade changes a projectile's
+colour**: the colour is the rule, and a rule that moved would cost the player the
+one thing they can read at a glance.
+
 It is a **cap that is always met**, not a spawn budget: kill one and the arena
 tops itself back up after `respawn_delay`, so the pressure never sags. A big
 hole — a screen the player just cleared, or the cap stepping up — refills at the

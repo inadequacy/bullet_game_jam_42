@@ -8,6 +8,9 @@ extends Area2D
 ##   RED   - homing. Not parryable, but the burst clears it. At range the dash
 ##           is still the only answer, since the burst is a short radius.
 ##
+## Purple is not here on purpose: it is Max's colour, and the one hue on screen
+## that never has to be dodged.
+##
 ## RED must outpace the player's walk, or the homing is decorative. Its speed is
 ## set per-caster via `projectile_speed`.
 
@@ -17,6 +20,15 @@ const COLORS := {
 	Kind.BLUE: Color(0.35, 0.62, 1.0),
 	Kind.GREEN: Color(0.35, 1.0, 0.45),
 	Kind.RED: Color(1.0, 0.3, 0.3),
+}
+
+## How big each colour draws and collides, as a multiple of the shared scene's
+## size. RED is the heavy one you dash away from, so it reads twice the size of
+## the rest. Kept here rather than in the scene, which every colour shares.
+const KIND_SIZE := {
+	Kind.BLUE: 1.0,
+	Kind.GREEN: 1.0,
+	Kind.RED: 2.0,
 }
 
 @export var kind: Kind = Kind.BLUE
@@ -43,9 +55,11 @@ const COLORS := {
 ## Shove on contact, along the shot's travel. RED only - stacking shoves from a
 ## blue volley would take control away from the player entirely.
 @export var knockback_strength: float = 320.0
-## RED draws and collides at this multiple of base size. Applied here, not in
-## the scene, which all three colours share.
-@export var red_size_scale: float = 2.0
+@export_group("")
+## Extra multiplier on top of the colour's own size in KIND_SIZE, set by the
+## caster. Escalations that trade one shot for several use it to make the
+## several smaller - see Caster's tier_projectile_scale.
+@export var size_scale: float = 1.0
 
 var lock_broken: bool = false
 
@@ -61,28 +75,30 @@ func _ready() -> void:
 	add_to_group("enemy_projectiles")
 	_sprite.modulate = COLORS.get(kind, Color.WHITE)
 	body_entered.connect(_on_body_entered)
+	_apply_size()
 	if kind == Kind.RED:
 		_player = get_tree().get_first_node_in_group("player") as Node2D
-		_apply_red_size()
 
 
-## Grows RED's sprite and hurtbox together, so what you see is what hits you.
+## Sizes the sprite and the hurtbox together, so what you see is what hits you.
 ##
 ## Duplicates the shape first - the sub-resource is shared by every instance of
-## the scene, so scaling it in place would fatten blue and green too. The Area2D
-## root is left unscaled, since Godot handles a scaled physics node poorly.
-func _apply_red_size() -> void:
-	if is_equal_approx(red_size_scale, 1.0):
+## the scene, so resizing it in place would resize every other shot too. The
+## Area2D root is left unscaled, since Godot handles a scaled physics node
+## poorly.
+func _apply_size() -> void:
+	var scale_factor: float = KIND_SIZE.get(kind, 1.0) * size_scale
+	if is_equal_approx(scale_factor, 1.0):
 		return
 
-	_sprite.scale *= red_size_scale
+	_sprite.scale *= scale_factor
 
 	var circle := $CollisionShape2D.shape as CircleShape2D
 	if circle == null:
 		return
-	var grown: CircleShape2D = circle.duplicate()
-	grown.radius *= red_size_scale
-	$CollisionShape2D.shape = grown
+	var resized: CircleShape2D = circle.duplicate()
+	resized.radius *= scale_factor
+	$CollisionShape2D.shape = resized
 
 
 func _physics_process(delta: float) -> void:

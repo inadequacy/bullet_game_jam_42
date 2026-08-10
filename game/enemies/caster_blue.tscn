@@ -23,8 +23,10 @@ projectile_scene = ExtResource("4_projectile")
 projectile_speed = 260.0
 cast_interval = 2.2
 telegraph_time = 0.45
-projectiles_per_cast = 2
+projectiles_per_cast = 1
 spread_degrees = 42.0
+upgrade_at = Array[float]([0.3, 0.6])
+tier_projectiles = Array[int]([1, 2, 3])
 move_speed = 110.0
 xp_value = 100
 

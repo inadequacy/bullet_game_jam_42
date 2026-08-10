@@ -299,11 +299,28 @@ func _refresh_status_tint() -> void:
 ##
 ## Returns 1.0 - the authored timings, unchanged - when there is no arena to ask.
 func attack_interval_scale() -> float:
+	var clock := run_clock()
+	if clock == null or not clock.has_method("attack_interval_scale"):
+		return 1.0
+	return maxf(clock.attack_interval_scale(), 0.05)
+
+
+## How far through the run we are, 0.0 to 1.0. Enemies that change how they
+## fight partway through - see Caster's escalation tiers - read it from here, so
+## the whole roster is stepping off one clock.
+##
+## Returns 0.0 - the opening - when there is no arena to ask.
+func run_progress() -> float:
+	var clock := run_clock()
+	if clock == null or not clock.has_method("run_progress"):
+		return 0.0
+	return clampf(clock.run_progress(), 0.0, 1.0)
+
+
+func run_clock() -> Node:
 	if _run_clock == null or not is_instance_valid(_run_clock):
 		_run_clock = get_tree().get_first_node_in_group("run_clock")
-	if _run_clock == null or not _run_clock.has_method("attack_interval_scale"):
-		return 1.0
-	return maxf(_run_clock.attack_interval_scale(), 0.05)
+	return _run_clock
 
 
 func has_player() -> bool:
