@@ -132,11 +132,26 @@ has to survive or red becomes unavoidable.
 
 ### HUD
 
-Everything except the clock lives in one cluster in the bottom-left
-(`game/ui/hud.tscn`); the run timer sits top-centre. The cluster fades while the
-player stands behind it, so the corner stays playable. Bars find what they need
-through groups (`health_bar`, `player`, `run_clock`) rather than node paths, so
-the level needs no wiring.
+Four clusters in `game/ui/hud.tscn`, each where the eye already expects it:
+
+| Where | What |
+| --- | --- |
+| top left | abilities — dash, parry, ultimate |
+| top centre | the run clock |
+| top right | score |
+| bottom centre | XP over health, the two bars read while dodging |
+
+XP sits above health and is drawn thinner, so the one that matters in a fight is
+the one the eye lands on. Both captions are drawn **inside** their bar rather
+than above it, which is what lets the two stack flush.
+
+**No panels behind any of it.** The readouts sit straight on the arena and every
+caption carries its own outline instead, so the HUD costs the player no visible
+floor. Each cluster fades independently while the player stands behind it — being
+cornered under the vitals is no reason to dim the clock. Anything in the
+`hud_cluster` group fades, so moving a cluster or adding a fifth needs no change
+to `hud.gd`. Bars find what they need through groups (`health_bar`, `player`,
+`run_clock`) rather than node paths, so the level needs no wiring.
 
 > Chaser `attack_range` must stay larger than the combined collider radii of the
 > chaser and the player, or it bumps into them forever without swinging.

@@ -3,13 +3,13 @@
 [ext_resource type="Script" path="res://game/ui/exp_bar.gd" id="1_2psns"]
 
 [node name="EXPBar" type="Control"]
-custom_minimum_size = Vector2(200, 34)
+custom_minimum_size = Vector2(240, 18)
 layout_mode = 3
 anchors_preset = 0
 mouse_filter = 2
 script = ExtResource("1_2psns")
 
-[node name="Rows" type="VBoxContainer" parent="."]
+[node name="Fill" type="ProgressBar" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -17,16 +17,20 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_constants/separation = 3
-
-[node name="Label" type="Label" parent="Rows"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.73, 0.78, 0.89, 1)
-theme_override_font_sizes/font_size = 12
-text = "XP"
-
-[node name="Fill" type="ProgressBar" parent="Rows"]
-custom_minimum_size = Vector2(0, 14)
-layout_mode = 2
-mouse_filter = 2
 show_percentage = false
+
+[node name="Label" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.85)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 11
+text = "XP  0/350"
+horizontal_alignment = 1
+vertical_alignment = 1

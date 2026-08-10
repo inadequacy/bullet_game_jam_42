@@ -11,8 +11,8 @@ var current_health: int
 @export var background_color: Color = Color(0.22, 0.26, 0.32)
 @export var fill_color: Color = Color(0.702, 0.004, 0.0, 1.0)
 
-@onready var _fill: ProgressBar = $Rows/Fill
-@onready var _label: Label = $Rows/Label
+@onready var _fill: ProgressBar = $Fill
+@onready var _label: Label = $Label
 
 
 func _ready() -> void:
@@ -37,10 +37,12 @@ func heal(amount: int) -> void:
 	health_changed.emit(current_health, max_health)
 
 
-## The count next to the caption. A bar alone answers "how hurt am I" but not
-## "how many more hits do I have", which is the question actually being asked.
+## The caption, drawn ON the bar rather than above it, so health and XP stack
+## directly on top of each other with no label rows between them. A bar alone
+## answers "how hurt am I" but not "how many more hits do I have", which is the
+## question actually being asked.
 func _relabel() -> void:
-	_label.text = "HEALTH  %d/%d" % [current_health, max_health]
+	_label.text = "HP  %d/%d" % [current_health, max_health]
 
 func _paint() -> void:
 	HudStyle.paint_bar(_fill, background_color, fill_color)

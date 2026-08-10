@@ -9,8 +9,8 @@ class_name EXPBar
 @export var background_color: Color = Color(0.22, 0.26, 0.32)
 @export var fill_color: Color = Color(0.702, 0.004, 0.996, 1.0)
 
-@onready var _fill: ProgressBar = $Rows/Fill
-@onready var _label: Label = $Rows/Label
+@onready var _fill: ProgressBar = $Fill
+@onready var _label: Label = $Label
 
 
 func _ready() -> void:
