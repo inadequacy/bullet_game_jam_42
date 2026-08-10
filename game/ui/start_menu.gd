@@ -1,5 +1,10 @@
 extends Control
 
+## The title screen. RunState and GameManager are wiped by whatever sent the
+## player here - the end screen and the pause menu both do it - so starting a run
+## from here needs no reset of its own.
+
+
 func _ready() -> void:
 	SoundManager.attach_button_sounds(self)
 

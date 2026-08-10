@@ -210,14 +210,10 @@ func attack_interval_scale() -> float:
 	return lerpf(1.0, final_attack_interval_scale, run_progress())
 
 
-## Living enemies, ignoring any freed this frame - queue_free() leaves a node in
-## its groups until the frame ends, which would stall the refill by a tick.
+## Ignores anything freed earlier this frame, or the refill would stall a tick
+## behind every kill. See Enemy.living.
 func _living_enemy_count() -> int:
-	var alive := 0
-	for e in get_tree().get_nodes_in_group("enemies"):
-		if is_instance_valid(e) and not e.is_queued_for_deletion():
-			alive += 1
-	return alive
+	return Enemy.living(self).size()
 
 
 ## Tops the arena back up to the cap, one spawn per respawn_delay. Driven by a
@@ -316,7 +312,7 @@ func _spawn_enemy(scene: PackedScene) -> void:
 ## The point just outside the view nearest to `target`, so an enemy walks in from
 ## the closest edge instead of trekking across the whole arena to reach its spot.
 func _offscreen_origin_for(target: Vector2) -> Vector2:
-	var view := _view_bounds()
+	var view := View.world_rect(self)
 	var to_left := target.x - view.position.x
 	var to_right := view.end.x - target.x
 	var to_top := target.y - view.position.y
@@ -330,14 +326,6 @@ func _offscreen_origin_for(target: Vector2) -> Vector2:
 	if nearest == to_top:
 		return Vector2(target.x, view.position.y - spawn_offscreen_margin)
 	return Vector2(target.x, view.end.y + spawn_offscreen_margin)
-
-
-## The visible world rect. Read off the canvas transform rather than assuming
-## 1152x648, so this survives a viewport or camera zoom change.
-func _view_bounds() -> Rect2:
-	var to_world := get_canvas_transform().affine_inverse()
-	var screen := get_viewport_rect()
-	return Rect2(to_world * screen.position, to_world.basis_xform(screen.size))
 
 
 ## Random point in the arena, kept away from the player. Falls back to the
@@ -363,10 +351,12 @@ func _pick_spawn_point() -> Vector2:
 	return furthest
 
 
-func _on_character_shoot(projectile: Variant, direction: Variant, location: Variant) -> void:
-	var spawned_projectile = projectile.instantiate()
-	add_child(spawned_projectile)
-	spawned_projectile.rotation = direction
-	spawned_projectile.position = location
-	spawned_projectile.velocity = spawned_projectile.velocity.rotated(direction)
-	# The projectile despawns itself, on enemy hit or after its lifetime.
+## Builds one of the player's shots. Parented to the arena rather than to the
+## player, so a shot does not inherit their movement. It despawns itself, on an
+## enemy hit or after its lifetime.
+func _on_character_shoot(scene: PackedScene, direction: float, at: Vector2) -> void:
+	var shot: PlayerProjectile = scene.instantiate()
+	add_child(shot)
+	shot.rotation = direction
+	shot.position = at
+	shot.velocity = shot.velocity.rotated(direction)

@@ -4,9 +4,7 @@ class_name CameraShake
 ## Screen shake, kept subtle. Joins the "camera_shake" group so anything can
 ## trigger it without holding a reference:
 ##
-##     var cam := get_tree().get_first_node_in_group("camera_shake")
-##     if cam != null:
-##         cam.shake()
+##     CameraShake.thump(self, strength, duration)
 ##
 ## The camera sits still at the centre of the fixed arena; it exists only so
 ## there is something to shake.
@@ -25,6 +23,14 @@ var _time_left: float = 0.0
 
 func _ready() -> void:
 	add_to_group("camera_shake")
+
+
+## Shakes the level's camera, if the level has one. The only place the group
+## lookup lives, so no caller carries its own null check.
+static func thump(from: Node, strength: float = -1.0, duration: float = -1.0) -> void:
+	var camera := from.get_tree().get_first_node_in_group("camera_shake") as CameraShake
+	if camera != null:
+		camera.shake(strength, duration)
 
 
 ## Negative arguments fall back to the exported defaults.

@@ -130,13 +130,8 @@ func _process(delta: float) -> void:
 
 
 ## True once the shot has left the visible arena by more than despawn_margin.
-## Read off the camera's canvas transform rather than a fixed size, so it still
-## culls correctly if the viewport or camera zoom changes.
 func _is_out_of_bounds() -> bool:
-	var to_world := get_canvas_transform().affine_inverse()
-	var screen := get_viewport_rect()
-	var world := Rect2(to_world * screen.position, to_world.basis_xform(screen.size))
-	return not world.grow(despawn_margin).has_point(global_position)
+	return not View.holds(self, global_position, despawn_margin)
 
 
 func _on_body_entered(body: Node2D) -> void:
@@ -234,11 +229,8 @@ static func explode(where: Node, at: Vector2, radius: float, splash: float,
 	var burning := RunState.flag(CardDatabase.FLAG_BURN)
 	var chaining := RunState.flag(CardDatabase.FLAG_CHAIN_EXPLOSION) and depth < 1
 
-	for e in where.get_tree().get_nodes_in_group("enemies"):
-		var enemy := e as Enemy
-		if enemy == null or enemy == except:
-			continue
-		if not is_instance_valid(enemy) or enemy.is_queued_for_deletion():
+	for enemy in Enemy.living(where):
+		if enemy == except:
 			continue
 		if enemy.global_position.distance_to(at) > radius:
 			continue

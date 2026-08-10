@@ -1,18 +1,24 @@
 extends Label
 
+## The leaderboard on the end screen, fetched from SilentWolf.
+##
+## Appends to whatever the label already says, so the "High scores:" heading
+## lives in the scene rather than here.
 
-## Fetches the leaderboard from SilentWolf and appends it to the label.
+## Dropped to this if the first request comes back empty - a shorter board is
+## better than none.
+const FALLBACK_COUNT := 20
+
+
 func _ready() -> void:
-	var sw_result: Dictionary = await SilentWolf.Scores.get_scores(100).sw_get_scores_complete
-	var new_text: String = ""
-	if !sw_result:
-		sw_result = await SilentWolf.Scores.get_scores(20).sw_get_scores_complete
+	var result: Dictionary = await SilentWolf.Scores.get_scores(100).sw_get_scores_complete
+	if not result:
+		result = await SilentWolf.Scores.get_scores(FALLBACK_COUNT).sw_get_scores_complete
+	if not "scores" in result:
+		return
 
-	print(sw_result)
-	if "scores" in sw_result:
-			for entry in sw_result.scores:
-				var player_name: String = entry.get("player_name", "Anonymous")
-				var score: String = str(int(entry.get("score", 0)))
-
-				new_text += player_name + ": " + score + "\n"
-	set_text(get_text() + "\n" + new_text)
+	var lines := ""
+	for entry in result.scores:
+		lines += "%s: %d\n" % [entry.get("player_name", "Anonymous"),
+			int(entry.get("score", 0))]
+	text += "\n" + lines

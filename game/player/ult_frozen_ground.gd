@@ -82,13 +82,8 @@ func _finish() -> void:
 ## Everything standing on the ice is frozen for freeze_duration. Enemy.apply_freeze
 ## takes the longer of the two, so refreshing never cuts an existing freeze short.
 func _freeze_everything_inside() -> void:
-	for e in get_tree().get_nodes_in_group("enemies"):
-		var enemy := e as Enemy
-		if enemy == null or not is_instance_valid(enemy) \
-				or enemy.is_queued_for_deletion():
-			continue
-		# Anything the player can see standing on the ice - see
-		# Enemy.is_on_screen.
+	for enemy in Enemy.living(self):
+		# Anything the player can see standing on the ice.
 		if not enemy.is_on_screen():
 			continue
 		if enemy.global_position.distance_to(global_position) > radius:

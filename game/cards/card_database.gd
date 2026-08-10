@@ -31,7 +31,7 @@ enum Pool { BASIC, ACTION, ATTACK }
 # What a card's `effect` can modify. Gameplay never reads a raw export - it asks
 # RunState for the modified value, e.g.
 #
-#     RunState.modified(CardDatabase.STAT_MOVE_SPEED, movespeed)
+#     RunState.modified(CardDatabase.STAT_MOVE_SPEED, move_speed)
 #
 # Use these constants rather than bare strings so a typo is a parse error.
 

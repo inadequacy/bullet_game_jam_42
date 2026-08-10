@@ -7,8 +7,8 @@ extends CharacterBody2D
 ## frame. Everything shared - health, damage, death, finding the player - lives
 ## here so a new enemy type only has to describe what makes it different.
 
+## Emitted before the corpse appears. level.gd logs it; GameManager scores it.
 signal died(enemy: Enemy)
-signal damaged(enemy: Enemy, amount: float)
 
 @export_group("Art")
 ## Normal artwork. Also what the sprite reverts to after an attack.
@@ -94,9 +94,9 @@ var _entry_saved_mask: int = 0
 var _base_modulate: Color = Color.WHITE
 var _base_scale: Vector2 = Vector2.ONE
 
-## The arena, resolved lazily through the "run_clock" group. Cached because
-## attack_interval_scale() is read on every cast by every enemy on screen.
-var _run_clock: Node = null
+## The arena, which owns the run clock. Cached because attack_interval_scale()
+## is read on every cast by every enemy on screen.
+var _run_clock_ref := GroupRef.new("run_clock")
 
 
 func _ready() -> void:
@@ -173,23 +173,11 @@ func is_entering() -> bool:
 
 ## True when this enemy is inside the visible arena.
 ##
-## What the ultimates ask before they hit something: they cover the screen, so
-## what is off screen is not in them.
-##
-## They used to ask is_entering() instead, which is not the same question and
-## was wrong in the direction that matters. An enemy stays "entering" until it
-## reaches its target INSIDE the arena, which is seconds after it has walked
-## into view - measured at 2.3s on average, 3.5s at worst, against a 3.5s
-## ultimate. So a wave arriving during an ultimate stood in the fire, plainly
-## visible, taking nothing, while ordinary shots hit it the whole time.
-##
-## Read off the camera rather than a fixed size, the same way enemy_projectile
-## culls itself, so a viewport or zoom change still gets the right answer.
+## What the ultimates ask before they hit something. NOT is_entering(): an enemy
+## stays "entering" until it reaches its target inside the arena, seconds after
+## it walked into view, and the ultimates used to let that immunity stand.
 func is_on_screen(margin: float = 0.0) -> bool:
-	var to_world := get_canvas_transform().affine_inverse()
-	var screen := get_viewport_rect()
-	var world := Rect2(to_world * screen.position, to_world.basis_xform(screen.size))
-	return world.grow(margin).has_point(global_position)
+	return View.holds(self, global_position, margin)
 
 
 ## Straight line to the entry target, no avoidance - it is a short walk across
@@ -339,9 +327,21 @@ func run_progress() -> float:
 
 
 func run_clock() -> Node:
-	if _run_clock == null or not is_instance_valid(_run_clock):
-		_run_clock = get_tree().get_first_node_in_group("run_clock")
-	return _run_clock
+	return _run_clock_ref.resolve(self)
+
+
+## Every enemy alive right now - no corpses, and nothing freed earlier in the
+## frame. queue_free() leaves a node in its group until the frame ends, so
+## walking the group raw double-counts the dead; every caller used to carry its
+## own copy of this filter.
+static func living(from: Node) -> Array[Enemy]:
+	var alive: Array[Enemy] = []
+	for e in from.get_tree().get_nodes_in_group("enemies"):
+		var enemy := e as Enemy
+		if enemy != null and is_instance_valid(enemy) \
+				and not enemy.is_queued_for_deletion():
+			alive.append(enemy)
+	return alive
 
 
 func has_player() -> bool:
@@ -364,7 +364,6 @@ func take_damage(amount: float) -> void:
 	if health <= 0.0:
 		return
 	health -= amount
-	damaged.emit(self, amount)
 	flash(Color(4.0, 4.0, 4.0), 0.08)
 	_on_damaged(amount)
 	if health <= 0.0:

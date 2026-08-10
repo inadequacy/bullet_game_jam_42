@@ -82,7 +82,7 @@ func _ready() -> void:
 	mat.blend_mode = CanvasItemMaterial.BLEND_MODE_MUL
 	material = mat
 	_left = duration
-	_area = _arena_bounds()
+	_area = View.world_rect(self)
 	_build_glow()
 	_start_roar()
 	# One damage tick lands immediately, so the cast bites the moment it goes off.
@@ -128,7 +128,9 @@ func _process(delta: float) -> void:
 	queue_redraw()
 
 	_spawn_flames(delta)
-	_shake()
+	# Short and constantly renewed, so it rumbles for the whole duration instead
+	# of thumping once at the start.
+	CameraShake.thump(self, SHAKE_STRENGTH, 0.25)
 
 	_damage_tick -= delta
 	if _damage_tick <= 0.0 and _left > 0.0:
@@ -163,25 +165,11 @@ func _fade_wash(value: float) -> void:
 
 
 func _burn_everything() -> void:
-	for e in get_tree().get_nodes_in_group("enemies"):
-		var enemy := e as Enemy
-		if enemy == null or not is_instance_valid(enemy) \
-				or enemy.is_queued_for_deletion():
-			continue
+	for enemy in Enemy.living(self):
 		# The fire falls on the screen, so it burns what is on the screen -
-		# including a wave that walked in after the cast. See Enemy.is_on_screen,
-		# and do not go back to asking is_entering() here.
-		if not enemy.is_on_screen():
-			continue
-		enemy.take_damage(damage)
-
-
-func _shake() -> void:
-	var camera := get_tree().get_first_node_in_group("camera_shake")
-	if camera != null and camera.has_method("shake"):
-		# Short and constantly renewed, so it rumbles for the whole duration
-		# instead of one thump at the start.
-		camera.shake(SHAKE_STRENGTH, 0.25)
+		# including a wave that walked in after the cast. See Enemy.is_on_screen.
+		if enemy.is_on_screen():
+			enemy.take_damage(damage)
 
 
 ## Flames are plain Sprite2Ds that fall and free themselves - no pooling, since
@@ -220,14 +208,6 @@ func _drop_one_flame() -> void:
 	tween.tween_property(flame, "modulate:a", 0.0, travel / fall) \
 		.set_ease(Tween.EASE_IN)
 	tween.chain().tween_callback(flame.queue_free)
-
-
-## The visible world rect. Read off the canvas transform rather than assuming
-## 1152x648, the same way level.gd finds its spawn edges.
-func _arena_bounds() -> Rect2:
-	var to_world := get_canvas_transform().affine_inverse()
-	var screen := get_viewport_rect()
-	return Rect2(to_world * screen.position, to_world.basis_xform(screen.size))
 
 
 func _draw() -> void:

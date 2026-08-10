@@ -1,15 +1,35 @@
 extends CharacterBody2D
 
+## Max: everything the player character does - moving, aiming, casting, dashing,
+## parrying, taking a hit, and firing whichever ultimate the run unlocked.
+##
+## The exports here are BASE values. Nothing reads them directly; gameplay goes
+## through the effective_*() readers below, which fold in the run's cards, so a
+## card that touches a stat needs no change here.
+##
+## The HUD does not get pushed to - DashBar, ParryBar and UltimateBar poll the
+## readouts on this node, so nothing needs wiring up when a level loads.
 
-@export var movespeed: int = 340
-var movement_allowed = true
-
-var random_names = ["Aspen", "Landen", "Yousef", 
-		"Lesli", "Kacie", "Tia", "Chancellor", 
-		"Dianna", "Brycen", "Kylee", "Ashlynn", 
-		"Deontae", "Fredrick", "Gwendolyn", "Jaeden", 
-		"Ibrahim", "Alma", "Serenity", "Maranda", 
+## Drawn when the player has not named themselves. One per run, held on
+## GameManager so it survives the scene change to the end screen.
+const RANDOM_NAMES := ["Aspen", "Landen", "Yousef",
+		"Lesli", "Kacie", "Tia", "Chancellor",
+		"Dianna", "Brycen", "Kylee", "Ashlynn",
+		"Deontae", "Fredrick", "Gwendolyn", "Jaeden",
+		"Ibrahim", "Alma", "Serenity", "Maranda",
 		"Emelia", "Beatriz", "Rylee", "Donnie", "Alanis", "Andrea"]
+
+const PROJECTILE := preload("res://game/player/player_projectile.tscn")
+
+const PARRY_SOUND := preload("res://assets/sounds/parry1.wav")
+const DASH_SOUND := preload("res://assets/sounds/dash1.wav")
+## The ultimate's release. The level-up fanfare, pitched down at the call site.
+const ULTIMATE_SOUND := preload("res://assets/sounds/level_up1.wav")
+const HIT_SOUND_DOG := preload("res://assets/sounds/playerhit_dog1.wav")
+const HIT_SOUND_LOW := preload("res://assets/sounds/playerhit_low1.wav")
+
+@export var move_speed: int = 340
+var movement_allowed: bool = true
 
 @export_group("Dash Settings")
 @export var dash_duration: float = 0.2
@@ -30,7 +50,7 @@ var _known_max_charges: int = 1
 
 ## True only while a dash is in progress. Red homing projectiles read this and
 ## sever their lock.
-var is_dashing = false
+var is_dashing: bool = false
 ## Seconds of invulnerability left. Only set by a dash with Phase Step, and
 ## tracked separately from `is_dashing` so it can outlive the dash by
 ## dash_iframe_grace.
@@ -60,12 +80,12 @@ var _iframes_left: float = 0.0
 @export_range(0.0, 1.0, 0.05) var parry_attempt_flash_alpha: float = 0.55
 ## Prints parry results to the terminal.
 @export var parry_debug_logs: bool = true
-@onready var parry_collider = $ParryRadius
+@onready var parry_collider: CollisionShape2D = $ParryRadius
 ## Optional - only used for the i-frame tint, so a renamed sprite is harmless.
 @onready var _body_sprite: Sprite2D = get_node_or_null("CharacterImage")
 var _body_base_modulate: Color = Color.WHITE
-var parry_allowed = true
-var is_parrying = false
+var parry_allowed: bool = true
+var is_parrying: bool = false
 ## The press ring, kept only so a parry that lands can take it back down - see
 ## _parry_succeeded(). Null whenever there is nothing to retract.
 var _parry_attempt_flash: ParryFlash = null
@@ -105,15 +125,10 @@ var _knockback: Vector2 = Vector2.ZERO
 var _knockback_drop: float = 0.0
 @export_group("")
 
-var parry_sound = preload("res://assets/sounds/parry1.wav")
-var dash_sound = preload("res://assets/sounds/dash1.wav")
-var levelup_sound = preload("res://assets/sounds/level_up1.wav") # used by the ultimate
-var playerhit_dog_sound = preload("res://assets/sounds/playerhit_dog1.wav")
-var playerhit_low_sound = preload("res://assets/sounds/playerhit_low1.wav")
-
 @export_group("Attack Settings")
-signal shoot(projectile, direction, location)
-var projectile = preload("res://game/player/player_projectile.tscn")
+## Emitted per shot. level.gd builds the projectile, so shots are parented to the
+## arena and do not inherit the player's own movement.
+signal shoot(scene: PackedScene, direction: float, at: Vector2)
 ## Seconds between casts, before Rapid Casting.
 @export var cast_rate: float = 0.8
 ## Shots per cast before any card. Arcane Volley and Split Bolt add to this.
@@ -189,9 +204,13 @@ var _ultimate_left: float = 0.0
 ## Leaderboard name for this run, submitted to SilentWolf on death.
 var my_name: String
 
-## The on-screen touch controls, resolved lazily through the "touch_controls"
-## group. Null on desktop, and on any run where they are not in the scene.
-var _touch_controls: Node = null
+## The on-screen touch controls. Absent on desktop, where the group is empty.
+var _touch_ref := GroupRef.new("touch_controls", "is_active")
+
+## The HUD health bar, found via the "health_bar" group so the lookup does not
+## depend on where the bar lives or how the level is loaded.
+var health_bar: HealthBar
+
 
 @export_group("Debug")
 ## Press H to toggle. While on, the player takes no damage - for trying out
@@ -201,12 +220,101 @@ var _touch_controls: Node = null
 @export_group("")
 
 
+# --- Lifecycle ---------------------------------------------------------------
+
+func _ready() -> void:
+	# Keep the shape in sync so the parry radius is visible with debug collision
+	# shapes on, even though the shape itself stays disabled.
+	parry_collider.shape.set_radius(parry_radius)
+
+	# One name per run, reused if the player restarts. GameManager holds it so it
+	# survives the scene change to the end menu, where the score is shown.
+	if !GameManager.player_name:
+		my_name = RANDOM_NAMES.pick_random()
+		GameManager.player_name = my_name
+	else:
+		my_name = GameManager.player_name
+
+	# Also hooks up health_depleted. A missing bar is not fatal - the player just
+	# cannot show or lose health.
+	find_health_bar()
+
+	_known_max_charges = max_dash_charges()
+	dash_charges = _known_max_charges
+	RunState.stats_changed.connect(_on_run_stats_changed)
+
+	if _body_sprite != null:
+		_body_base_modulate = _body_sprite.modulate
+		_idle_art_scale = _body_sprite.scale
+		# The three drawings have different frame sizes, so each is scaled to the
+		# idle height to keep Max the same size across poses.
+		_attack_art_scale = _match_idle_height(attack_texture)
+		_hurt_art_scale = _match_idle_height(hurt_texture)
+
+
+## The scale at which `texture` stands as tall as the idle drawing does. Falls
+## back to the idle scale for anything unusable, so a missing or zero-height
+## texture cannot produce a divide by zero or a collapsed sprite.
+func _match_idle_height(texture: Texture2D) -> Vector2:
+	if idle_texture == null or texture == null or texture.get_height() <= 0:
+		return _idle_art_scale
+	return _idle_art_scale * (float(idle_texture.get_height())
+		/ float(texture.get_height()))
+
+
+func _physics_process(delta: float) -> void:
+	get_input()
+	# After get_input, which has just aimed the body at the cursor.
+	_face_art()
+	# After get_input, which has just overwritten velocity from the movement keys.
+	# Skipped mid-dash, so a shove applied the frame before the dash started
+	# cannot go on adding to dash_speed while it decays.
+	if not is_dashing:
+		velocity += _knockback
+	move_and_slide()
+	_decay_knockback(delta)
+	_iframes_left = maxf(_iframes_left - delta, 0.0)
+	_tick_dash_recharge(delta)
+	_tick_ultimate(delta)
+	_tick_poses(delta)
+	# Resolve before ticking, so the frame that closes the window still counts.
+	if is_parrying:
+		_resolve_parry()
+	_tick_parry(delta)
+	_tick_parry_burst(delta)
+	if can_attack:
+		basic_attack()
+
+
+func get_input() -> void:
+	# Outside the movement gate so these still register during a dash.
+	if Input.is_action_just_pressed("toggle_aim"):
+		toggle_auto_aim()
+
+	if Input.is_action_just_pressed("debug_invincible"):
+		toggle_invincible()
+
+	# Also outside the gate: the ultimate must not be eaten by a dash that
+	# happens to be running when the key is pressed.
+	if Input.is_action_just_pressed("ultimate"):
+		cast_ultimate()
+
+	if movement_allowed:
+		var input_direction := Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
+		_aim_body(input_direction)
+		velocity = input_direction * effective_move_speed()
+
+		if Input.is_action_just_pressed("dash") && can_dash():
+			start_dash(input_direction)
+
+		if Input.is_action_just_pressed("parry") && parry_allowed:
+			start_parry()
+
+
 # --- Card-modified stats -----------------------------------------------------
-# The exports above are base values. Gameplay goes through these, so any card
-# that touches the stat applies automatically.
 
 func effective_move_speed() -> float:
-	return RunState.modified(CardDatabase.STAT_MOVE_SPEED, movespeed)
+	return RunState.modified(CardDatabase.STAT_MOVE_SPEED, move_speed)
 
 func effective_dash_cooldown() -> float:
 	return RunState.modified(CardDatabase.STAT_DASH_COOLDOWN, dash_cooldown)
@@ -312,7 +420,7 @@ func cast_ultimate() -> bool:
 		show_attacking(attack_art_duration)
 
 	_ultimate_left = effective_ultimate_cooldown()
-	SoundManager.play_sfx(levelup_sound, 0, 0.7, 0.8, 0)
+	SoundManager.play_sfx(ULTIMATE_SOUND, 0, 0.7, 0.8, 0)
 
 	if ultimate_logs:
 		print("[ULT] %s cast | %.1fs | next in %.0fs"
@@ -320,10 +428,7 @@ func cast_ultimate() -> bool:
 	return true
 
 
-## The HUD health bar, found via the "health_bar" group so the lookup does not
-## depend on where the bar lives or how the level is loaded.
-var health_bar: HealthBar
-
+# --- Damage and death --------------------------------------------------------
 
 ## Resolves the bar lazily and caches it, so a bar that appears later (or one
 ## assigned directly, e.g. in a test) is picked up either way.
@@ -365,11 +470,17 @@ func take_damage(amount: float) -> bool:
 	bar.take_damage(amount)
 
 	# Below the guards, so a hit that was blocked neither sounds nor poses.
-	# play_sfx takes: sound, start playing position, min pitch, max pitch, volume.
-	SoundManager.play_sfx(playerhit_dog_sound, 0, 0.85, 1.1, 0)
-	SoundManager.play_sfx(playerhit_low_sound, 0, 0.85, 1.1, 0)
+	SoundManager.play_sfx(HIT_SOUND_DOG, 0, 0.85, 1.1, 0)
+	SoundManager.play_sfx(HIT_SOUND_LOW, 0, 0.85, 1.1, 0)
 	show_hurt(hurt_art_duration)
 	return true
+
+
+func _on_health_depleted() -> void:
+	GameManager.finish_run(false)
+	# Deferred: the killing blow arrives from a projectile's body_entered, and
+	# swapping the scene inside a physics callback tears down colliders mid-step.
+	get_tree().change_scene_to_file.call_deferred("res://game/ui/end_menu.tscn")
 
 
 func toggle_invincible() -> void:
@@ -381,7 +492,48 @@ func toggle_invincible() -> void:
 			print("[DEBUG] invincible off - taking damage normally")
 
 
-# --- Dash charges ------------------------------------------------------------
+# --- Dash --------------------------------------------------------------------
+
+## Goes translucent and cold for the length of an invulnerable dash, then
+## settles back to whatever the sprite normally looks like.
+func _show_iframes(duration: float) -> void:
+	if _body_sprite == null:
+		return
+	var tween := create_tween()
+	tween.tween_property(_body_sprite, "modulate",
+		Color(0.6, 0.9, 1.0, 0.5), duration * 0.2)
+	tween.tween_property(_body_sprite, "modulate",
+		_body_base_modulate, duration * 0.8)
+
+
+## Spends a charge and throws the player along `direction`, or along facing when
+## nothing is held. Refused silently when there is no charge left.
+func start_dash(direction: Vector2) -> void:
+	if not can_dash():
+		return
+	# After the guard, so a dash refused for having no charge left stays silent.
+	SoundManager.play_sfx(DASH_SOUND, 0, 0.85, 1.1, 0)
+
+	dash_charges -= 1
+	movement_allowed = false
+	is_dashing = true
+	# Anything still shoving the player is cancelled by the dash taking over.
+	_knockback = Vector2.ZERO
+
+	if direction == Vector2(0.0, 0.0):
+		direction = self.transform.x
+
+	# The tint runs for the whole invulnerability, grace tail included, so it
+	# never promises less than the card gives.
+	if has_dash_iframes():
+		var invulnerable_for := dash_duration + maxf(dash_iframe_grace, 0.0)
+		_iframes_left = invulnerable_for
+		_show_iframes(invulnerable_for)
+
+	velocity = direction * dash_speed
+	await get_tree().create_timer(dash_duration).timeout
+	is_dashing = false
+	movement_allowed = true
 
 ## How many charges the player can hold, base plus any cards.
 func max_dash_charges() -> int:
@@ -522,94 +674,10 @@ func _tick_poses(delta: float) -> void:
 	_apply_pose()
 
 
-## Goes translucent and cold for the length of an invulnerable dash, then
-## settles back to whatever the sprite normally looks like.
-func _show_iframes(duration: float) -> void:
-	if _body_sprite == null:
-		return
-	var tween := create_tween()
-	tween.tween_property(_body_sprite, "modulate",
-		Color(0.6, 0.9, 1.0, 0.5), duration * 0.2)
-	tween.tween_property(_body_sprite, "modulate",
-		_body_base_modulate, duration * 0.8)
+# --- Parry -------------------------------------------------------------------
 
-
-## Press Space to dash
-func dash_direction(direction: Vector2) -> void:
-	if not can_dash():
-		return
-	# After the guard, so a dash refused for having no charge left stays silent.
-	SoundManager.play_sfx(dash_sound,  0, 0.85, 1.1, 0)
-
-	dash_charges -= 1
-	movement_allowed = false
-	is_dashing = true
-	# Anything still shoving the player is cancelled by the dash taking over.
-	_knockback = Vector2.ZERO
-
-	if direction == Vector2(0.0, 0.0):
-		direction = self.transform.x
-
-	# The tint runs for the whole invulnerability, grace tail included, so it
-	# never promises less than the card gives.
-	if has_dash_iframes():
-		var invulnerable_for := dash_duration + maxf(dash_iframe_grace, 0.0)
-		_iframes_left = invulnerable_for
-		_show_iframes(invulnerable_for)
-
-	velocity = direction * dash_speed
-	await get_tree().create_timer(dash_duration).timeout
-	is_dashing = false
-	movement_allowed = true
-
-func _ready() -> void:
-	# Keep the shape in sync so the parry radius is visible with debug collision
-	# shapes on, even though the shape itself stays disabled.
-	parry_collider.shape.set_radius(parry_radius)
-
-	# One name per run, reused if the player restarts. GameManager holds it so it
-	# survives the scene change to the end menu, where the score is shown.
-	if !GameManager.player_name:
-		my_name = random_names.pick_random()
-		GameManager.player_name = my_name
-	else:
-		my_name = GameManager.player_name
-
-	# Also hooks up health_depleted. A missing bar is not fatal - the player just
-	# cannot show or lose health.
-	find_health_bar()
-
-	_known_max_charges = max_dash_charges()
-	dash_charges = _known_max_charges
-	RunState.stats_changed.connect(_on_run_stats_changed)
-
-	if _body_sprite != null:
-		_body_base_modulate = _body_sprite.modulate
-		_idle_art_scale = _body_sprite.scale
-		# The three drawings have different frame sizes, so each is scaled to the
-		# idle height to keep Max the same size across poses.
-		_attack_art_scale = _match_idle_height(attack_texture)
-		_hurt_art_scale = _match_idle_height(hurt_texture)
-
-
-## The scale at which `texture` stands as tall as the idle drawing does. Falls
-## back to the idle scale for anything unusable, so a missing or zero-height
-## texture cannot produce a divide by zero or a collapsed sprite.
-func _match_idle_height(texture: Texture2D) -> Vector2:
-	if idle_texture == null or texture == null or texture.get_height() <= 0:
-		return _idle_art_scale
-	return _idle_art_scale * (float(idle_texture.get_height())
-		/ float(texture.get_height()))
-
-func _on_health_depleted() -> void:
-	GameManager.finish_run(false)
-	# Deferred: the killing blow arrives from a projectile's body_entered, and
-	# swapping the scene inside a physics callback tears down colliders mid-step.
-	get_tree().change_scene_to_file.call_deferred("res://game/ui/end_menu.tscn")
-
-
-## Press Shift to parry
-func parry_this_casual() -> void:
+## Opens the parry window. Refused silently while the lockout is running.
+func start_parry() -> void:
 	if not parry_allowed:
 		return
 
@@ -712,7 +780,7 @@ func _resolve_parry() -> void:
 ## by the lockout never gets here.
 ##
 ## Drawn at parry_radius rather than the burst radius, since that is the reach
-## the press actually had. Silent and still - see parry_this_casual().
+## the press actually had. Silent and still - see start_parry().
 func _show_parry_attempt() -> void:
 	var parent := get_parent()
 	if parent == null:
@@ -731,7 +799,7 @@ func _parry_succeeded() -> int:
 	_parry_attempt_flash = null
 
 	# The only parry sound: every success funnels through here, a miss never does.
-	SoundManager.play_sfx(parry_sound, 0, 0.85, 1.1, 0)
+	SoundManager.play_sfx(PARRY_SOUND, 0, 0.85, 1.1, 0)
 
 	# Refunded here rather than when the window shuts, so the bar reads full the
 	# instant the parry connects.
@@ -753,8 +821,8 @@ func _parry_succeeded() -> int:
 	# The ring shows reach and stays exactly the burst radius; the sparkles are
 	# the "that worked", thrown where the player is looking - at their character.
 	ParrySparkle.burst(get_parent(), global_position, parry_sparkle_texture)
-	# No arguments: CameraShake's defaults are tuned for the parry.
-	_shake_camera()
+	# No strength or duration: CameraShake's own defaults are tuned for the parry.
+	CameraShake.thump(self)
 
 	return cleared
 
@@ -782,12 +850,6 @@ func _tick_parry_burst(delta: float) -> void:
 
 ## Thumps the screen, if the level has a camera that can. Negative values fall
 ## back to CameraShake's own defaults.
-func _shake_camera(strength: float = -1.0, duration: float = -1.0) -> void:
-	var camera := get_tree().get_first_node_in_group("camera_shake")
-	if camera != null and camera.has_method("shake"):
-		camera.shake(strength, duration)
-
-
 ## Destroys every shot the burst is allowed to take inside its radius - blue and
 ## red both, green excluded. Returns how many died.
 func _parry_burst() -> int:
@@ -805,6 +867,8 @@ func _parry_burst() -> int:
 	return cleared
 
 
+# --- Knockback ---------------------------------------------------------------
+
 ## Shoves the player along `dir` - called by whatever hit them, so the push
 ## follows the shot's own travel direction rather than pointing away from its
 ## source. Passing a negative strength uses knockback_strength.
@@ -813,7 +877,7 @@ func apply_knockback(dir: Vector2, strength: float = -1.0) -> void:
 		return
 
 	# The hit still registers on screen even when the shove itself is refused.
-	_shake_camera(knockback_shake_strength, knockback_decay)
+	CameraShake.thump(self, knockback_shake_strength, knockback_decay)
 
 	# A dash owns movement outright, so a shove arriving mid-dash is dropped
 	# rather than queued - it would add to dash_speed instead of replacing it.
@@ -832,6 +896,8 @@ func _decay_knockback(delta: float) -> void:
 	if _knockback != Vector2.ZERO:
 		_knockback = _knockback.move_toward(Vector2.ZERO, _knockback_drop * delta)
 
+
+# --- Attack and aim ----------------------------------------------------------
 
 func basic_attack() -> void:
 	can_attack = false
@@ -858,7 +924,7 @@ func _fire_volley(aim: float) -> void:
 		var offset := 0.0
 		if count > 1:
 			offset = (float(i) / float(count - 1) - 0.5) * spread
-		shoot.emit(projectile, aim + offset, position)
+		shoot.emit(PROJECTILE, aim + offset, position)
 
 
 ## Direction of the next shot: the nearest enemy while auto-aim is on, otherwise
@@ -877,9 +943,7 @@ func aim_angle() -> float:
 func nearest_enemy() -> Node2D:
 	var best: Node2D = null
 	var best_dist_sq := INF
-	for e in get_tree().get_nodes_in_group("enemies"):
-		if not is_instance_valid(e):
-			continue
+	for e in Enemy.living(self):
 		var d: float = global_position.distance_squared_to(e.global_position)
 		if d < best_dist_sq:
 			best_dist_sq = d
@@ -914,55 +978,5 @@ func _aim_body(direction: Vector2) -> void:
 ## True while the on-screen touch controls are what the player is using. Absent
 ## on desktop, where the group is simply empty.
 func _touch_is_driving() -> bool:
-	if _touch_controls == null or not is_instance_valid(_touch_controls):
-		_touch_controls = get_tree().get_first_node_in_group("touch_controls")
-	return _touch_controls != null and _touch_controls.is_active()
-
-
-func get_input() -> void:
-	# Outside the movement gate so these still register during a dash.
-	if Input.is_action_just_pressed("toggle_aim"):
-		toggle_auto_aim()
-
-	if Input.is_action_just_pressed("debug_invincible"):
-		toggle_invincible()
-
-	# Also outside the gate: the ultimate must not be eaten by a dash that
-	# happens to be running when the key is pressed.
-	if Input.is_action_just_pressed("ultimate"):
-		cast_ultimate()
-
-	if movement_allowed == true:
-		var input_direction = Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
-		_aim_body(input_direction)
-		velocity = input_direction * effective_move_speed()
-
-		if Input.is_action_just_pressed("dash") && can_dash():
-			dash_direction(input_direction)
-
-		if Input.is_action_just_pressed("parry") && parry_allowed:
-			parry_this_casual()
-
-
-func _physics_process(_delta) -> void:
-	get_input()
-	# After get_input, which has just aimed the body at the cursor.
-	_face_art()
-	# After get_input, which has just overwritten velocity from the movement keys.
-	# Skipped mid-dash, so a shove applied the frame before the dash started
-	# cannot go on adding to dash_speed while it decays.
-	if not is_dashing:
-		velocity += _knockback
-	move_and_slide()
-	_decay_knockback(_delta)
-	_iframes_left = maxf(_iframes_left - _delta, 0.0)
-	_tick_dash_recharge(_delta)
-	_tick_ultimate(_delta)
-	_tick_poses(_delta)
-	# Resolve before ticking, so the frame that closes the window still counts.
-	if is_parrying:
-		_resolve_parry()
-	_tick_parry(_delta)
-	_tick_parry_burst(_delta)
-	if can_attack == true:
-		basic_attack()
+	var touch := _touch_ref.resolve(self)
+	return touch != null and touch.is_active()

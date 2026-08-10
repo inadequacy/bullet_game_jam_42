@@ -1,8 +1,8 @@
 extends Control
 class_name HealthBar
 
+## The player's death, which movement.gd turns into the end screen.
 signal health_depleted
-signal health_changed(current: int, max: int)
 
 @export var max_health: int = 10
 var current_health: int
@@ -26,7 +26,6 @@ func take_damage(amount: int) -> void:
 	current_health = clamp(current_health - amount, 0, max_health)
 	_fill.value = current_health
 	_relabel()
-	health_changed.emit(current_health, max_health)
 	if current_health == 0:
 		health_depleted.emit()
 
@@ -34,7 +33,6 @@ func heal(amount: int) -> void:
 	current_health = clamp(current_health + amount, 0, max_health)
 	_fill.value = current_health
 	_relabel()
-	health_changed.emit(current_health, max_health)
 
 
 ## The caption, drawn ON the bar rather than above it, so health and XP stack

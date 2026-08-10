@@ -46,6 +46,7 @@ toggles invincibility.
 │   ├── levels/        Arena, spawn director, camera shake, sound manager
 │   ├── pickups/       Health hearts
 │   ├── player/        Character, projectiles, ultimates, parry visuals
+│   ├── shared/        Helpers used from everywhere - see below
 │   └── ui/            HUD, menus, bars
 └── project.godot
 ```
@@ -73,7 +74,7 @@ there needs no other change. `card_screen.gd` picks which three are offered,
 Gameplay never reads a raw export. It asks for the modified value:
 
 ```gdscript
-RunState.modified(CardDatabase.STAT_MOVE_SPEED, movespeed)
+RunState.modified(CardDatabase.STAT_MOVE_SPEED, move_speed)
 ```
 
 so a card can retune anything without that system knowing cards exist. `RunState`
@@ -81,6 +82,22 @@ is an autoload because it has to outlive the level reload on restart.
 
 The first attack card **locks an element** — Arcane, Fire or Ice — and every
 attack card after it comes from that school, ultimate included.
+
+### Shared helpers
+
+Four questions get asked from all over the codebase, so each has exactly one
+answer. Reach for these rather than working it out again locally:
+
+| Ask | Instead of |
+| --- | --- |
+| `View.holds(self, point, margin)` / `View.world_rect(self)` | deriving the visible world from the canvas transform |
+| `GroupRef.new("player", "some_method")` then `.resolve(self)` | your own cached "find it in the group, check it, remember it" |
+| `Enemy.living(self)` | walking the `enemies` group and filtering out corpses and nodes freed this frame |
+| `CameraShake.thump(self, strength, duration)` | looking up the `camera_shake` group and null-checking it |
+
+Nothing in the HUD is wired to the player: the bars, the clock and the fade all
+find what they read through `GroupRef`, which is why a level can be reloaded and
+a scene moved without touching them.
 
 ### Enemies
 
@@ -102,9 +119,12 @@ a new spell colour costs a scene and zero code.
 
 | Scene | Fires | Role |
 | --- | --- | --- |
-| `caster_blue.tscn` | Blue, 2-shot spread | The crowd you clear |
+| `caster_blue.tscn` | Blue, 1 shot → 2 → 3 as the run goes on | The crowd you clear |
 | `caster_green.tscn` | Green, one fast shot after a long charge | The parry bait |
-| `caster_red.tscn` | Red, homing | The dash bait |
+| `caster_red.tscn` | Red, homing; splits into two smaller ones at half time | The dash bait |
+
+Each colour upgrades at a fixed fraction of the run, authored per scene in
+`caster.gd`'s Escalation group — see the design doc's difficulty ramp.
 
 **Enemies are not placed in `level.tscn`.** `level.gd` owns the population: it
 counts heads every frame and tops the arena back up to a cap that climbs by one

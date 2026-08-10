@@ -17,7 +17,8 @@ class_name ParryBar
 ## Hide the recovery bar while the parry is up, rather than showing a full one.
 @export var hide_bar_when_ready: bool = true
 
-var _player: Node = null
+## See DashBar - the same lookup, proved by the parry API instead.
+var _player_ref := GroupRef.new("player", "parry_cooldown_ratio")
 
 @onready var _pip: ColorRect = $Rows/Pips/Pip
 @onready var _recharge: ProgressBar = $Rows/Recharge
@@ -29,7 +30,7 @@ func _ready() -> void:
 
 
 func _process(_delta: float) -> void:
-	var player := _find_player()
+	var player := _player_ref.resolve(self)
 	if player == null:
 		return
 
@@ -44,13 +45,3 @@ func _process(_delta: float) -> void:
 	_recharge.value = player.parry_cooldown_ratio() * 100.0
 	if hide_bar_when_ready:
 		_recharge.visible = not is_ready
-
-
-func _find_player() -> Node:
-	if _player != null and is_instance_valid(_player):
-		return _player
-	_player = get_tree().get_first_node_in_group("player")
-	# Only drive this from a player that actually has the parry API.
-	if _player != null and not _player.has_method("parry_cooldown_ratio"):
-		_player = null
-	return _player

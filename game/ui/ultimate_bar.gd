@@ -19,7 +19,8 @@ class_name UltimateBar
 ## enough that a bare bar does not answer "how long?" at a glance.
 @export var show_seconds: bool = true
 
-var _player: Node = null
+## See DashBar - the same lookup, proved by the ultimate API instead.
+var _player_ref := GroupRef.new("player", "ultimate_cooldown_ratio")
 
 @onready var _pip: ColorRect = $Rows/Pips/Pip
 @onready var _recharge: ProgressBar = $Rows/Recharge
@@ -33,7 +34,7 @@ func _ready() -> void:
 
 
 func _process(_delta: float) -> void:
-	var player := _find_player()
+	var player := _player_ref.resolve(self)
 	if player == null:
 		return
 
@@ -53,13 +54,3 @@ func _process(_delta: float) -> void:
 		_label.text = "E"
 	else:
 		_label.text = "%ds" % int(ceil(player.ultimate_time_left()))
-
-
-func _find_player() -> Node:
-	if _player != null and is_instance_valid(_player):
-		return _player
-	_player = get_tree().get_first_node_in_group("player")
-	# Only drive this from a player that actually has the ultimate API.
-	if _player != null and not _player.has_method("ultimate_cooldown_ratio"):
-		_player = null
-	return _player

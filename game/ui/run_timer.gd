@@ -16,22 +16,13 @@ class_name RunTimer
 @export var warn_color: Color = Color(1.0, 0.55, 0.45)
 @export var warn_below: float = 60.0
 
-var _clock: Node = null
+## The arena, which owns the clock. format_time_left is what proves it.
+var _clock_ref := GroupRef.new("run_clock", "format_time_left")
 
 
 func _process(_delta: float) -> void:
-	var clock := _find_clock()
+	var clock := _clock_ref.resolve(self)
 	if clock == null:
 		return
 	text = clock.format_time_left()
 	modulate = warn_color if clock.time_left() <= warn_below else normal_color
-
-
-func _find_clock() -> Node:
-	if _clock != null and is_instance_valid(_clock):
-		return _clock
-	_clock = get_tree().get_first_node_in_group("run_clock")
-	# Only drive this from something that actually keeps the time.
-	if _clock != null and not _clock.has_method("format_time_left"):
-		_clock = null
-	return _clock

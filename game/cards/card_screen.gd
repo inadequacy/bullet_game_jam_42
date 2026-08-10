@@ -10,10 +10,6 @@ extends CanvasLayer
 ## Opened by level.gd on GameManager.level_up; `open_action` is a debug key that
 ## opens it on demand.
 
-signal card_chosen(card: Dictionary)
-## Fired the first time an element is committed to. Never fires again in a run.
-signal element_locked(element: CardDatabase.Element)
-
 ## Debug key that opens the screen on demand, alongside the normal level-up.
 @export var open_action: String = "debug_cards"
 ## How long a fresh hand is dealt for before it will accept a pick.
@@ -171,7 +167,6 @@ func _on_card_pressed(index: int) -> void:
 	GameManager.exp_changed.emit(GameManager.experience, GameManager.exp_threshold)
 
 	if was_unelemented and RunState.chosen_element != CardDatabase.Element.NONE:
-		element_locked.emit(RunState.chosen_element)
 		if logs:
 			var label := CardDatabase.element_name(RunState.chosen_element)
 			print("[CARDS] ELEMENT LOCKED: %s - only %s attack cards from here, ultimate included"
@@ -181,7 +176,6 @@ func _on_card_pressed(index: int) -> void:
 		print("[CARDS] picked '%s' (%s) | %s"
 			% [card["name"], card["group"], RunState.describe()])
 
-	card_chosen.emit(card)
 	close()
 
 

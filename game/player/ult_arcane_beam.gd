@@ -114,13 +114,8 @@ func _burn_along_beam(amount: float) -> void:
 	var origin := global_position
 	var forward := Vector2.RIGHT.rotated(global_rotation)
 
-	for e in get_tree().get_nodes_in_group("enemies"):
-		var enemy := e as Enemy
-		if enemy == null or not is_instance_valid(enemy) \
-				or enemy.is_queued_for_deletion():
-			continue
-		# Anything the player can see standing in the beam - see
-		# Enemy.is_on_screen.
+	for enemy in Enemy.living(self):
+		# Anything the player can see standing in the beam.
 		if not enemy.is_on_screen():
 			continue
 

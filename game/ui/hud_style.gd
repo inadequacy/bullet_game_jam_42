@@ -1,8 +1,8 @@
 class_name HudStyle
 extends RefCounted
 
-## Shared paint for the HUD readouts. One place to set the shape, so the bars in
-## the bottom strip read as one instrument panel rather than five widgets.
+## Shared paint for the HUD readouts. One place to set the shape, so bars spread
+## across four corners of the screen still read as one instrument.
 
 ## Corner rounding shared by every bar and pip.
 const RADIUS := 4

@@ -43,7 +43,7 @@ horizontal_alignment = 1
 
 [node name="Hint" type="Label" parent="Screen/Center/VBox"]
 modulate = Color(1, 1, 1, 0.6)
-text = "placeholder cards - picking one does nothing yet    (G to close)"
+text = "the element you commit to is locked for the run"
 horizontal_alignment = 1
 
 [node name="Cards" type="HBoxContainer" parent="Screen/Center/VBox"]

@@ -7,7 +7,7 @@ extends Node
 ## restarts with change_scene_to_file, so run state has to outlive the level.
 ## Gameplay never reads a raw export, it asks for the modified value:
 ##
-##     RunState.modified(CardDatabase.STAT_MOVE_SPEED, movespeed)
+##     RunState.modified(CardDatabase.STAT_MOVE_SPEED, move_speed)
 
 ## Emitted whenever a card lands. Anything caching a modified value should
 ## recompute here.

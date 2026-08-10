@@ -21,7 +21,7 @@ extends CanvasLayer
 ## of the sprite that hang past its origin.
 @export var fade_margin: float = 48.0
 
-var _player: Node2D = null
+var _player_ref := GroupRef.new("player")
 
 ## Everything that dims, found by group rather than by path, so moving a cluster
 ## around the screen - or adding a fifth - needs no change here.
@@ -38,17 +38,10 @@ func _process(delta: float) -> void:
 
 
 func _player_is_behind(cluster: Control) -> bool:
-	var player := _find_player()
+	var player := _player_ref.resolve(self) as Node2D
 	if player == null:
 		return false
 	# The cluster is laid out in screen space and the player lives in the world,
 	# so the player is the one that has to be converted.
 	var on_screen := player.get_global_transform_with_canvas().origin
 	return cluster.get_global_rect().grow(fade_margin).has_point(on_screen)
-
-
-func _find_player() -> Node2D:
-	if _player != null and is_instance_valid(_player):
-		return _player
-	_player = get_tree().get_first_node_in_group("player") as Node2D
-	return _player

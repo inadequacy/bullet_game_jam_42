@@ -141,13 +141,8 @@ func launch(from: Vector2, dir: Vector2) -> void:
 
 
 ## True once the shot has left the visible arena by more than despawn_margin.
-## Read off the camera rather than a fixed size, so a viewport or zoom change
-## still culls correctly.
 func _is_out_of_bounds() -> bool:
-	var to_world := get_canvas_transform().affine_inverse()
-	var screen := get_viewport_rect()
-	var world := Rect2(to_world * screen.position, to_world.basis_xform(screen.size))
-	return not world.grow(despawn_margin).has_point(global_position)
+	return not View.holds(self, global_position, despawn_margin)
 
 
 ## Severs the lock, dims the shot so the player can see the dash worked, and
