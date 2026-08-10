@@ -87,7 +87,9 @@ func _freeze_everything_inside() -> void:
 		if enemy == null or not is_instance_valid(enemy) \
 				or enemy.is_queued_for_deletion():
 			continue
-		if enemy.is_entering():
+		# Anything the player can see standing on the ice - see
+		# Enemy.is_on_screen.
+		if not enemy.is_on_screen():
 			continue
 		if enemy.global_position.distance_to(global_position) > radius:
 			continue

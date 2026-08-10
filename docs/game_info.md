@@ -506,6 +506,16 @@ the nearest edge and walk in, and `_behavior()` is skipped until they arrive —
 caster that could fire from outside the view would be attacking from somewhere
 the player cannot see, let alone answer.
 
+**Walking in is not the same as being off screen, and nothing may confuse the
+two.** An enemy stays "entering" until it reaches its target *inside* the arena,
+which is on average **2.3 s** after it has walked into view (3.5 s at worst,
+measured across real spawns). All three ultimates used to skip `is_entering()`
+enemies on the grounds that they were off screen; the result was that a wave
+arriving during an ultimate stood in the fire, plainly visible, taking nothing,
+while ordinary shots hit it the whole time. They ask `Enemy.is_on_screen()` now.
+Anything that wants "don't hit what the player cannot see" must ask the same
+question — `is_entering()` answers a different one.
+
 Normal waves keep spawning during boss fights and after 6:00.
 
 ### Boss implementation (jam-sized)

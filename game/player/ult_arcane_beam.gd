@@ -119,7 +119,9 @@ func _burn_along_beam(amount: float) -> void:
 		if enemy == null or not is_instance_valid(enemy) \
 				or enemy.is_queued_for_deletion():
 			continue
-		if enemy.is_entering():
+		# Anything the player can see standing in the beam - see
+		# Enemy.is_on_screen.
+		if not enemy.is_on_screen():
 			continue
 
 		var to_enemy := enemy.global_position - origin

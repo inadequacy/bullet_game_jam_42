@@ -171,6 +171,27 @@ func is_entering() -> bool:
 	return _entering
 
 
+## True when this enemy is inside the visible arena.
+##
+## What the ultimates ask before they hit something: they cover the screen, so
+## what is off screen is not in them.
+##
+## They used to ask is_entering() instead, which is not the same question and
+## was wrong in the direction that matters. An enemy stays "entering" until it
+## reaches its target INSIDE the arena, which is seconds after it has walked
+## into view - measured at 2.3s on average, 3.5s at worst, against a 3.5s
+## ultimate. So a wave arriving during an ultimate stood in the fire, plainly
+## visible, taking nothing, while ordinary shots hit it the whole time.
+##
+## Read off the camera rather than a fixed size, the same way enemy_projectile
+## culls itself, so a viewport or zoom change still gets the right answer.
+func is_on_screen(margin: float = 0.0) -> bool:
+	var to_world := get_canvas_transform().affine_inverse()
+	var screen := get_viewport_rect()
+	var world := Rect2(to_world * screen.position, to_world.basis_xform(screen.size))
+	return world.grow(margin).has_point(global_position)
+
+
 ## Straight line to the entry target, no avoidance - it is a short walk across
 ## empty ground at the edge of the arena.
 func _walk_in(delta: float) -> void:

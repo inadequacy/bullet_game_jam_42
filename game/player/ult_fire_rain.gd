@@ -168,9 +168,10 @@ func _burn_everything() -> void:
 		if enemy == null or not is_instance_valid(enemy) \
 				or enemy.is_queued_for_deletion():
 			continue
-		# Enemies still walking in are off screen. The fire falls on the screen,
-		# so hitting them would be hitting something the player cannot see.
-		if enemy.is_entering():
+		# The fire falls on the screen, so it burns what is on the screen -
+		# including a wave that walked in after the cast. See Enemy.is_on_screen,
+		# and do not go back to asking is_entering() here.
+		if not enemy.is_on_screen():
 			continue
 		enemy.take_damage(damage)
 
