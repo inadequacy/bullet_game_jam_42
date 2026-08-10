@@ -1,13 +1,15 @@
-[gd_scene format=3 uid="uid://48s1bqu0sahc"]
+[gd_scene load_steps=3 format=3 uid="uid://48s1bqu0sahc"]
 
-[ext_resource type="Script" uid="uid://vbblni4vr6oe" path="res://game/ui/pause_screen.gd" id="1_cicty"]
+[ext_resource type="Script" uid="uid://b1mladehkye2w" path="res://game/ui/pause_screen.gd" id="1_cicty"]
 [ext_resource type="Theme" uid="uid://c5m3g1ayqp1sv" path="res://game/ui/button.tres" id="2_cicty"]
 
 [node name="PauseScreen" type="CanvasLayer" unique_id=485895090]
 process_mode = 3
+layer = 11
 script = ExtResource("1_cicty")
 
 [node name="Screen" type="Control" parent="." unique_id=1247287664]
+visible = false
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -22,7 +24,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.25490198, 0.25490198, 0.25490198, 0.7882353)
+color = Color(0, 0, 0, 0.72)
 
 [node name="Center" type="CenterContainer" parent="Screen" unique_id=247369325]
 layout_mode = 1
@@ -31,44 +33,79 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 
-[node name="VBox" type="VBoxContainer" parent="Screen/Center" unique_id=29449626]
+[node name="Menu" type="VBoxContainer" parent="Screen/Center" unique_id=29449626]
 layout_mode = 2
-theme_override_constants/separation = 20
+theme_override_constants/separation = 14
 
-[node name="Title" type="Label" parent="Screen/Center/VBox" unique_id=102804896]
-z_index = 3
+[node name="Title" type="Label" parent="Screen/Center/Menu" unique_id=102804896]
 layout_mode = 2
 theme_override_font_sizes/font_size = 42
-text = "Paused"
+text = "PAUSED"
+horizontal_alignment = 1
 
-[node name="Resume_Button" type="Button" parent="Screen/Center/VBox" unique_id=1186878475]
-z_index = 3
+[node name="Resume_Button" type="Button" parent="Screen/Center/Menu" unique_id=1186878475]
 layout_mode = 2
-mouse_behavior_recursive = 2
 theme = ExtResource("2_cicty")
 text = "Resume"
 
-[node name="Restart_Button" type="Button" parent="Screen/Center/VBox" unique_id=1502610432]
-z_index = 3
+[node name="Controls_Button" type="Button" parent="Screen/Center/Menu" unique_id=1186878476]
 layout_mode = 2
 theme = ExtResource("2_cicty")
-action_mode = 0
+text = "Controls"
+
+[node name="Restart_Button" type="Button" parent="Screen/Center/Menu" unique_id=1502610432]
+layout_mode = 2
+theme = ExtResource("2_cicty")
 text = "Restart"
 
-[node name="MainMenu_Button" type="Button" parent="Screen/Center/VBox" unique_id=305754304]
-z_index = 3
+[node name="MainMenu_Button" type="Button" parent="Screen/Center/Menu" unique_id=305754304]
 layout_mode = 2
 theme = ExtResource("2_cicty")
 text = "Main Menu"
 
-[node name="Instructions" type="Label" parent="Screen/Center/VBox" unique_id=134775542]
-z_index = 3
+[node name="Hint" type="Label" parent="Screen/Center/Menu" unique_id=134775542]
+modulate = Color(1, 1, 1, 0.55)
 layout_mode = 2
-theme_override_font_sizes/font_size = 20
-text = "Space to dash 
-Shift to parry"
+theme_override_font_sizes/font_size = 16
+text = "Esc to resume"
+horizontal_alignment = 1
 
-[connection signal="pressed" from="Screen/Center/VBox/Resume_Button" to="." method="_on_resume_pressed"]
-[connection signal="pressed" from="Screen/Center/VBox/Restart_Button" to="." method="_on_restart_pressed"]
-[connection signal="pressed" from="Screen/Center/VBox/MainMenu_Button" to="." method="_on_main_menu_pressed"]
+[node name="Controls" type="PanelContainer" parent="Screen/Center" unique_id=134775543]
+visible = false
+layout_mode = 2
+
+[node name="Margin" type="MarginContainer" parent="Screen/Center/Controls" unique_id=134775544]
+layout_mode = 2
+theme_override_constants/margin_left = 40
+theme_override_constants/margin_top = 30
+theme_override_constants/margin_right = 40
+theme_override_constants/margin_bottom = 30
+
+[node name="VBox" type="VBoxContainer" parent="Screen/Center/Controls/Margin" unique_id=134775545]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="Title" type="Label" parent="Screen/Center/Controls/Margin/VBox" unique_id=134775546]
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "CONTROLS"
+horizontal_alignment = 1
+
+[node name="Grid" type="GridContainer" parent="Screen/Center/Controls/Margin/VBox" unique_id=134775547]
+layout_mode = 2
+theme_override_constants/h_separation = 24
+theme_override_constants/v_separation = 12
+columns = 2
+
+[node name="Back_Button" type="Button" parent="Screen/Center/Controls/Margin/VBox" unique_id=134775548]
+layout_mode = 2
+theme = ExtResource("2_cicty")
+text = "Back"
+
+[connection signal="pressed" from="Screen/Center/Menu/Resume_Button" to="." method="_on_resume_pressed"]
+[connection signal="pressed" from="Screen/Center/Menu/Controls_Button" to="." method="_on_controls_pressed"]
+[connection signal="pressed" from="Screen/Center/Menu/Restart_Button" to="." method="_on_restart_pressed"]
+[connection signal="pressed" from="Screen/Center/Menu/MainMenu_Button" to="." method="_on_main_menu_pressed"]
+[connection signal="pressed" from="Screen/Center/Controls/Margin/VBox/Back_Button" to="." method="_on_controls_back_pressed"]
