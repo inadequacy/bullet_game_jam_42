@@ -16,11 +16,29 @@ signal element_locked(element: CardDatabase.Element)
 
 ## Debug key that opens the screen on demand, alongside the normal level-up.
 @export var open_action: String = "debug_cards"
+## How long a fresh hand is dealt for before it will accept a pick.
+##
+## The screen opens mid-fight, on a frame the player did not choose, with their
+## hands already on the keys - and Space is both dash and Godot's ui_accept, so
+## a dash tapped as the cards arrive would otherwise pick one outright. This beat
+## swallows whatever was queued for the fight, and every key keeps doing in the
+## menu exactly what it does everywhere else. Long enough to eat a keypress
+## already on its way, short enough that a player who knows what they want never
+## feels held up.
+@export var arm_delay: float = 0.5
+## What the hand fades in from while it is being dealt. Not zero - the cards are
+## there to be read during the wait, they are just not pickable yet.
+@export_range(0.0, 1.0, 0.05) var dealing_alpha: float = 0.45
 @export var logs: bool = true
 
 var is_open: bool = false
 
 var _offer: Array = []
+## False while a fresh hand is still being dealt. See arm_delay.
+var _armed: bool = false
+## Bumped every open(), so the deal-in of a hand that has since been closed and
+## re-opened cannot arm the one now on screen.
+var _open_id: int = 0
 
 
 ## The committed school. Lives in RunState, not here - this node dies with the
@@ -30,6 +48,7 @@ var chosen_element: CardDatabase.Element:
 
 @onready var _screen: Control = $Screen
 @onready var _hint: Label = $Screen/Center/VBox/Hint
+@onready var _row: Control = $Screen/Center/VBox/Cards
 ## Three card_view.tscn instances. They draw themselves from a card dictionary -
 ## see card_view.gd - so this file never touches a label or a texture.
 @onready var _cards: Array[CardView] = [
@@ -79,7 +98,7 @@ func open() -> void:
 	_screen.visible = true
 	is_open = true
 	get_tree().paused = true
-	_cards[0].grab_focus()
+	_deal_in()
 
 	if logs:
 		var names := []
@@ -89,11 +108,43 @@ func open() -> void:
 			% [CardDatabase.element_name(chosen_element), ", ".join(names)])
 
 
+## Fades the hand up and holds it unpickable for arm_delay, then arms it and
+## gives the first card focus.
+##
+## The cards are disabled rather than merely ignored, so a click that lands early
+## does not light a card up or play its sound - a card that reacts and then does
+## nothing reads as a dropped input rather than as "not yet".
+##
+## The timer and the tween both keep running while the tree is paused: this node
+## is PROCESS_MODE_ALWAYS, and SceneTree.create_timer() ticks through a pause by
+## default. Without that they would never fire - the screen pauses the game.
+func _deal_in() -> void:
+	_armed = false
+	_open_id += 1
+	var opening := _open_id
+
+	for view in _cards:
+		view.disabled = true
+	_row.modulate.a = dealing_alpha
+	create_tween().tween_property(_row, "modulate:a", 1.0, arm_delay)
+
+	await get_tree().create_timer(arm_delay).timeout
+	# Closed, or a different hand has been dealt since.
+	if not is_open or opening != _open_id:
+		return
+
+	for view in _cards:
+		view.disabled = false
+	_armed = true
+	_cards[0].grab_focus()
+
+
 func close() -> void:
 	if not is_open:
 		return
 	_screen.visible = false
 	is_open = false
+	_armed = false
 	get_tree().paused = false
 	if logs:
 		print("[CARDS] closed - game resumed")
@@ -105,6 +156,11 @@ func reset() -> void:
 
 
 func _on_card_pressed(index: int) -> void:
+	# Belt and braces behind the disabled cards in _deal_in(): a pick is
+	# irreversible and can lock the run's element, so it is worth being sure.
+	if not _armed:
+		return
+
 	var card: Dictionary = _offer[index]
 	var was_unelemented := RunState.chosen_element == CardDatabase.Element.NONE
 

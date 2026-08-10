@@ -32,6 +32,7 @@ Everything gained is lost on death. No meta-progression in the jam build.
 | Ability | Q | **Undecided.** Behavior not designed yet — implement late or cut |
 | Ultimate | E | Fires along **facing**. **Locked** until the Ultimate card is drawn |
 | Toggle aim | T | Switches the basic spell between auto-aim and facing |
+| Confirm (menus) | Mouse, Space, Enter, gamepad A | Godot's `ui_accept`, left at its defaults. Space confirms a card as well as dashing — see the arm delay under *XP and Cards* for why that is safe |
 
 Movement and aim are decoupled — this is a twin-stick scheme with the mouse as
 the right stick. The player can strafe, retreat, and circle while keeping the
@@ -238,6 +239,26 @@ pressure.
 | 1 | **Basic** | Utility. Currently only *Renewal* (restore to full health) |
 | 2 | **Action** | Mobility, dash, parry, and basic attack damage / cast rate / spread |
 | 3 | **Attack** | Elements and their ultimates, nothing else |
+
+**A fresh hand is dealt before it can be picked.** The screen opens on a frame
+the player did not choose, mid-fight, with their hands already on the keys — so
+for `arm_delay` (0.5 s) the cards fade up and refuse every input. Whatever was
+queued for the fight lands on nothing instead of spending the level-up.
+
+This is what makes it safe to leave **Space** as both dash and confirm. Dash is
+the key a player is leaning on when the cards arrive, and it is also Godot's
+`ui_accept` — so without the delay a dash tapped on the level-up frame picked
+whichever card had focus. Rebinding was the other way out and the worse one: the
+fix belongs on the half-second of ambiguity, not on the key, and a player who
+wants to pick a card with Space should be able to. Two details make the window
+airtight — no card is given focus until the hand arms, and Godot ignores key
+auto-repeat for button activation, so *holding* Space through the window does
+nothing either; it takes a fresh press afterwards.
+
+The cards are *disabled* for that beat rather than merely ignored: a card that
+lights up and plays its click but does nothing reads as a dropped input, where a
+card that does not react at all reads as "not yet". A pick can lock the run's
+element and cannot be undone, which is what makes it worth half a second.
 
 Slot 3 is the only one that can run out — the element lines are one-shot chains,
 seven cards deep. When it does, **slot 3 falls back to an Action card**, so the

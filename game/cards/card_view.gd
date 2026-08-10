@@ -56,6 +56,11 @@ func _paint_frame() -> void:
 	add_theme_stylebox_override("normal", _frame(BODY_COLOR, 3))
 	add_theme_stylebox_override("hover", _frame(BODY_COLOR.lerp(_accent, HOVER_TINT), 4))
 	add_theme_stylebox_override("pressed", _frame(BODY_COLOR.lerp(_accent, PRESSED_TINT), 4))
+	# Identical to normal. A card is disabled only for the brief moment a fresh
+	# hand is being dealt - see card_screen.arm_delay - and that wait is already
+	# said by the deal-in fade. The theme's grey default would say it twice, and
+	# louder than the thing it is describing.
+	add_theme_stylebox_override("disabled", _frame(BODY_COLOR, 3))
 	# Focus draws over normal, so it contributes the thicker border and nothing else.
 	add_theme_stylebox_override("focus", _frame(Color(0, 0, 0, 0), 4))
 
