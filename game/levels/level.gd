@@ -9,6 +9,10 @@ extends Node2D
 ## its attack interval by `attack_interval_scale()`.
 
 const LEVEL_UP_SOUND := preload("res://assets/sounds/level_up1.wav")
+## The win sting. The level-up fanfare, pitched down and pushed louder, so
+## surviving reads as the same family of good news but a bigger piece of it.
+const VICTORY_SOUND := preload("res://assets/sounds/level_up1.wav")
+const END_SCREEN := "res://game/ui/end_menu.tscn"
 
 const ENEMY_SCENES := [
 	preload("res://game/enemies/caster_blue.tscn"),
@@ -20,6 +24,13 @@ const ENEMY_SCENES := [
 @export_group("Run")
 ## Total run length. The clock counts down from here.
 @export var run_duration: float = 360.0
+## Beat held between the clock hitting 0:00 and the end screen appearing.
+##
+## The arena is frozen for it. Long enough that the win lands where it was
+## earned - on the arena, with the clock reading 0:00 and the sting playing -
+## rather than as a screen that replaces the fight before the player has
+## registered surviving it.
+@export var victory_beat: float = 1.4
 
 @export_group("Difficulty ramp")
 ## Enemies alive at once when the run starts.
@@ -66,6 +77,8 @@ const BLUE_CASTER := preload("res://game/enemies/caster_blue.tscn")
 
 var _time_left: float = 0.0
 var _refill_timer: float = 0.0
+## Set the moment the run is won, so the victory can only be triggered once.
+var _run_over: bool = false
 ## Last cap announced to the log, so a change is printed once and not per frame.
 var _logged_cap: int = -1
 ## Cleared once the opening wave has been placed. See _process().
@@ -92,12 +105,67 @@ func _process(delta: float) -> void:
 		_opening_wave_pending = false
 		_fill_to_cap()
 
-	# Stops at zero rather than running negative. Per docs/game_info.md the run
-	# continues past the final beat until the last boss dies, so this is not the
-	# place that ends the run.
+	if _run_over:
+		return
+
 	_time_left = maxf(_time_left - delta, 0.0)
+	if _time_left <= 0.0:
+		_win()
+		return
+
 	_log_cap_change()
 	_maintain_population(delta)
+
+
+# --- Winning -----------------------------------------------------------------
+
+## Reaching 0:00 alive is the win. docs/game_info.md still describes the run
+## ending on a final boss; until that boss exists the clock is the only thing
+## the player is fighting, so the clock is what ends the run.
+##
+## Pauses the arena for the whole victory beat. Nothing may kill the player in
+## the moment after they have won: a red already in the air on the frame the
+## clock ran out would otherwise turn a win into a death.
+func _win() -> void:
+	_run_over = true
+
+	# A killing blow can land in the same frame the clock runs out - physics
+	# steps before this - and movement.gd has then already recorded a loss and
+	# queued the end screen. Dying on the last frame is a death; the clock does
+	# not overturn it.
+	if not _player_alive():
+		if respawn_logs:
+			print("[RUN] 0:00 - clock out, but the player died on the same frame")
+		return
+
+	get_tree().paused = true
+	SoundManager.play_sfx(VICTORY_SOUND, 0, 0.82, 0.86, 2.0)
+	GameManager.finish_run(true)
+
+	if respawn_logs:
+		print("[RUN] 0:00 - SURVIVED | score %d" % GameManager.score)
+
+	# A SceneTree timer, which ticks through a pause; a Timer node or this
+	# node's own _process would both be frozen by the line above.
+	await get_tree().create_timer(victory_beat).timeout
+	if not is_inside_tree():
+		return
+	# Before the swap, or the end screen inherits the pause and its buttons
+	# never animate.
+	get_tree().paused = false
+	get_tree().change_scene_to_file(END_SCREEN)
+
+
+## The player, alive and with health left. False once the health bar has hit
+## zero, which is the same source movement.gd's death path listens to.
+func _player_alive() -> bool:
+	var player := get_tree().get_first_node_in_group("player")
+	if player == null or not is_instance_valid(player):
+		return false
+	var bar := get_tree().get_first_node_in_group("health_bar")
+	if bar == null or not is_instance_valid(bar):
+		return true
+	return bar.current_health > 0
 
 
 # --- Run clock (RunTimer polls these) ----------------------------------------

@@ -602,8 +602,7 @@ func _match_idle_height(texture: Texture2D) -> Vector2:
 		/ float(texture.get_height()))
 
 func _on_health_depleted() -> void:
-	SilentWolf.Scores.save_score(my_name, GameManager.score)
-	GameManager.message = "You lost, " + my_name + "!"
+	GameManager.finish_run(false)
 	# Deferred: the killing blow arrives from a projectile's body_entered, and
 	# swapping the scene inside a physics callback tears down colliders mid-step.
 	get_tree().change_scene_to_file.call_deferred("res://game/ui/end_menu.tscn")

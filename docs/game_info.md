@@ -8,6 +8,13 @@ A run is **6 minutes long** and ends in a win or a death. Fixed single-screen
 arena, no scrolling. (It was 12; halved after playtesting, which moved every
 boss beat and the whole difficulty ramp onto the shorter clock.)
 
+Both endings land on the same screen — `end_menu.tscn`, showing the score, the
+leaderboard, and **Play again / Main menu / Quit**. `GameManager.won` is what it
+reads to tell them apart: a win titles itself in gold and offers to *play again*,
+a death keeps the plain title and offers to *restart*. `GameManager.finish_run()`
+is the single door out of a run — it records the outcome and posts the score, so
+neither ending can reach the leaderboard without the other.
+
 ---
 
 ## 1. Core Loop
@@ -412,6 +419,19 @@ what's happening.
   punished, and a run can spiral out of reach. No despawn, no mercy rule.
 - After 6:00 the clock stops advancing. Normal waves keep spawning and the run
   ends only when the **final boss dies**. Killing it is the win condition.
+
+**What ships today: the clock is the boss.** No boss exists yet, so surviving to
+0:00 *is* the win — `level.gd` ends the run there. The ladder above stays as the
+intended shape; when a final boss lands, the win condition moves onto it and the
+clock goes back to being the thing that summons it.
+
+The arena freezes for `victory_beat` (1.4 s) at 0:00 before the end screen: the
+win should land where it was earned, on the arena with the clock reading 0:00 and
+the sting playing, not as a screen that replaces the fight before the player has
+registered surviving it. The pause is also a guarantee — a red already in the air
+on the last frame cannot turn a win into a death. Dying *on* the frame the clock
+runs out is still a death, though; physics steps first, so the loss is already
+recorded and the clock does not overturn it.
 
 ### Difficulty Ramp
 
