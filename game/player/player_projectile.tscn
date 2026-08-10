@@ -2,6 +2,10 @@
 
 [ext_resource type="Script" uid="uid://dwha2w4ug5i5f" path="res://game/player/player_projectile.gd" id="1_2f6ks"]
 [ext_resource type="Texture2D" path="res://assets/images/magic_ball.png" id="2_314jq"]
+[ext_resource type="Shader" path="res://assets/shaders/colorize.gdshader" id="3_colorize"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_colorize"]
+shader = ExtResource("3_colorize")
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_haif4"]
 radius = 6.0
@@ -11,6 +15,8 @@ height = 18.0
 script = ExtResource("1_2f6ks")
 
 [node name="Icon" type="Sprite2D" parent="." unique_id=1947587561]
+material = SubResource("ShaderMaterial_colorize")
+modulate = Color(0.55, 0.1, 0.95, 1)
 position = Vector2(0, -1.9073486e-06)
 scale = Vector2(0.038, 0.038)
 texture = ExtResource("2_314jq")

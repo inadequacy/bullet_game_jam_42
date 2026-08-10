@@ -9,6 +9,41 @@ extends Area2D
 ##
 ## The exports below are base values; cards scale them through RunState, so
 ## retuning a card never means editing this file.
+##
+## A shot also LOOKS like the school it belongs to - see LOOKS. The element lock
+## is a decision the player cannot take back, so their own fire should show it
+## for the rest of the run.
+
+## Art, colour and size per school, applied at spawn from RunState's element
+## lock. NONE and ARCANE share the purple orb: arcane is the "stay as you are"
+## school, so committing to it should not change what the shot looks like.
+##
+## The colours are chosen against the enemy palette as much as against each
+## other. Ice is a pale cyan rather than the enemies' royal blue, and fire is
+## pushed well into orange, away from the homing red the player has to dash.
+## Purple stays Max's own - see docs/game_info.md §"Projectile Colors".
+const LOOKS := {
+	CardDatabase.Element.NONE: {
+		"texture": preload("res://assets/images/magic_ball.png"),
+		"color": Color(0.55, 0.10, 0.95),
+		"scale": Vector2(0.038, 0.038),
+	},
+	CardDatabase.Element.ARCANE: {
+		"texture": preload("res://assets/images/magic_ball.png"),
+		"color": Color(0.55, 0.10, 0.95),
+		"scale": Vector2(0.038, 0.038),
+	},
+	CardDatabase.Element.ICE: {
+		"texture": preload("res://assets/images/ice_shard.svg"),
+		"color": Color(0.42, 0.92, 1.0),
+		"scale": Vector2(0.30, 0.30),
+	},
+	CardDatabase.Element.FIRE: {
+		"texture": preload("res://assets/images/fireball.svg"),
+		"color": Color(1.0, 0.28, 0.04),
+		"scale": Vector2(0.34, 0.34),
+	},
+}
 
 @export var speed: float = 500
 ## Enemy health values are 20-40, so 10 means 2-4 hits to kill.
@@ -60,10 +95,26 @@ var _already_hit: Dictionary = {}
 func _ready() -> void:
 	add_to_group("player_projectiles")
 	body_entered.connect(_on_body_entered)
+	_apply_element_look()
 	# Bake in the run's cards at spawn - the exports are the base values.
 	damage = RunState.modified(CardDatabase.STAT_ATTACK_DAMAGE, damage)
 	speed = RunState.modified(CardDatabase.STAT_PROJECTILE_SPEED, speed)
 	_pierce_left = int(round(RunState.modified(CardDatabase.STAT_PIERCE, 0.0)))
+
+
+## Dresses the shot as the run's school. Only the sprite changes - the hurtbox
+## is a capsule along the line of travel, which fits an orb and a shard alike, so
+## what the shot hits never depends on which art it is wearing.
+func _apply_element_look() -> void:
+	var look: Dictionary = LOOKS.get(RunState.chosen_element, {})
+	if look.is_empty():
+		return
+	var icon := $Icon as Sprite2D
+	icon.texture = look["texture"]
+	icon.scale = look["scale"]
+	# Read by colorize.gdshader, which rebuilds the hue from brightness - which
+	# is why one greyscale shard can be any blue asked of it.
+	icon.modulate = look["color"]
 
 
 func _process(delta: float) -> void:

@@ -4,6 +4,10 @@
 [ext_resource type="Texture2D" uid="uid://b0kjja22qvu8t" path="res://assets/images/Idle_Max.png" id="2_f86wk"]
 [ext_resource type="Theme" uid="uid://c5m3g1ayqp1sv" path="res://game/ui/button.tres" id="3_rrpri"]
 [ext_resource type="Script" uid="uid://cdn2plt6n14jn" path="res://game/ui/highscores.gd" id="4_f86wk"]
+[ext_resource type="Shader" path="res://assets/shaders/max_clothes.gdshader" id="5_clothes"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_clothes"]
+shader = ExtResource("5_clothes")
 
 [node name="Menu" type="Control" unique_id=729403175]
 layout_mode = 3
@@ -24,6 +28,7 @@ grow_vertical = 2
 color = Color(0.47216445, 0.45904392, 0.76470226, 1)
 
 [node name="Background" type="TextureRect" parent="." unique_id=1986772845]
+material = SubResource("ShaderMaterial_clothes")
 layout_mode = 0
 offset_left = 812.0
 offset_top = 244.0

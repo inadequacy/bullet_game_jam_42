@@ -1,0 +1,27 @@
+<!-- Max's shot once the run commits to Fire. Travels +X, so the licks trail off
+     to the left behind the ball.
+
+     Greyscale for the same reason as ice_shard.svg: colorize.gdshader rebuilds
+     the hue from brightness, so the fire colour lives in the sprite's modulate.
+     The brightness ramp from the licks (dark) through the body to the core
+     (white) is what makes it read as burning rather than as a red circle.
+
+     The core sits dead centre and stays small. Off-centre it read as a crescent
+     - a moon rather than a flame - and wide it bleached the colour out of the
+     whole shot, since the shader blows its brightest pixels to white. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="88" viewBox="0 0 128 88">
+  <!-- Trailing licks. Curved and tapered, darkest at the tips, so the flame
+       frays out behind the ball instead of ending in a spike. -->
+  <path d="M64 30 C44 22 26 14 4 18 C24 26 36 32 60 38 Z" fill="#4a4a4a"/>
+  <path d="M64 58 C44 66 26 74 4 70 C24 62 36 56 60 50 Z" fill="#4a4a4a"/>
+  <path d="M62 34 C46 30 30 24 14 34 C34 40 44 42 58 42 Z" fill="#666666"/>
+  <path d="M62 54 C46 58 30 64 14 54 C34 48 44 46 58 46 Z" fill="#666666"/>
+  <!-- The ball, in three concentric steps: body, glow, core. -->
+  <circle cx="82" cy="44" r="33" fill="#8c8c8c"/>
+  <circle cx="82" cy="44" r="22" fill="#bdbdbd"/>
+  <circle cx="82" cy="44" r="10" fill="#ffffff"/>
+  <!-- Two curls of flame licking off the leading edge, so the ball reads as
+       burning forward rather than as a disc being dragged along. -->
+  <path d="M104 24 C114 30 118 38 116 46 C112 40 108 34 100 30 Z" fill="#a8a8a8"/>
+  <path d="M100 64 C110 58 114 50 113 42 C110 50 106 56 97 59 Z" fill="#a8a8a8"/>
+</svg>

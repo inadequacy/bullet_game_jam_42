@@ -1,0 +1,28 @@
+<!-- Max's shot once the run commits to Ice. Points along +X: level.gd rotates a
+     spawned projectile to its travel direction, so the tip leads.
+
+     Drawn in GREYSCALE on purpose. colorize.gdshader throws the source hue away
+     and rebuilds it from brightness, so the ice blue lives in the sprite's
+     modulate and this file only decides the shape and where the light falls.
+
+     The shard is split along its spine into a lit upper face and a shaded lower
+     one. That split is the whole trick: one flat silhouette in a single tone
+     reads as a lozenge, two faces at different brightness read as a solid
+     crystal turned edge-on to the light. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="48" viewBox="0 0 128 48">
+  <!-- Rim, a shade darker than either face, so the crystal keeps its edge
+       against a bright arena floor. -->
+  <path d="M127 24 L64 3 L18 11 L1 24 L18 37 L64 45 Z" fill="#3c3c3c"/>
+  <!-- Lit upper face. -->
+  <path d="M122 24 L64 6 L20 13.5 L6 24 Z" fill="#b4b4b4"/>
+  <!-- Shaded lower face. -->
+  <path d="M122 24 L64 42 L20 34.5 L6 24 Z" fill="#6b6b6b"/>
+  <!-- The spine, and a glint running back from the tip along it. The shader
+       pushes its hottest pixels to white, so these come out as sparkle on the
+       ice rather than as pale blue. -->
+  <path d="M122 24 L6 24 L6 22.4 L122 22.4 Z" fill="#e8e8e8"/>
+  <path d="M118 23 L70 12 L62 14.5 L104 23.4 Z" fill="#ffffff"/>
+  <!-- A short secondary facet near the back, so the crystal has more than one
+       plane and does not flatten out when it is small on screen. -->
+  <path d="M36 16 L20 13.5 L6 24 L26 24 Z" fill="#d0d0d0"/>
+</svg>

@@ -2,6 +2,10 @@
 
 [ext_resource type="Texture2D" uid="uid://ucgkndwr077u" path="res://assets/images/Attacking_max.png" id="2_01t5x"]
 [ext_resource type="Script" uid="uid://f0ddo4sw3nl4" path="res://game/ui/start_menu.gd" id="2_jgtwh"]
+[ext_resource type="Shader" path="res://assets/shaders/max_clothes.gdshader" id="3_clothes"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_clothes"]
+shader = ExtResource("3_clothes")
 
 [node name="Menu" type="Control" unique_id=729403175]
 layout_mode = 3
@@ -22,6 +26,7 @@ grow_vertical = 2
 color = Color(0.47058824, 0.45882353, 0.7647059, 1)
 
 [node name="Background" type="TextureRect" parent="." unique_id=1986772845]
+material = SubResource("ShaderMaterial_clothes")
 layout_mode = 0
 offset_left = 118.0
 offset_top = 249.0

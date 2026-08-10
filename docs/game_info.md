@@ -117,6 +117,32 @@ Red is the only projectile that chases you, which makes it the only one that
 demands a dash. Blue is the crowd you clear, green is the opportunity you punish,
 red is the threat that follows you home.
 
+**🟣 Purple is Max's own colour**, and no enemy is allowed to use it. His shots
+used to be blue, which put the one thing on the field that can never hurt you in
+the same hue as the crowd enemy that fills the screen with shots — in a busy
+late-run wall the player was reading their own fire as a threat. Purple keeps the
+vocabulary one-glance: if it is purple it is yours. His hat and hoodie carry a
+nudge of the same violet (`max_clothes.gdshader`), so the wizard matches his
+magic instead of matching the blue caster.
+
+### Max's shot changes with the school
+
+The element lock is the one decision a run cannot take back, so his own fire
+shows it from then on — art, colour and all, from `LOOKS` in
+`player_projectile.gd`:
+
+| School | Shot | Why that colour |
+| --- | --- | --- |
+| **None / Arcane** | 🟣 purple orb | Arcane is the "stay as you are" school, so committing to it changes nothing |
+| **Ice** | 🩵 pale cyan **shard** | Cyan, not the enemies' royal blue — and the only shot in the game that isn't round |
+| **Fire** | 🔥 orange-red **fireball** | Pushed well into orange, away from the pink-red of the homing shot the player has to dash |
+
+Only the sprite changes. The hurtbox is a capsule along the line of travel, which
+fits an orb and a shard alike, so what a shot hits never depends on what it is
+wearing. All of it — Max's shots and every enemy shot — rides on
+`colorize.gdshader`, which rebuilds hue from brightness, so one greyscale shard
+can be any blue asked of it and a blue orb can come out purple.
+
 The burst clears red as well as blue, but that does not make the dash redundant:
 the burst only reaches `parry_burst_radius`, and it needs a green shot on screen
 to trigger at all. Red at range is still a dash problem. What the burst buys is

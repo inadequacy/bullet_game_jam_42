@@ -2,15 +2,17 @@ shader_type canvas_item;
 
 // Recolours a sprite to whatever its `modulate` is, IGNORING the source hue.
 //
-// For the enemy projectiles. The art is a purple orb, and the game's whole
-// combat vocabulary is blue / green / red - plain modulate multiplies, so
-// tinting a purple orb green gives mud, because purple has almost no green in
-// it to keep. This throws the hue away and rebuilds it from brightness, so
-// every kind comes out clean.
+// For every projectile in the game. The enemy art is a purple orb and Max's is
+// a blue one, while the colours they have to come out in are blue / green / red
+// and purple - plain modulate multiplies, so tinting a purple orb green gives
+// mud, because purple has almost no green in it to keep, and a blue orb can
+// never be made purple at all. This throws the hue away and rebuilds it from
+// brightness, so every colour comes out clean whatever it was painted as.
 //
 // enemy_projectile.gd already sets modulate per kind, including the darkened
-// red it uses when a dash severs a lock, so this needs no per-kind wiring - it
-// just makes the colour that file already chose come out right.
+// red it uses when a dash severs a lock, and Max's shot carries its purple on
+// the sprite - so this needs no per-colour wiring, it just makes the colour
+// already chosen come out right.
 //
 // READING THE TINT IS THE FIDDLY BIT. In fragment(), COLOR arrives already
 // holding texture * modulate - NOT the modulate on its own - so multiplying it
