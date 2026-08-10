@@ -7,6 +7,7 @@
 [ext_resource type="Script" uid="uid://bot2idqjveu7p" path="res://game/levels/camera_shake.gd" id="12_shake"]
 [ext_resource type="PackedScene" uid="uid://48s1bqu0sahc" path="res://game/ui/pause_screen.tscn" id="13_6segh"]
 [ext_resource type="PackedScene" uid="uid://ba1lkuu2hudbr" path="res://game/ui/hud.tscn" id="16_hud"]
+[ext_resource type="PackedScene" path="res://game/mobile/touch_controls.tscn" id="17_touch"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_haif4"]
 
@@ -72,5 +73,7 @@ shape = SubResource("RectangleShape2D_haif4")
 [node name="CardScreen" parent="." unique_id=132707580 instance=ExtResource("10_cards")]
 
 [node name="PauseScreen" parent="." unique_id=485895090 instance=ExtResource("13_6segh")]
+
+[node name="TouchControls" parent="." instance=ExtResource("17_touch")]
 
 [connection signal="shoot" from="Character" to="." method="_on_character_shoot"]

@@ -28,6 +28,16 @@ const CONTROLS := [
 	{"action": "pause", "label": "Pause"},
 ]
 
+## Shown instead of the above once the on-screen controls are in use, where the
+## keyboard list would name keys the player has no way to press.
+const TOUCH_CONTROLS := [
+	{"keys": "Left half", "label": "Drag to move - you face the way you walk"},
+	{"keys": "DASH", "label": "Dash"},
+	{"keys": "PARRY", "label": "Parry"},
+	{"keys": "ULT", "label": "Ultimate, once a card unlocks it"},
+	{"keys": "MENU", "label": "This menu"},
+]
+
 const PANEL_COLOR := Color(0.09, 0.09, 0.12)
 const CHIP_COLOR := Color(0.16, 0.17, 0.22)
 ## Shared with DashBar's fill, so the panel belongs to the same HUD palette.
@@ -97,17 +107,28 @@ func _show_menu() -> void:
 
 
 func _show_controls() -> void:
+	_build_controls()
 	_menu.visible = false
 	_controls.visible = true
 	_back_button.grab_focus()
 
 
-## Fills the Controls grid with a key chip and a description per row.
+## True when the on-screen touch controls are what the player is using. Absent on
+## desktop, where the group is simply empty.
+func _touch_is_active() -> bool:
+	var touch := get_tree().get_first_node_in_group("touch_controls")
+	return touch != null and touch.is_active()
+
+
+## Fills the Controls grid with a key chip and a description per row. Rebuilt
+## each time the panel opens, so it follows whichever input the player switched
+## to during the run.
 func _build_controls() -> void:
 	for child in _grid.get_children():
+		_grid.remove_child(child)
 		child.queue_free()
 
-	for row in CONTROLS:
+	for row in (TOUCH_CONTROLS if _touch_is_active() else CONTROLS):
 		var keys: String = row.get("keys", "")
 		if keys == "":
 			keys = _keys_for(row["action"])

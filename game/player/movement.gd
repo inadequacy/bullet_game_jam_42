@@ -189,6 +189,10 @@ var _ultimate_left: float = 0.0
 ## Leaderboard name for this run, submitted to SilentWolf on death.
 var my_name: String
 
+## The on-screen touch controls, resolved lazily through the "touch_controls"
+## group. Null on desktop, and on any run where they are not in the scene.
+var _touch_controls: Node = null
+
 @export_group("Debug")
 ## Press H to toggle. While on, the player takes no damage - for trying out
 ## cards without dying.
@@ -895,6 +899,27 @@ func toggle_auto_aim() -> void:
 			print("[AIM] MANUAL - shots follow the mouse")
 
 
+## Points the body - which is the aim, and what the Arcane beam rides on.
+##
+## Mouse normally. On touch there is no cursor to look at, so facing follows the
+## stick and simply holds while it is centred. Basic shots are unaffected either
+## way: auto_aim sends those at the nearest enemy, not along facing.
+func _aim_body(direction: Vector2) -> void:
+	if not _touch_is_driving():
+		look_at(get_global_mouse_position())
+		return
+	if direction != Vector2.ZERO:
+		rotation = direction.angle()
+
+
+## True while the on-screen touch controls are what the player is using. Absent
+## on desktop, where the group is simply empty.
+func _touch_is_driving() -> bool:
+	if _touch_controls == null or not is_instance_valid(_touch_controls):
+		_touch_controls = get_tree().get_first_node_in_group("touch_controls")
+	return _touch_controls != null and _touch_controls.is_active()
+
+
 func get_input() -> void:
 	# Outside the movement gate so these still register during a dash.
 	if Input.is_action_just_pressed("toggle_aim"):
@@ -909,8 +934,8 @@ func get_input() -> void:
 		cast_ultimate()
 
 	if movement_allowed == true:
-		look_at(get_global_mouse_position())
 		var input_direction = Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
+		_aim_body(input_direction)
 		velocity = input_direction * effective_move_speed()
 
 		if Input.is_action_just_pressed("dash") && can_dash():
