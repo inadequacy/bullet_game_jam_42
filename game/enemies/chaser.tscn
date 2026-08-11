@@ -1,12 +1,12 @@
 [gd_scene format=3 uid="uid://csfxnytjea4g"]
 
 [ext_resource type="Script" uid="uid://bnxnt8334sl0j" path="res://game/enemies/chaser.gd" id="1_script"]
-[ext_resource type="Texture2D" path="res://assets/images/Idle_cat.png" id="2_idle"]
-[ext_resource type="Texture2D" path="res://assets/images/Attacking_cat.png" id="3_attack"]
-[ext_resource type="Texture2D" path="res://assets/images/dead_cat.png" id="4_dead"]
+[ext_resource type="Texture2D" uid="uid://cnh7dhvuruqq8" path="res://assets/images/Idle_cat.png" id="2_idle"]
+[ext_resource type="Texture2D" uid="uid://cu4mm8sa5q2sc" path="res://assets/images/Attacking_cat.png" id="3_attack"]
+[ext_resource type="Texture2D" uid="uid://cudu2q82ot06n" path="res://assets/images/dead_cat.png" id="4_dead"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_chaser"]
-radius = 21.0
+radius = 27.45906
 
 [node name="Chaser" type="CharacterBody2D" unique_id=1572109770]
 script = ExtResource("1_script")
@@ -18,7 +18,7 @@ move_speed = 190.0
 xp_value = 50
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=1108715902]
-scale = Vector2(0.17, 0.17)
+scale = Vector2(0.34, 0.34)
 texture = ExtResource("2_idle")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1316732820]

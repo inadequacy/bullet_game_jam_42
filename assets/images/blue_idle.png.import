@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://c751sti8w420u"
-path="res://.godot/imported/Background.webp-683a9f2b83ec8b2e817797b7ea3837ce.ctex"
+uid="uid://b5gyuj8lxipyv"
+path="res://.godot/imported/blue_idle.png-45ab4daa3373a040d10011e3b1f84832.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/images/Background.webp"
-dest_files=["res://.godot/imported/Background.webp-683a9f2b83ec8b2e817797b7ea3837ce.ctex"]
+source_file="res://assets/images/blue_idle.png"
+dest_files=["res://.godot/imported/blue_idle.png-45ab4daa3373a040d10011e3b1f84832.ctex"]
 
 [params]
 

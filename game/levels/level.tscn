@@ -1,13 +1,13 @@
 [gd_scene format=3 uid="uid://bxufhl5cvsmpq"]
 
 [ext_resource type="Script" uid="uid://bxkb5aexglxbc" path="res://game/levels/level.gd" id="1_nk1il"]
-[ext_resource type="Texture2D" uid="uid://cd458m3vthaod" path="res://assets/images/background/ruin_bg.png" id="2_dh60h"]
+[ext_resource type="Texture2D" uid="uid://c8qubgrybl6dp" path="res://assets/images/background.png" id="2_mu8dv"]
 [ext_resource type="PackedScene" uid="uid://dfv1w0exg4fps" path="res://game/player/character.tscn" id="2_qmtf6"]
 [ext_resource type="PackedScene" path="res://game/cards/card_screen.tscn" id="10_cards"]
 [ext_resource type="Script" uid="uid://bot2idqjveu7p" path="res://game/levels/camera_shake.gd" id="12_shake"]
 [ext_resource type="PackedScene" uid="uid://48s1bqu0sahc" path="res://game/ui/pause_screen.tscn" id="13_6segh"]
 [ext_resource type="PackedScene" uid="uid://ba1lkuu2hudbr" path="res://game/ui/hud.tscn" id="16_hud"]
-[ext_resource type="PackedScene" path="res://game/mobile/touch_controls.tscn" id="17_touch"]
+[ext_resource type="PackedScene" uid="uid://d00q5n6rk08hp" path="res://game/mobile/touch_controls.tscn" id="17_touch"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_haif4"]
 
@@ -16,9 +16,9 @@ script = ExtResource("1_nk1il")
 
 [node name="Background" type="Sprite2D" parent="." unique_id=1863172997]
 z_index = -10
-position = Vector2(576, 324)
-scale = Vector2(0.52, 0.52)
-texture = ExtResource("2_dh60h")
+position = Vector2(580.4444, 326.49997)
+scale = Vector2(0.637963, 0.63796294)
+texture = ExtResource("2_mu8dv")
 
 [node name="Character" parent="." unique_id=876229241 instance=ExtResource("2_qmtf6")]
 position = Vector2(510, 275)
@@ -74,6 +74,6 @@ shape = SubResource("RectangleShape2D_haif4")
 
 [node name="PauseScreen" parent="." unique_id=485895090 instance=ExtResource("13_6segh")]
 
-[node name="TouchControls" parent="." instance=ExtResource("17_touch")]
+[node name="TouchControls" parent="." unique_id=966416203 instance=ExtResource("17_touch")]
 
 [connection signal="shoot" from="Character" to="." method="_on_character_shoot"]

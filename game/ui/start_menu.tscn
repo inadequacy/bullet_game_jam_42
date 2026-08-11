@@ -2,10 +2,18 @@
 
 [ext_resource type="Texture2D" uid="uid://ucgkndwr077u" path="res://assets/images/Attacking_max.png" id="2_01t5x"]
 [ext_resource type="Script" uid="uid://f0ddo4sw3nl4" path="res://game/ui/start_menu.gd" id="2_jgtwh"]
-[ext_resource type="Shader" path="res://assets/shaders/max_clothes.gdshader" id="3_clothes"]
+[ext_resource type="Shader" uid="uid://c8dtu1yvjrl84" path="res://assets/shaders/max_clothes.gdshader" id="3_clothes"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_clothes"]
 shader = ExtResource("3_clothes")
+shader_parameter/hue_shift = 0.06
+shader_parameter/sat_boost = 1.06
+shader_parameter/hue_low_in = 0.5
+shader_parameter/hue_low_full = 0.545
+shader_parameter/hue_high_full = 0.64
+shader_parameter/hue_high_out = 0.69
+shader_parameter/sat_min_in = 0.18
+shader_parameter/sat_min_full = 0.3
 
 [node name="Menu" type="Control" unique_id=729403175]
 layout_mode = 3
@@ -87,7 +95,7 @@ grow_vertical = 0
 offset_transform_enabled = true
 offset_transform_position = Vector2(0, -20)
 theme_override_font_sizes/font_size = 20
-text = "Credits: Cole, Alessandro, Kevin, Yanru"
+text = "Credits: Cole, Alessandro, Kevin, Yanru and Sasha"
 
 [connection signal="pressed" from="VBoxContainer/Start_Button" to="." method="_on_start_button_pressed"]
 [connection signal="pressed" from="VBoxContainer/Quit_Button" to="." method="_on_quit_button_pressed"]

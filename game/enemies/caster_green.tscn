@@ -1,24 +1,30 @@
 [gd_scene format=3 uid="uid://ys576ewv3f7h"]
 
 [ext_resource type="Script" uid="uid://d4ghjewgcvovb" path="res://game/enemies/caster.gd" id="1_script"]
-[ext_resource type="Texture2D" path="res://assets/images/Idle_pug.png" id="2_idle"]
-[ext_resource type="Texture2D" path="res://assets/images/attacking_pug.png" id="3_attack"]
-[ext_resource type="Texture2D" path="res://assets/images/dead_pug.png" id="6_dead"]
-[ext_resource type="Shader" path="res://assets/shaders/team_tint.gdshader" id="5_tint"]
+[ext_resource type="Texture2D" uid="uid://b2quawmm2aw01" path="res://assets/images/Idle_pug.png" id="2_idle"]
+[ext_resource type="Texture2D" uid="uid://e34qptpuh7o" path="res://assets/images/attacking_pug.png" id="3_attack"]
 [ext_resource type="PackedScene" path="res://game/enemies/enemy_projectile.tscn" id="4_projectile"]
+[ext_resource type="Shader" uid="uid://4yvjaqwol5c" path="res://assets/shaders/team_tint.gdshader" id="5_tint"]
+[ext_resource type="Texture2D" uid="uid://de1o56e2n02uh" path="res://assets/images/dead_pug.png" id="6_dead"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_tint"]
 shader = ExtResource("5_tint")
 shader_parameter/team_color = Color(0.3, 0.95, 0.42, 1)
+shader_parameter/robe_low_in = 0.14
+shader_parameter/robe_low_full = 0.175
+shader_parameter/robe_high_full = 0.32
+shader_parameter/robe_high_out = 0.4
+shader_parameter/robe_sat_full = 0.2
+shader_parameter/robe_sat_out = 0.3
+shader_parameter/robe_pivot = 0.23
+shader_parameter/tint_orb = true
+shader_parameter/orb_min_sat = 0.25
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_caster"]
-radius = 23.0
+radius = 32.0
 
 [node name="CasterGreen" type="CharacterBody2D" unique_id=741634916]
 script = ExtResource("1_script")
-idle_texture = ExtResource("2_idle")
-attack_texture = ExtResource("3_attack")
-dead_texture = ExtResource("6_dead")
 preferred_range = 300.0
 range_tolerance = 60.0
 projectile_scene = ExtResource("4_projectile")
@@ -30,14 +36,17 @@ projectiles_per_cast = 1
 spread_degrees = 0.0
 upgrade_at = Array[float]([0.5])
 tier_fire_rate = Array[float]([1.0, 2.0])
+charge_wind_up = true
+idle_texture = ExtResource("2_idle")
+attack_texture = ExtResource("3_attack")
+dead_texture = ExtResource("6_dead")
 max_health = 25.0
 move_speed = 130.0
 xp_value = 200
-charge_wind_up = true
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=2027714833]
 material = SubResource("ShaderMaterial_tint")
-scale = Vector2(0.18, 0.18)
+scale = Vector2(0.36, 0.36)
 texture = ExtResource("2_idle")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1409725842]

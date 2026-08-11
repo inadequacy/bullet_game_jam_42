@@ -1,20 +1,28 @@
 [gd_scene format=3 uid="uid://dfv1w0exg4fps"]
 
-[ext_resource type="Texture2D" path="res://assets/images/Idle_Max.png" id="1_lkv7d"]
+[ext_resource type="Texture2D" uid="uid://b0kjja22qvu8t" path="res://assets/images/Idle_Max.png" id="1_lkv7d"]
 [ext_resource type="Script" uid="uid://cwirr0va8ubfb" path="res://game/player/movement.gd" id="2_ushfy"]
-[ext_resource type="Texture2D" path="res://assets/images/Attacking_max.png" id="3_attack"]
-[ext_resource type="Texture2D" path="res://assets/images/green_sparkle.png" id="4_sparkle"]
-[ext_resource type="Texture2D" path="res://assets/images/Hurt_Max.png" id="5_hurt"]
-[ext_resource type="Shader" path="res://assets/shaders/max_clothes.gdshader" id="6_clothes"]
-
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_clothes"]
-shader = ExtResource("6_clothes")
+[ext_resource type="Texture2D" uid="uid://ucgkndwr077u" path="res://assets/images/Attacking_max.png" id="3_attack"]
+[ext_resource type="Texture2D" uid="uid://bm3icrkmayexl" path="res://assets/images/green_sparkle.png" id="4_sparkle"]
+[ext_resource type="Texture2D" uid="uid://b57wyk67g38ib" path="res://assets/images/Hurt_Max.png" id="5_hurt"]
+[ext_resource type="Shader" uid="uid://c8dtu1yvjrl84" path="res://assets/shaders/max_clothes.gdshader" id="6_clothes"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_haif4"]
-size = Vector2(40, 40)
+size = Vector2(62, 64)
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_haif4"]
 radius = 90.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_clothes"]
+shader = ExtResource("6_clothes")
+shader_parameter/hue_shift = 0.06
+shader_parameter/sat_boost = 1.06
+shader_parameter/hue_low_in = 0.5
+shader_parameter/hue_low_full = 0.545
+shader_parameter/hue_high_full = 0.64
+shader_parameter/hue_high_out = 0.69
+shader_parameter/sat_min_in = 0.18
+shader_parameter/sat_min_full = 0.3
 
 [node name="PlayerCharacter" type="CharacterBody2D" unique_id=1852961571 groups=["player"]]
 script = ExtResource("2_ushfy")
@@ -25,7 +33,7 @@ parry_sparkle_texture = ExtResource("4_sparkle")
 
 [node name="PlayerCollision" type="CollisionShape2D" parent="." unique_id=558354169]
 visibility_layer = 5
-position = Vector2(0.5, 0.5)
+position = Vector2(1, 8)
 shape = SubResource("RectangleShape2D_haif4")
 
 [node name="ParryRadius" type="CollisionShape2D" parent="." unique_id=1844970628]
@@ -35,5 +43,5 @@ disabled = true
 
 [node name="CharacterImage" type="Sprite2D" parent="." unique_id=1203039092]
 material = SubResource("ShaderMaterial_clothes")
-scale = Vector2(0.19, 0.19)
+scale = Vector2(0.38, 0.38)
 texture = ExtResource("1_lkv7d")
